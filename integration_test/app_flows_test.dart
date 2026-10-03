@@ -29,7 +29,8 @@ import 'flows/weight_flow.dart';
 ///
 /// WARNING: before every test the database file of the app is deleted, so every
 /// test starts like a fresh install. Run this only on an emulator or a device
-/// whose app data may be thrown away.
+/// whose app data may be thrown away; the tests refuse to run without
+/// `--dart-define=WIPE_APP_DATA=yes`.
 final class _DeviceEnvironment implements FlowEnvironment {
   /// The longest real time the emulator waits when a flow wants time to pass.
   /// Long enough to be measured on the one-second countdown, short enough to
@@ -102,6 +103,13 @@ Future<void> _deleteDatabaseFiles() async {
   }
 }
 
+/// Whether the caller confirmed that the app's data may be deleted. The flows
+/// start like a fresh install and DELETE the database file, so a phone that
+/// holds real data must never be wiped by accident: the run needs
+/// `--dart-define=WIPE_APP_DATA=yes` (the CI emulator job passes it) or, for the
+/// host run on a temporary directory, `main(wipeConfirmed: true)`.
+var _wipeAllowed = false;
+
 /// Runs [flow] on a fresh install: empty app data, the production start, and
 /// the app closed again afterwards (also when the flow fails), so its database
 /// connection is gone before the next test deletes the file.
@@ -109,6 +117,13 @@ Future<void> _runFlow(
   WidgetTester tester,
   Future<void> Function(FlowContext ctx) flow,
 ) async {
+  if (!_wipeAllowed) {
+    fail(
+      'This test deletes the database of the app on the device. Run it only on '
+      'an emulator or a device whose app data may be thrown away, and confirm '
+      'with --dart-define=WIPE_APP_DATA=yes.',
+    );
+  }
   await _deleteDatabaseFiles();
   final environment = _DeviceEnvironment();
   final ctx = FlowContext(tester: tester, environment: environment);
@@ -120,7 +135,9 @@ Future<void> _runFlow(
   }
 }
 
-void main() {
+void main({bool wipeConfirmed = false}) {
+  _wipeAllowed =
+      wipeConfirmed || const String.fromEnvironment('WIPE_APP_DATA') == 'yes';
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   // Render every frame the app asks for, like the real app does. The default
   // policy only draws the frames the test pumps, which stretches the time

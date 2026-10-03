@@ -141,4 +141,21 @@ void main() {
       }
     }
   });
+
+  test(
+    'the flows refuse to wipe app data without an explicit confirmation',
+    () {
+      final entry = device.readAsStringSync();
+      expect(entry, contains("String.fromEnvironment('WIPE_APP_DATA')"));
+      expect(entry, contains('if (!_wipeAllowed)'));
+      final ci = File('.github/workflows/ci.yml').readAsStringSync();
+      expect(
+        ci,
+        contains(
+          'flutter test integration_test --no-pub --dart-define=WIPE_APP_DATA=yes',
+        ),
+        reason: 'the emulator job holds no real data and says so',
+      );
+    },
+  );
 }

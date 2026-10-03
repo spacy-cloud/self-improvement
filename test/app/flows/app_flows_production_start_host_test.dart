@@ -68,5 +68,6 @@ void main() {
   // On Android the plugin registers its implementation at start.
   AndroidFlutterLocalNotificationsPlugin.registerWith();
 
-  emulator_entry.main();
+  // The data lives in a temporary directory here, so wiping it is fine.
+  emulator_entry.main(wipeConfirmed: true);
 }
