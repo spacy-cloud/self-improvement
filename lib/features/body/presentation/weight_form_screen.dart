@@ -544,49 +544,54 @@ class _WeightValueField extends StatelessWidget {
     );
     return MediaQuery.withClampedTextScaling(
       maxScaleFactor: 1.3,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.baseline,
-        textBaseline: TextBaseline.alphabetic,
-        children: [
-          IntrinsicWidth(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 84),
-              child: Semantics(
-                label: 'Gewicht in Kilogramm',
-                textField: true,
-                child: TextField(
-                  controller: controller,
-                  focusNode: focusNode,
-                  textAlign: TextAlign.center,
-                  style: style,
-                  cursorColor: colors.primaryButton,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
+      // Narrow screens at large text sizes shrink the value instead of
+      // overflowing the card.
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            IntrinsicWidth(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minWidth: 84),
+                child: Semantics(
+                  label: 'Gewicht in Kilogramm',
+                  textField: true,
+                  child: TextField(
+                    controller: controller,
+                    focusNode: focusNode,
+                    textAlign: TextAlign.center,
+                    style: style,
+                    cursorColor: colors.primaryButton,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    textInputAction: TextInputAction.done,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp('[0-9.,]')),
+                      LengthLimitingTextInputFormatter(8),
+                    ],
+                    decoration: InputDecoration.collapsed(
+                      hintText: hint,
+                      hintStyle: style.copyWith(color: colors.textTertiary),
+                    ),
+                    onChanged: onChanged,
+                    onSubmitted: onSubmitted,
                   ),
-                  textInputAction: TextInputAction.done,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp('[0-9.,]')),
-                    LengthLimitingTextInputFormatter(8),
-                  ],
-                  decoration: InputDecoration.collapsed(
-                    hintText: hint,
-                    hintStyle: style.copyWith(color: colors.textTertiary),
-                  ),
-                  onChanged: onChanged,
-                  onSubmitted: onSubmitted,
                 ),
               ),
             ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            'kg',
-            style: AppTextStyles.titleSection.copyWith(
-              color: colors.textPrimary,
+            const SizedBox(width: 6),
+            Text(
+              'kg',
+              style: AppTextStyles.titleSection.copyWith(
+                color: colors.textPrimary,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

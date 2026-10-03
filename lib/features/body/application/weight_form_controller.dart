@@ -94,11 +94,14 @@ final class WeightFormState {
     bool? dirty,
     Map<String, String>? fieldErrors,
     bool? submitting,
+    int? Function()? suggestionGrams,
     AppFailure? Function()? submitFailure,
     String? Function()? duplicateOfId,
   }) => WeightFormState(
     weightText: weightText ?? this.weightText,
-    suggestionGrams: suggestionGrams,
+    suggestionGrams: suggestionGrams == null
+        ? this.suggestionGrams
+        : suggestionGrams(),
     date: date ?? this.date,
     time: time ?? this.time,
     beforeToilet: beforeToilet ?? this.beforeToilet,
@@ -184,6 +187,18 @@ class WeightFormController extends Notifier<WeightFormState> {
     final local = clock.toLocal(entry?.occurredAtUtc ?? clock.nowUtc());
     _originalInstant = entry?.occurredAtUtc;
     final latest = ref.read(weightEntriesProvider).value;
+    if (entry == null) {
+      // The history may still be loading when the form opens (for example
+      // when the dashboard card is hidden): offer the last value as soon as
+      // it arrives, without touching what the user typed meanwhile.
+      ref.listen(weightEntriesProvider, (previous, next) {
+        final loaded = next.value;
+        if (loaded == null || loaded.isEmpty || state.suggestionGrams != null) {
+          return;
+        }
+        state = state.copyWith(suggestionGrams: () => loaded.first.weightGrams);
+      });
+    }
     return WeightFormState(
       weightText: entry == null ? '' : formatKilograms(entry.weightGrams),
       suggestionGrams: entry == null && latest != null && latest.isNotEmpty

@@ -151,7 +151,10 @@ class _Segment extends StatelessWidget {
       excludeSemantics: true,
       child: AnimatedContainer(
         duration: duration,
-        constraints: const BoxConstraints(minHeight: AppSizes.touchMin),
+        constraints: const BoxConstraints(
+          minWidth: AppSizes.touchMin,
+          minHeight: AppSizes.touchMin,
+        ),
         decoration: BoxDecoration(
           color: selected ? colors.surface : Colors.transparent,
           borderRadius: radius,
