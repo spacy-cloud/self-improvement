@@ -7,7 +7,7 @@ Diese Anleitung ist für die ersten eigenen Tests auf einem Emulator oder einem 
 | Geprüft | Wie |
 |---|---|
 | Fachlogik, Datenbank, Oberflächen, Barrierefreiheit-Grundlagen | automatische Tests auf dem Entwicklungsrechner (siehe [test-report.md](test-report.md)) |
-| App baut als Debug-APK; auf einem Android-Emulator (API 34) laufen die Integrationstests (Start auf einer In-Memory-Datenbank, Tabs, Plus-Menü), der echte Produktionsstart nicht | GitHub Actions, Jobs „Android debug APK“ und „Android emulator integration tests“; was sie beweisen, steht in [test-report.md](test-report.md) |
+| App baut als Debug-APK; auf einem Android-Emulator (API 34) laufen der Smoke-Test und sieben Kernabläufe mit dem echten Produktionsstart (Erststart, Gewicht, Wasser, Aufgabe, Fokus mit Neustart, Zurücksetzen, Datenbankdatei und Zeitzone), siehe [integration-tests.md](integration-tests.md) | GitHub Actions, Jobs „Android debug APK“ und „Android emulator integration tests“; was sie beweisen, steht in [test-report.md](test-report.md) |
 | Lasttest mit mehr als 10.000 synthetischen Einträgen | nur auf einem CI-Rechner, nicht auf einem Gerät |
 
 | Noch nicht geprüft | Folge für dich |
@@ -60,6 +60,8 @@ Schritte:
 4. Oben die Konfiguration `main.dart` wählen und auf **Run** drücken. Die erste Gradle-Synchronisierung lädt Gradle und Abhängigkeiten und dauert mehrere Minuten.
 
 Ohne Android Studio geht es auch mit `flutter run` im Projektordner, sobald ein Gerät verbunden ist.
+
+**Achtung bei den Integrationstests:** `flutter test integration_test` (die Emulator-Abläufe aus [integration-tests.md](integration-tests.md)) löscht die Datenbank der App auf dem Zielgerät, damit jeder Ablauf wie eine frische Installation startet. Die Abläufe starten deshalb nur mit `--dart-define=WIPE_APP_DATA=yes`. Nie auf einem Handy mit echten Daten, und nicht auf dem Emulator, auf dem du von Hand testest, solange du die Einträge behalten willst.
 
 ## Demo-Daten laden (optional, empfohlen für Diagramme und Analyse)
 

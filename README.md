@@ -20,6 +20,7 @@ Der App-Name steht noch nicht fest und wird im Code als eine Konstante geführt 
 
 - [Erste Tests](docs/erste-tests.md): App starten (Android Studio, Handy, CI-APK), Demo-Daten, Rundgang
 - [Demo-Skript](docs/demo-script.md): 15-Minuten-Vorführung mit Vorbereitung, Ablauf, Fehlerplan und dem, was nicht behauptet wird
+- [Emulator-Abläufe](docs/integration-tests.md): sieben Kernabläufe mit dem echten Produktionsstart (Emulator und Host), Ausführung und Grenzen
 - [Testbericht](docs/test-report.md): ausgeführte Prüfungen mit Befehlen und Ergebnissen, Lastzahlen, was die CI-Jobs beweisen, was nicht getestet ist
 - [Anforderungsmatrix](docs/requirements-matrix.md): Jira → Anforderung → Umsetzung → Test → Status, Abnahmefälle AT01 bis AT36, offene Punkte
 - [Architektur](docs/architecture.md): Schichten, Verzeichnisse, Datenmodell, Commands, Start der App
@@ -56,7 +57,7 @@ flutter build apk --debug            # Debug-APK: build/app/outputs/flutter-apk/
 dart format --set-exit-if-changed lib test integration_test tool
 flutter analyze
 flutter test                         # Unit-, Repository- und Widget-Tests (laufen auf dem Host)
-flutter test integration_test        # Integrationstests (benötigt Gerät oder Emulator)
+flutter test integration_test --dart-define=WIPE_APP_DATA=yes   # Emulator-Abläufe; löschen die App-Daten des Geräts (siehe docs/integration-tests.md)
 dart run tool/sync_app_name.dart     # native Anzeigenamen nach Änderung von AppConfig.appName angleichen
 dart run tool/at_coverage.dart       # welche Tests welchen Abnahmefall (AT01 bis AT36) benennen
 flutter test test/tool/demo_backup_test.dart   # erzeugt die Demo-Sicherung build/demo-backup/demo-daten-90-tage.json

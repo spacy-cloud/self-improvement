@@ -171,7 +171,7 @@ Die Navigations-Einstiege des Shells (Plus-Menü, Benachrichtigungen) öffnen Se
 
 - Alle acht Schnellaktionen und alle Modulrouten sind registriert; `findDuplicatePaths` bleibt leer (Test `route_guard_test.dart`: jeder Pfad einmal, mit allen fünf Modulen). Ein neuer Eintrag im Plus-Menü braucht eine neue Id in `plusEntryIds` und eine Schnellaktion in einer Modulklasse.
 - Das Speichern oder Verwerfen einer offenen Fokus-Sitzung geschieht auf dem Sitzungs-Screen; die Modulverwaltung führt dorthin. Der Fokus-Eigentümer kann `canDeactivate` für eigene Texte überschreiben.
-- Bei `resumed` liest die Verdrahtung nur Zone und Datum neu (`AppWiring`, Abschnitt 8); sie ruft `FocusRestorer.restore()` nicht auf, obwohl der Kommentar an der Klasse das beschreibt. Den Aufruf bei der Rückkehr macht nur der geöffnete Sitzungsbildschirm (Einzelheiten in [focus-workouts.md](focus-workouts.md), Abschnitt 3.1).
+- Bei `resumed` liest die Verdrahtung Zone und Datum neu und stellt eine offene Fokus-Sitzung wieder her (`FocusRestorer.restore()`, siehe [focus-workouts.md](focus-workouts.md), Abschnitt 3.1).
 - `dataEpochProvider` zählt Datenersetzungen (Import, Zurücksetzen) und wird nach jeder Ersetzung erhöht, aber von keinem Provider im Code beobachtet; Provider, die mehr als ihren Datenbank-Stream zwischenspeichern, sollten ihn beobachten.
 - `snapshotConsistencyCheckerProvider` hat keine Umsetzung (Zielfunktion); der Standard übernimmt Snapshots unverändert.
 - Scroll nach oben beim erneuten Tippen auf den Tab ist Sache der Tab-Screens (der Shell setzt den Tab nur auf seine Wurzel zurück).

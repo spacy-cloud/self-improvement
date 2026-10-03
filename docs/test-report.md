@@ -11,7 +11,7 @@ Dokumentiert tatsächlich ausgeführte Prüfungen mit Umgebung und Ergebnis. Nic
 | Toolchain | Flutter 3.47.6 (stable, Framework-Revision `5fc346839b`), Dart 3.13.5, DevTools 2.60.0 (Ausgabe von `flutter --version`; siehe [implementation-decisions.md](implementation-decisions.md)) |
 | Host | Linux x86_64 |
 | Host-Tests | `flutter test` mit echter In-Memory-SQLite-Datenbank (Drift), fester Uhr `FakeClock` (Zone Europa/Berlin, 2026-10-03), Fakes für Erinnerungs-Plattform, Teilen und Dateiauswahl, simulierter Textskala und Tastatur; nur synthetische Daten |
-| Lokales Android-Ziel | Keines: kein Android-SDK, kein Gerät, kein Emulator; Lizenzen nicht akzeptiert |
+| Lokales Android-Ziel | In der automatischen Entwicklungsumgebung keines (kein Android-SDK, kein Gerät, kein Emulator); der Projektinhaber startet die App lokal in Android Studio |
 | CI | GitHub Actions, siehe `.github/workflows/ci.yml` und Abschnitt 5 |
 
 ## 2. Gesamtlauf der Host-Tests
@@ -109,19 +109,21 @@ Definiert in `.github/workflows/ci.yml`; Ergebnis der Läufe: siehe Pull Request
 |---|---|---|---|
 | Format, analyze, test | Lockfile erzwungen (`flutter pub get --enforce-lockfile`), Format-Check, Drift-Codegenerierung, Prüfung der nativen Anzeigenamen, `flutter analyze --no-pub`, `flutter test --no-pub`; lädt `load-test-results` und `demo-backup` als Artefakte hoch | Dasselbe wie die lokalen Läufe in den Abschnitten 2 bis 4, auf sauberer Umgebung mit der gesperrten Toolchain | Verhalten auf Android |
 | Android debug APK | `flutter build apk --debug`, danach `flutter build apk --release` (mit dem Debug-Schlüssel signiert, nur für manuelle Leistungsproben); lädt `debug-apk` und `release-apk` hoch | Die App lässt sich für Android bauen und verpacken | Dass die APKs starten: Der Job startet keine; das Release-Paket wurde nirgends gestartet |
-| Android emulator integration tests (API 34) | `flutter test integration_test` auf einem Emulator (x86_64, Google APIs, Profil Pixel 6, Animationen aus); die Datei `integration_test/app_smoke_test.dart` | Der Dart-Code läuft auf einem Android-Emulator: Start auf einer In-Memory-Datenbank hinter dem Onboarding, Wechsel der vier Tabs, Plus-Menü öffnen und schließen | Alles Übrige: der echte Produktionsstart, die echte Datenbankdatei, das Onboarding, das echte Benachrichtigungs-Plugin, jeder fachliche Ablauf |
+| Android emulator integration tests (API 34) | `flutter test integration_test --dart-define=WIPE_APP_DATA=yes` auf einem Emulator (x86_64, Google APIs, Profil Pixel 6, Animationen aus): `integration_test/app_smoke_test.dart` (In-Memory-Datenbank, Test-Ersatz für Benachrichtigungen) und `integration_test/app_flows_test.dart` (der echte Produktionsstart, siehe [integration-tests.md](integration-tests.md)) | Der Dart-Code läuft auf einem Android-Emulator. Smoke-Test: Start hinter dem Onboarding, vier Tabs, Plus-Menü. Abläufe mit dem echten Start (echte SQLite-Datei im App-Support-Verzeichnis, echte Zeitzonenerkennung, echtes Benachrichtigungs-Plugin): F1 Erststart und Onboarding (AT01), F2 Gewicht mit Neustart (AT02, AT06), F3 Wasser mit Rückgängig (AT10), F4 Aufgabe abschließen (AT13), F5 Fokus mit Pause und Neustart mitten in der Sitzung (AT16), F6 Zurücksetzen (AT32), F7 Datenbankdatei, Gerätezone und Initialisierung der Erinnerungs-Plattform | Systemdialoge, Teilen-Menü und Dateiauswahl, TalkBack, echte Benachrichtigungszustellung, Leistung, ein echtes Gerät, den Release-Build; die Abläufe laufen bei ausgeschalteten Animationen und auf einem frischen Emulator |
 
-Ein zweiter Ablauftest mit dem echten Produktionsstart ist im Ticket [BS-76](https://spacy-cloud.atlassian.net/browse/BS-76) in Arbeit und nicht Teil dieses Standes.
+Das CI-Ergebnis des Emulator-Jobs steht im Pull Request. Die Abläufe löschen die App-Datenbank des Zielgeräts und starten deshalb nur mit der ausdrücklichen Bestätigung `--dart-define=WIPE_APP_DATA=yes` (die CI übergibt sie); sie gehören nicht auf ein Handy mit echten Daten.
+
+Zusätzlich lief die App am 2026-10-03 manuell auf einem Android-Emulator des Projektteams (Debug-Build aus Android Studio): Start mit dem Produktionspfad und Anzeige des Dashboards mit leeren Zuständen. Weitere manuelle Prüfungen (Rundgang in [erste-tests.md](erste-tests.md)) sind offen.
 
 ## 6. Nicht getestet
 
-Nicht auf einem Gerät oder mit der echten Plattform geprüft (kein Android-SDK, kein Gerät, kein Emulator in der Entwicklungsumgebung); die jeweils vorhandenen Stellvertreter stehen in der [Anforderungsmatrix](requirements-matrix.md), Abschnitt 6:
+Nicht auf einem Gerät oder mit der echten Plattform geprüft (in der automatischen Entwicklungsumgebung gibt es kein Android-SDK; Emulator-Läufe stammen aus der CI und aus dem einen manuellen Lauf des Projektteams); die jeweils vorhandenen Stellvertreter stehen in der [Anforderungsmatrix](requirements-matrix.md), Abschnitt 6:
 
 - **Echtes Gerät:** Gefühl bei Start und Scrollen, Leistung, Speicher.
 - **TalkBack** und die Lesereihenfolge; echte Systemschrift bis 200 % und echte Tastatur (im Host nur simuliert).
 - **Zustellung von Erinnerungen:** Systemdialog ab Android 13, endgültige Ablehnung, ungenau getaktete Alarme, Verhalten nach Force-Stop, Antippen einer echten Benachrichtigung.
 - **Teilen-Menü und Dateiauswahl** für Export und Import, einschließlich der Kopie der Auswahl im Cache und sehr großer Dateien.
-- **Prozessende und Datei-Datenbank:** Kein automatisierter Test öffnet die echte Datenbankdatei oder startet die App mit dem Produktionsstart.
+- **Prozessende:** Der Neustart wird in den Emulator-Abläufen durch Abbau und Neuaufbau des Widget-Baums auf derselben Datenbankdatei nachgestellt (F2, F5, F6), nicht durch das Beenden des Betriebssystem-Prozesses.
 - **Release-Build zur Laufzeit:** Die CI baut ihn, gestartet wurde er nicht.
 - **Android-Systemzurück** und der Opt-out aus dem vorhersagenden Zurück (`android:enableOnBackInvokedCallback="false"`, Android 16 mit targetSdk 36).
 - **Zeitzonen- und Sommerzeitwechsel des Betriebssystems** (im Host mit `FakeClock` und Fake-Zonenquelle nachgestellt).
