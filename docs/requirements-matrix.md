@@ -5,7 +5,7 @@ Zuordnung **Jira-Key → Anforderungen/Arbeitspaket → Screen/Route → Impleme
 **Statuswerte:** `offen` · `in Arbeit` · `umgesetzt` (Code und automatisierte Tests vorhanden und ausgeführt) · `Review` (umgesetzt, PR offen, Team-Abnahme ausstehend) · `nicht prüfbar` (mit Grund, z. B. kein Gerät) · `teilweise` (mit Angabe des offenen Teils).
 Ein gestarteter CI-Lauf gilt nicht als bestanden. Prüfungen mit Fakes oder Host-Tests sind von realen Geräteprüfungen getrennt ausgewiesen.
 
-Letzter Stand: 2026-10-03, Code-Stand `873f9ff` (Integrationsbranch `feature/BS-51-android-v1`, als Entwurfs-PR 2 gegen `main`; PR 1 ist der Bootstrap BS-52). Diese Datei wird mit jedem Meilenstein aktualisiert.
+Letzter Stand: 2026-10-03, Code-Stand `873f9ff` (Integrationsbranch `feature/BS-51-android-v1`, als Entwurfs-PR 2 gegen `main`; PR 1, der Bootstrap BS-52, ist bereits in `main` gemergt). Diese Datei wird mit jedem Meilenstein aktualisiert.
 
 ## 0. Wie die Nachweise gelesen werden
 
@@ -29,7 +29,7 @@ Testzahlen: Ergebnis von `flutter test <Verzeichnis>` am genannten Stand, alle g
 
 | Jira | AP | Prio | Arbeitspaket | Anforderungen | Abnahmetests | Screen / Route | Implementierung | Tests | PR / Commit | Jira-Status |
 |---|---|---|---|---|---|---|---|---|---|---|
-| [BS-52](https://spacy-cloud.atlassian.net/browse/BS-52) | AP00 | P0 | Projektstand, Flutter-Umgebung, Bootstrap und CI | C01, Q01 | – | – | `pubspec.yaml`, `analysis_options.yaml`, `.github/workflows/ci.yml`, `lib/main.dart`, `lib/core/config/`, `tool/sync_app_name.dart`, `android/`, `ios/` | `test/core/config` (4); die CI-Jobs (siehe [test-report.md](test-report.md)) | PR 1 (Basis), PR 2; Merge `69f207c` | Wird überprüft |
+| [BS-52](https://spacy-cloud.atlassian.net/browse/BS-52) | AP00 | P0 | Projektstand, Flutter-Umgebung, Bootstrap und CI | C01, Q01 | – | – | `pubspec.yaml`, `analysis_options.yaml`, `.github/workflows/ci.yml`, `lib/main.dart`, `lib/core/config/`, `tool/sync_app_name.dart`, `android/`, `ios/` | `test/core/config` (4); die CI-Jobs (siehe [test-report.md](test-report.md)) | PR 1 (Basis, in `main` gemergt), PR 2; Merge `69f207c` | Wird überprüft |
 | [BS-56](https://spacy-cloud.atlassian.net/browse/BS-56) | AP01 | P0 | Lokales Drift-Schema, Repositories und Migrationen | C03, C05, Q01 | AT02, AT07, AT27 | – | `lib/core/database/` (Schema 1, Tabellen, Konverter, Schlüssel, reaktive Abfragen), `lib/core/bootstrap/`; Repositories in `lib/core/{profile,settings,modules}/` | `test/core/database` (31), `test/core/bootstrap` (8) | PR 2; `d2d5a59`, `d81ed9a` | In Arbeit |
 | [BS-55](https://spacy-cloud.atlassian.net/browse/BS-55) | AP01 | P0 | Zeitmodell, idempotente Commands und Undo | C05, G01, G02 | AT12, AT23, AT25, AT27 | – | `lib/core/time/`, `lib/core/commands/` (Runner, Receipts, `SubmissionTracker`, `AttemptClock`), `lib/core/errors/`, `lib/core/feedback/`, `lib/shared/` | `test/core/time` (12), `test/core/commands` (20), `test/shared` (24), `test/core/feedback` (6) | PR 2; `6f959a6`, `d2d5a59`, `cbfa53a` | In Arbeit |
 | [BS-54](https://spacy-cloud.atlassian.net/browse/BS-54) | AP02 | P0 | Figma-Tokens, Themes und gemeinsame Komponenten | C06, Q02, Q03 | AT33, AT35 | Design System | `lib/core/design/` (Tokens, Themes, Bewegung, Komponenten), `assets/fonts/` | `test/core/design` (840, darunter Kontrast- und Golden-Tests) | PR 2; Merge `6b960a2`, `760f05e` | In Arbeit |
