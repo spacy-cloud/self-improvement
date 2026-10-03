@@ -6,6 +6,7 @@ import 'package:self_improvement/core/backup/import_validation_report.dart';
 import 'package:self_improvement/core/backup/reset_service.dart';
 import 'package:self_improvement/core/config/app_config.dart';
 import 'package:self_improvement/core/design/design.dart';
+import 'package:self_improvement/core/feedback/feedback_service.dart';
 import 'package:self_improvement/core/providers/core_providers.dart';
 import 'package:self_improvement/features/reminders/presentation/sheet_frame.dart';
 import 'package:self_improvement/features/settings/application/data_backup_actions.dart';
@@ -441,6 +442,13 @@ final class ResetSheetDone extends ResetSheetResult {
   final ResetOutcome outcome;
 }
 
+/// What the user is told after a completed reset.
+String resetDoneMessage(ResetOutcome outcome) => outcome.followUpSucceeded
+    ? 'Alle App-Daten wurden gelöscht.'
+    : 'Alle App-Daten wurden gelöscht. Einige Folgeschritte '
+          '(Erinnerungen, Zwischenspeicher) sind fehlgeschlagen. '
+          'Starte die App neu, damit alles abgeglichen wird.';
+
 /// Asks for the typed confirmation and, when it matches exactly, deletes all
 /// app data.
 Future<ResetSheetResult> showResetSheet(BuildContext context) async {
@@ -480,16 +488,26 @@ class _ResetSheetState extends ConsumerState<ResetSheet> {
       _busy = true;
       _error = null;
     });
+    final feedback = ref.read(feedbackServiceProvider);
+    final navigator = Navigator.of(context);
+    final route = ModalRoute.of(context);
     final result = await ref
         .read(dataBackupActionsProvider)
         .resetAll(_typed.text);
-    if (!mounted) {
-      return;
-    }
     switch (result) {
       case ResetDone(:final outcome):
-        Navigator.of(context).pop(ResetSheetDone(outcome));
+        // The reset removes the profile, so the router may already have
+        // replaced the screens (and this sheet) with the onboarding by now.
+        // The message therefore does not depend on the sheet still being there,
+        // and the sheet only closes itself while it is still the top route.
+        feedback.showInfo(resetDoneMessage(outcome));
+        if (mounted && (route?.isCurrent ?? false)) {
+          navigator.pop(ResetSheetDone(outcome));
+        }
       case ResetFailed():
+        if (!mounted) {
+          return;
+        }
         setState(() {
           _busy = false;
           _error =

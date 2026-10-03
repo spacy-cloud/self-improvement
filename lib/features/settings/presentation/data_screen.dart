@@ -219,7 +219,6 @@ class _DataScreenState extends ConsumerState<DataScreen> {
     if (!_idle) {
       return;
     }
-    final feedback = ref.read(feedbackServiceProvider);
     final router = GoRouter.of(context);
     final result = await showResetSheet(context);
     switch (result) {
@@ -229,16 +228,11 @@ class _DataScreenState extends ConsumerState<DataScreen> {
         if (mounted) {
           await _startExport();
         }
-      case ResetSheetDone(:final outcome):
-        feedback.showInfo(
-          outcome.followUpSucceeded
-              ? 'Alle App-Daten wurden gelöscht.'
-              : 'Alle App-Daten wurden gelöscht. Einige Folgeschritte '
-                    '(Erinnerungen, Zwischenspeicher) sind fehlgeschlagen. '
-                    'Starte die App neu, damit alles abgeglichen wird.',
-        );
-        // The profile is back to "not onboarded": the router sends the user
-        // to the setup from the start route.
+      case ResetSheetDone():
+        // The sheet already told the user (it must not depend on this screen,
+        // which the router may have replaced). The profile is back to "not
+        // onboarded": the router sends the user to the setup from the start
+        // route.
         router.go('/');
     }
   }

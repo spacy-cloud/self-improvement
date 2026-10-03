@@ -67,6 +67,11 @@ Future<void> resetFlow(FlowContext ctx) async {
   await ctx.enterText(find.byType(TextField).first, 'LÖSCHEN');
   await ctx.tapText('Alles löschen');
 
+  ctx.log('F6: the message does not depend on the closing sheet');
+  // The reset removes the profile, the router leaves for the onboarding while
+  // the sheet is still working; the user is told anyway.
+  await ctx.waitForText('Alle App-Daten wurden gelöscht.');
+
   ctx.log('F6: back to the onboarding');
   await ctx.waitForText('Los geht’s');
   expect(find.byType(AppBottomNavBar), findsNothing);

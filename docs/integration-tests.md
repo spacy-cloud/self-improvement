@@ -38,14 +38,14 @@ F7 prüft nur, was auf einem frischen Emulator feststeht: der Berechtigungsstatu
 flutter test test/app/flows/app_flows_host_test.dart     # Host, schnelle Schleife, etwa 15 Sekunden
 flutter test test/app/flows                              # alle Host-Tests der Flows, etwa 1,5 Minuten
 flutter devices                                          # Geräte-ID ablesen
-flutter test integration_test -d <deviceId>              # Emulator: Flows und Smoke-Test
-flutter test integration_test/app_flows_test.dart -d <deviceId>   # nur die Flows
+flutter test integration_test -d <deviceId> --dart-define=WIPE_APP_DATA=yes   # Emulator: Flows und Smoke-Test
+flutter test integration_test/app_flows_test.dart -d <deviceId> --dart-define=WIPE_APP_DATA=yes   # nur die Flows
 dart run tool/at_coverage.dart                           # welche Abnahme-IDs ein Test nennt
 ```
 
-In Android Studio genügt es, `integration_test/app_flows_test.dart` zu öffnen, das Gerät zu wählen und die Datei auszuführen. Die CI führt `flutter test integration_test` im Job `android-integration` auf einem Emulator mit API 34 aus.
+In Android Studio die Datei `integration_test/app_flows_test.dart` öffnen, das Gerät wählen und in der Run-Konfiguration unter „Additional run args“ `--dart-define=WIPE_APP_DATA=yes` eintragen. Die CI führt `flutter test integration_test --dart-define=WIPE_APP_DATA=yes` im Job `android-integration` auf einem Emulator mit API 34 aus.
 
-**Warnung:** Die Flowtests löschen vor jedem Test die Datenbankdatei der App (`self_improvement*` im App-Support-Verzeichnis), damit jeder Test wie eine frische Installation startet. Nur auf einem Emulator oder Testgerät ausführen, dessen App-Daten verloren gehen dürfen, nie auf einem Gerät mit echten Einträgen.
+**Warnung:** Die Flowtests löschen vor jedem Test die Datenbankdatei der App (`self_improvement*` im App-Support-Verzeichnis), damit jeder Test wie eine frische Installation startet. Nur auf einem Emulator oder Testgerät ausführen, dessen App-Daten verloren gehen dürfen, nie auf einem Gerät mit echten Einträgen. Zum Schutz verweigern die Flows den Start ohne `--dart-define=WIPE_APP_DATA=yes`; der Smoke-Test löscht nichts. Auf einem Handy mit echten Daten also nie mit dieser Bestätigung starten.
 
 ## Neuen Ablauf ergänzen
 
@@ -85,6 +85,8 @@ Alle Unterschiede stehen in den Einstiegen, nie in den Abläufen:
 - Der Emulator-Einstieg lief nie auf einem Gerät; lokal laufen Format, Analyse und der Host-Lauf des Einstiegs mit nachgebauten Plattformkanälen (`app_flows_production_start_host_test.dart`). Das prüft den Produktionsstart gegen eine echte Datei und echte Frames, ersetzt aber keinen Emulatorlauf: native Seiten der Plugins, die sqlite-Bibliothek der APK, Tastatur, Bildschirmgröße und echte Berechtigungen bleiben ungeprüft.
 - Die Flows prüfen Ergebnisse auf dem Bildschirm. Sie ersetzen weder die Domänentests noch die Widget-Tests der Features; sie weisen nach, dass Start, Datenbankdatei und die Kernabläufe zusammen funktionieren.
 
-## Beobachtung zum Zurücksetzen (Stand BS-76)
+## Beobachtung zum Zurücksetzen (behoben)
 
-Löscht das Zurücksetzen das Profil, schickt der Router die App sofort ins Onboarding und entfernt dabei das Bestätigungs-Sheet, noch bevor `ResetSheet._reset` das Ergebnis zurückgibt. Zwei Ausgänge sind möglich: Ist das Sheet schon weg, kommt das Ergebnis „zurückgesetzt“ nie bei `DataScreen._startReset` an, und die Meldung „Alle App-Daten wurden gelöscht.“ erscheint nicht (die App steht trotzdem im Onboarding). Ist das Sheet noch eingehängt, trifft das späte `Navigator.pop` die Onboarding-Seite, und go_router meldet „popped the last page“ (Assertion im Debug-Build, im Release eine leere Seitenliste). Beides zeigte sich im Host-Lauf des Emulator-Einstiegs mit echter SQLite-Datei, je nachdem, ob zwischen Weiterleitung und Rückgabe ein Frame gezeichnet wurde. F6 prüft deshalb das Ergebnis (Onboarding, leere Daten, Timer weg), nicht die Meldung.
+Löscht das Zurücksetzen das Profil, schickt der Router die App sofort ins Onboarding und entfernt dabei das Bestätigungs-Sheet, noch bevor `ResetSheet._reset` das Ergebnis zurückgibt. Der Host-Lauf des Emulator-Einstiegs mit echter SQLite-Datei zeigte zwei Ausgänge: Entweder kam das Ergebnis „zurückgesetzt“ nie beim Datenbildschirm an und die Meldung „Alle App-Daten wurden gelöscht.“ fehlte, oder das späte `Navigator.pop` traf die Onboarding-Seite (go_router meldet „popped the last page“).
+
+Behoben (BS-89): Das Sheet zeigt die Meldung selbst, unabhängig davon, ob es noch eingehängt ist, und schließt sich nur noch, solange es die oberste Route ist. F6 prüft jetzt auch die Meldung.
