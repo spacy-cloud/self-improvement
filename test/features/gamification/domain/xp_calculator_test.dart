@@ -1,7 +1,10 @@
+import 'dart:math';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/features/gamification/domain/xp_award.dart';
 import 'package:self_improvement/features/gamification/domain/xp_calculator.dart';
 import 'package:self_improvement/features/gamification/domain/xp_facts.dart';
+import 'package:self_improvement/features/gamification/domain/xp_reconciliation.dart';
 import 'package:self_improvement/features/gamification/domain/xp_rules.dart';
 import 'package:self_improvement/shared/local_date.dart';
 
@@ -867,6 +870,203 @@ void main() {
 
     test('later days earn XP', () {
       expect(awardsOf(activeDay(profileStart.addDays(40))), isNotEmpty);
+    });
+  });
+
+  group('random days (fixed seed)', () {
+    /// The rule restated independently: the first [limit] qualifying facts by
+    /// (event time, creation time, id).
+    List<String> firstIds(Iterable<XpEventFact> facts, int limit) {
+      final eligible = facts.where((fact) => fact.eligible).toList()
+        ..sort((a, b) {
+          var byTime = a.occurredAtUtc.compareTo(b.occurredAtUtc);
+          if (byTime == 0) {
+            byTime = a.createdAtUtc.compareTo(b.createdAtUtc);
+          }
+          return byTime != 0 ? byTime : a.id.compareTo(b.id);
+        });
+      return eligible.take(limit).map((fact) => fact.id).toList();
+    }
+
+    XpDayFacts randomDay(Random random) {
+      var counter = 0;
+      String nextId() =>
+          '${random.nextInt(1 << 30).toRadixString(16).padLeft(8, '0')}-${counter++}';
+      // Few distinct minutes, so ties on event and creation time happen often.
+      int minute() => random.nextInt(6);
+      bool eligible() => random.nextDouble() < 0.8;
+      List<T> many<T>(T Function() make) => [
+        for (var i = random.nextInt(9); i > 0; i--) make(),
+      ];
+      return XpDayFacts(
+        date: day,
+        water: many(
+          () => water(
+            nextId(),
+            ml: [50, 99, 100, 250, 500][random.nextInt(5)],
+            minute: minute(),
+            created: minute(),
+            eligible: eligible(),
+          ),
+        ),
+        weights: many(() => weight(nextId(), eligible: eligible())),
+        steps: random.nextBool()
+            ? StepsXpFact(
+                steps: random.nextInt(20000),
+                reachedGoalEligible: [true, false, null][random.nextInt(3)],
+                xpGoalTargetSteps: random.nextBool() ? 10000 : null,
+              )
+            : null,
+        tasks: many(
+          () => task(
+            nextId(),
+            minute: minute(),
+            created: minute(),
+            eligible: eligible(),
+          ),
+        ),
+        focusSessions: many(
+          () => focus(
+            nextId(),
+            seconds: [120, 299, 300, 1500][random.nextInt(4)],
+            minute: minute(),
+            created: minute(),
+            eligible: eligible(),
+          ),
+        ),
+        workouts: many(() => workout(nextId(), eligible: eligible())),
+        habitChecks: many(
+          () => check(
+            nextId(),
+            nextId(),
+            minute: minute(),
+            created: minute(),
+            eligible: eligible(),
+          ),
+        ),
+      );
+    }
+
+    test('awards follow the rules, limits and the order of the facts', () {
+      final random = Random(99);
+      for (var round = 0; round < 300; round++) {
+        final facts = randomDay(random);
+        final awards = awardsOf(facts);
+        final reason = 'round $round';
+
+        expect(
+          awards
+              .where((a) => a.source == XpSource.water)
+              .map((a) => a.sourceId),
+          firstIds(
+            facts.water.where((f) => f.amountMl >= 100),
+            XpRules.waterMaxAwardsPerDay,
+          ),
+          reason: reason,
+        );
+        expect(
+          awards.where((a) => a.source == XpSource.task).map((a) => a.sourceId),
+          firstIds(facts.tasks, XpRules.taskMaxAwardsPerDay),
+          reason: reason,
+        );
+        expect(
+          awards
+              .where((a) => a.source == XpSource.focus)
+              .map((a) => a.sourceId),
+          firstIds(
+            facts.focusSessions.where((f) => f.accumulatedSeconds >= 300),
+            XpRules.focusMaxAwardsPerDay,
+          ),
+          reason: reason,
+        );
+        expect(
+          awards
+              .where((a) => a.source == XpSource.habit)
+              .map((a) => a.key.split(':')[1]),
+          firstIds(facts.habitChecks, XpRules.habitMaxAwardsPerDay).map(
+            (checkId) => facts.habitChecks
+                .firstWhere((fact) => fact.id == checkId)
+                .habitId,
+          ),
+          reason: reason,
+        );
+        expect(
+          awards.any((a) => a.source == XpSource.weight),
+          facts.weights.any((fact) => fact.eligible),
+          reason: reason,
+        );
+        expect(
+          awards.any((a) => a.source == XpSource.workout),
+          facts.workouts.any((fact) => fact.eligible),
+          reason: reason,
+        );
+        expect(
+          awards.any((a) => a.source == XpSource.steps),
+          facts.steps?.earnsAward ?? false,
+          reason: reason,
+        );
+
+        expect(total(awards), lessThanOrEqualTo(170), reason: reason);
+        expect(keys(awards).toSet(), hasLength(awards.length), reason: reason);
+        expect(awards.every((a) => a.points > 0), isTrue, reason: reason);
+      }
+    });
+
+    test('the result does not depend on the order of the input', () {
+      final random = Random(5);
+      for (var round = 0; round < 100; round++) {
+        final facts = randomDay(random);
+        final shuffled = XpDayFacts(
+          date: day,
+          water: [...facts.water]..shuffle(random),
+          weights: [...facts.weights]..shuffle(random),
+          steps: facts.steps,
+          tasks: [...facts.tasks]..shuffle(random),
+          focusSessions: [...facts.focusSessions]..shuffle(random),
+          workouts: [...facts.workouts]..shuffle(random),
+          habitChecks: [...facts.habitChecks]..shuffle(random),
+        );
+        expect(awardsOf(shuffled), awardsOf(facts), reason: 'round $round');
+      }
+    });
+
+    test('removing a record never raises the total and reconciles cleanly', () {
+      final random = Random(11);
+      for (var round = 0; round < 100; round++) {
+        final facts = randomDay(random);
+        if (facts.water.isEmpty) {
+          continue;
+        }
+        final before = awardsOf(facts);
+        final withoutFirst = XpDayFacts(
+          date: day,
+          water: facts.water.skip(1).toList(),
+          weights: facts.weights,
+          steps: facts.steps,
+          tasks: facts.tasks,
+          focusSessions: facts.focusSessions,
+          workouts: facts.workouts,
+          habitChecks: facts.habitChecks,
+        );
+        final after = awardsOf(withoutFirst);
+        expect(
+          total(after),
+          lessThanOrEqualTo(total(before)),
+          reason: 'round $round',
+        );
+        final change = reconcileAwards(existing: before, desired: after);
+        final applied = {
+          for (final award in before)
+            if (!change.toDeleteKeys.contains(award.key)) award.key: award,
+          for (final award in change.toUpsert) award.key: award,
+        };
+        expect(
+          reconcileAwards(existing: applied.values, desired: after).isEmpty,
+          isTrue,
+          reason: 'round $round',
+        );
+        expect(total(applied.values), total(after), reason: 'round $round');
+      }
     });
   });
 

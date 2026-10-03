@@ -24,12 +24,11 @@ void main() {
       final result = decide(steps: 10000);
       expect(result.reachedGoalEligible, isTrue);
       expect(result.xpGoalTargetSteps, 10000);
-      expect(result.isDecided, isTrue);
     });
 
     test('the threshold itself is enough, one step less is not', () {
       expect(decide(steps: 9999), StepsEligibility.undecided);
-      expect(decide(steps: 10000).isDecided, isTrue);
+      expect(decide(steps: 10000).reachedGoalEligible, isNotNull);
       expect(decide(steps: 10001).xpGoalTargetSteps, 10000);
     });
 
@@ -43,7 +42,6 @@ void main() {
       final result = decide(steps: 12000, gamification: false);
       expect(result.reachedGoalEligible, isFalse);
       expect(result.xpGoalTargetSteps, 10000);
-      expect(result.isDecided, isTrue);
     });
   });
 
@@ -53,7 +51,6 @@ void main() {
         final result = decide(steps: steps);
         expect(result.reachedGoalEligible, isNull, reason: '$steps');
         expect(result.xpGoalTargetSteps, isNull, reason: '$steps');
-        expect(result.isDecided, isFalse);
       }
     });
 

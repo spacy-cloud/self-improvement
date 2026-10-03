@@ -531,24 +531,6 @@ void main() {
       expect(snapshot.itemFor('habit:h1')?.type, isNull);
       expect(snapshot.itemFor('habit:h1')?.habitId, 'h1');
     });
-
-    test('withApplicable changes only the flag', () {
-      const item = GoalSnapshotItem(
-        goalKey: 'water',
-        module: ModuleId.nutrition,
-        target: 2500,
-        applicable: true,
-      );
-      expect(
-        item.withApplicable(false),
-        const GoalSnapshotItem(
-          goalKey: 'water',
-          module: ModuleId.nutrition,
-          target: 2500,
-          applicable: false,
-        ),
-      );
-    });
   });
 
   group('maskTodaySnapshot', () {
@@ -776,6 +758,27 @@ void main() {
     });
   });
 
+  group('DaySnapshot value semantics', () {
+    test('snapshots with the same date and items are equal', () {
+      expect(built(), built());
+      expect(built().hashCode, built().hashCode);
+      expect(built(), isNot(built(day: yesterday)));
+      expect(
+        built(),
+        isNot(built(moduleEnabledOn: (module, day) => false)),
+        reason: 'applicability is part of the value',
+      );
+      expect(
+        built(),
+        isNot(
+          built(
+            habits: [HabitSnapshotInput(id: 'h', startedOn: profileStart)],
+          ),
+        ),
+      );
+    });
+  });
+
   group('GoalSnapshotItem value semantics', () {
     test('equality covers all fields', () {
       const base = GoalSnapshotItem(
@@ -793,8 +796,37 @@ void main() {
           applicable: true,
         ),
       );
-      expect(base.hashCode, base.withApplicable(true).hashCode);
-      expect(base, isNot(base.withApplicable(false)));
+      expect(
+        base.hashCode,
+        const GoalSnapshotItem(
+          goalKey: 'water',
+          module: ModuleId.nutrition,
+          target: 2500,
+          applicable: true,
+        ).hashCode,
+      );
+      expect(
+        base,
+        isNot(
+          const GoalSnapshotItem(
+            goalKey: 'water',
+            module: ModuleId.nutrition,
+            target: 2500,
+            applicable: false,
+          ),
+        ),
+      );
+      expect(
+        base,
+        isNot(
+          const GoalSnapshotItem(
+            goalKey: 'water',
+            module: ModuleId.body,
+            target: 2500,
+            applicable: true,
+          ),
+        ),
+      );
       expect(
         base,
         isNot(

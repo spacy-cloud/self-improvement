@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/core/goals/domain/day_snapshot.dart';
 import 'package:self_improvement/core/goals/domain/day_status.dart';
@@ -649,6 +651,112 @@ void main() {
       final repaired = series(checked: run(today.addDays(-6), 7));
       expect(repaired.current, 7);
       expect(repaired.longest, 7);
+    });
+  });
+
+  group('against a brute-force reference (fixed seed)', () {
+    /// Counts back from the reference day without any shared code.
+    int referenceCurrent(
+      LocalDate now,
+      LocalDate start,
+      Set<LocalDate> active,
+    ) {
+      var day = active.contains(now) ? now : now.addDays(-1);
+      var count = 0;
+      while (!day.isBefore(start) && active.contains(day)) {
+        count++;
+        day = day.addDays(-1);
+      }
+      return count;
+    }
+
+    ({int longest, int activeDays}) referenceTotals(
+      LocalDate now,
+      LocalDate start,
+      Set<LocalDate> active,
+    ) {
+      var longest = 0;
+      var activeDays = 0;
+      for (var day = start; !day.isAfter(now); day = day.addDays(1)) {
+        if (!active.contains(day)) {
+          continue;
+        }
+        activeDays++;
+        var length = 1;
+        var previous = day.addDays(-1);
+        while (!previous.isBefore(start) && active.contains(previous)) {
+          length++;
+          previous = previous.addDays(-1);
+        }
+        longest = max(longest, length);
+      }
+      return (longest: longest, activeDays: activeDays);
+    }
+
+    test('the global streak matches the reference on random histories', () {
+      final random = Random(2026);
+      // Spans a month change and both daylight saving dates.
+      final anchors = [
+        today,
+        LocalDate(2026, 3, 31),
+        LocalDate(2026, 10, 27),
+        LocalDate(2027, 1, 2),
+      ];
+      for (var round = 0; round < 400; round++) {
+        final now = anchors[round % anchors.length];
+        final start = now.addDays(-random.nextInt(90));
+        final density = 0.3 + random.nextDouble() * 0.65;
+        // Active days may also lie before the start and after today.
+        final active = {
+          for (var offset = -120; offset <= 5; offset++)
+            if (random.nextDouble() < density) now.addDays(offset),
+        };
+        final summary = computeStreak(
+          today: now,
+          profileStart: start,
+          isActiveDay: active.contains,
+        );
+        final totals = referenceTotals(now, start, active);
+        final reason = 'round $round, today $now, start $start';
+        expect(
+          summary.current,
+          referenceCurrent(now, start, active),
+          reason: reason,
+        );
+        expect(summary.longest, totals.longest, reason: reason);
+        expect(summary.activeDays, totals.activeDays, reason: reason);
+        expect(
+          summary.todayActive,
+          active.contains(now) && !now.isBefore(start),
+        );
+        expect(summary.longest, greaterThanOrEqualTo(summary.current));
+        expect(summary.activeDays, greaterThanOrEqualTo(summary.longest));
+        expect(summary.nextMilestone, greaterThan(summary.current));
+      }
+    });
+
+    test('an active habit series equals the streak from its start day', () {
+      final random = Random(7);
+      for (var round = 0; round < 200; round++) {
+        final start = today.addDays(-random.nextInt(60));
+        final checked = {
+          for (var offset = -80; offset <= 0; offset++)
+            if (random.nextBool()) today.addDays(offset),
+        };
+        final global = computeStreak(
+          today: today,
+          profileStart: start,
+          isActiveDay: checked.contains,
+        );
+        final habit = computeHabitSeries(
+          today: today,
+          habitStart: start,
+          archivedFrom: null,
+          isChecked: checked.contains,
+        );
+        expect(habit.current, global.current, reason: 'round $round');
+        expect(habit.longest, global.longest, reason: 'round $round');
+      }
     });
   });
 }
