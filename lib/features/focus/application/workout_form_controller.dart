@@ -147,6 +147,33 @@ final class WorkoutRejected extends WorkoutSubmitResult {
   const WorkoutRejected();
 }
 
+/// Outcome of [WorkoutFormController.deleteEntry].
+sealed class WorkoutDeleteResult {
+  const WorkoutDeleteResult();
+}
+
+/// Deleted. [outcome] carries the undo action that restores the same id.
+final class WorkoutDeleted extends WorkoutDeleteResult {
+  const WorkoutDeleted(this.outcome);
+
+  final CommandOutcome outcome;
+
+  /// Success message after the commit.
+  String get message => 'Training gelöscht';
+}
+
+/// Ignored because a save or delete is already running (double tap).
+final class WorkoutDeleteBusy extends WorkoutDeleteResult {
+  const WorkoutDeleteBusy();
+}
+
+/// Not deleted (for example the workout vanished or the database failed).
+final class WorkoutDeleteFailed extends WorkoutDeleteResult {
+  const WorkoutDeleteFailed(this.failure);
+
+  final AppFailure failure;
+}
+
 /// Controller of the new/edit workout form (same pattern as the weight form).
 class WorkoutFormController extends Notifier<WorkoutFormState> {
   WorkoutFormController(this.args);
@@ -354,6 +381,36 @@ class WorkoutFormController extends Notifier<WorkoutFormState> {
       state = state.copyWith(submitting: false, submitFailure: () => failure);
     }
     return const WorkoutRejected();
+  }
+
+  /// Deletes the edited workout (soft delete with an undo that restores the
+  /// same id). Only valid in edit mode; the UI asks for confirmation first. A
+  /// retry after a failure reuses the command id.
+  Future<WorkoutDeleteResult> deleteEntry() async {
+    final entry = args.entry;
+    if (entry == null) {
+      throw StateError('Only an existing workout can be deleted');
+    }
+    if (state.submitting) {
+      return const WorkoutDeleteBusy();
+    }
+    final commandId = _tracker.idFor(('delete', entry.id));
+    state = state.copyWith(submitting: true, submitFailure: () => null);
+    try {
+      final outcome = await ref
+          .read(workoutRepositoryProvider)
+          .delete(commandId: commandId, id: entry.id);
+      _tracker.completed();
+      if (ref.mounted) {
+        state = state.copyWith(submitting: false, dirty: false);
+      }
+      return WorkoutDeleted(outcome);
+    } on AppFailure catch (failure) {
+      if (ref.mounted) {
+        state = state.copyWith(submitting: false, submitFailure: () => failure);
+      }
+      return WorkoutDeleteFailed(failure);
+    }
   }
 
   Map<String, String> _without(String field) {
