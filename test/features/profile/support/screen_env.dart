@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/core/feedback/feedback_service.dart';
+import 'package:self_improvement/core/goals/data/goal_version_repository.dart';
 import 'package:self_improvement/core/providers/command_providers.dart';
 import 'package:self_improvement/core/testing/data_harness.dart';
 import 'package:self_improvement/features/body/application/weight_providers.dart';
@@ -21,13 +22,26 @@ import 'package:self_improvement/features/settings/presentation/settings_screen.
 
 import '../../../support/pump_app.dart';
 import 'flaky_projection.dart';
+import 'recording_commands.dart';
 
 export 'flaky_projection.dart';
 
 /// Database, fake clock, recording feedback and a provider container for the
 /// screen tests of the profile and settings features.
 class ScreenEnv {
-  ScreenEnv._(this.harness, this.feedback, this.projection, this._overrides) {
+  ScreenEnv._(this.harness, this.feedback, this.projection, this._overrides)
+    : profileCommands = RecordingProfileCommands(
+        database: harness.database,
+        runner: harness.runner,
+      ),
+      goalsCommands = RecordingGoalsCommands(
+        runner: harness.runner,
+        versions: GoalVersionRepository(harness.database),
+      ),
+      settingsCommands = RecordingSettingsCommands(
+        database: harness.database,
+        runner: harness.runner,
+      ) {
     container = newContainer();
   }
 
@@ -35,6 +49,11 @@ class ScreenEnv {
   final RecordingFeedbackService feedback;
   final FlakyProjection projection;
   final List<Override> _overrides;
+
+  /// The command layers the screens use; they record every command id.
+  final RecordingProfileCommands profileCommands;
+  final RecordingGoalsCommands goalsCommands;
+  final RecordingSettingsCommands settingsCommands;
   late ProviderContainer container;
 
   /// A fresh container over the SAME database: the app process was killed and
@@ -42,6 +61,9 @@ class ScreenEnv {
   ProviderContainer newContainer() => container = harness.createContainer(
     overrides: [
       feedbackServiceProvider.overrideWithValue(feedback),
+      profileCommandsProvider.overrideWithValue(profileCommands),
+      goalsCommandsProvider.overrideWithValue(goalsCommands),
+      settingsCommandsProvider.overrideWithValue(settingsCommands),
       ..._overrides,
     ],
   );
