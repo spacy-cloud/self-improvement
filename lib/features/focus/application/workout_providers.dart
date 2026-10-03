@@ -18,8 +18,9 @@ final workoutEntriesProvider = StreamProvider<List<WorkoutEntry>>(
 );
 
 /// The newest [limit] workouts; a lazy list loads more by raising the limit.
-final workoutEntriesPageProvider =
-    StreamProvider.family<List<WorkoutEntry>, int>(
+/// Auto-disposed: a page that is no longer shown stops watching the database.
+final workoutEntriesPageProvider = StreamProvider.autoDispose
+    .family<List<WorkoutEntry>, int>(
       (ref, limit) =>
           ref.watch(workoutRepositoryProvider).watchActive(limit: limit),
     );

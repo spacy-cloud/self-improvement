@@ -99,9 +99,10 @@ final focusHistoryProvider = StreamProvider<List<FocusHistoryEntry>>((ref) {
 });
 
 /// The newest [limit] completed sessions (lazy lists load more by raising the
-/// limit).
-final focusHistoryPageProvider =
-    StreamProvider.family<List<FocusHistoryEntry>, int>((ref, limit) {
+/// limit). Auto-disposed: a page that is no longer shown stops watching the
+/// database.
+final focusHistoryPageProvider = StreamProvider.autoDispose
+    .family<List<FocusHistoryEntry>, int>((ref, limit) {
       final clock = ref.watch(clockProvider);
       return ref
           .watch(focusRepositoryProvider)
