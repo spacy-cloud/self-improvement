@@ -4,8 +4,12 @@ import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/core/backup/backup_codec.dart';
+import 'package:self_improvement/core/backup/backup_document.dart';
 import 'package:self_improvement/core/backup/backup_exporter.dart';
 import 'package:self_improvement/core/backup/backup_format.dart';
+import 'package:self_improvement/core/backup/backup_validator.dart';
+import 'package:self_improvement/core/backup/import_validation_report.dart';
+import 'package:self_improvement/core/backup/snapshot_consistency_checker.dart';
 import 'package:self_improvement/core/bootstrap/app_bootstrap.dart';
 import 'package:self_improvement/core/config/app_config.dart';
 import 'package:self_improvement/core/database/app_database.dart';
@@ -156,7 +160,7 @@ void main() {
           .insert(
             MealEntriesCompanion.insert(
               id: uuid(0x777),
-              name: 'Müsli mit Äpfeln 😀',
+              name: 'Müsli mit Äpfeln \u{1F600}',
               occurredAtUtc: at(6, 7),
               localDate: march(6),
               timezoneId: berlin,
@@ -165,10 +169,10 @@ void main() {
             ),
           );
       final backup = await exporter.export();
-      expect(utf8.decode(backup.bytes), contains('Müsli mit Äpfeln 😀'));
+      expect(utf8.decode(backup.bytes), contains('Müsli mit Äpfeln \u{1F600}'));
       expect(
         rowsOf(backup, 'meal_entries').map((m) => m['name']),
-        contains('Müsli mit Äpfeln 😀'),
+        contains('Müsli mit Äpfeln \u{1F600}'),
       );
     });
 
@@ -748,6 +752,27 @@ void main() {
       },
     );
 
+    test(
+      'a failing check never prevents the backup, it only marks it',
+      () async {
+        final fragile = BackupExporter(
+          database: harness.database,
+          clock: harness.clock,
+          validator: BackupValidator(snapshotChecker: _ThrowingChecker()),
+        );
+        final backup = await fragile.export();
+        expect(backup.bytes, isNotEmpty);
+        expect(backup.isRestorable, isFalse);
+        expect(
+          backup.importCheck.problems.single.message,
+          contains('fehlgeschlagen'),
+        );
+        // The same bytes are what a healthy exporter writes.
+        final healthy = await exporter.export();
+        expect(backup.bytes, healthy.bytes);
+      },
+    );
+
     test('a file above the size limit is flagged as not restorable', () async {
       // 10,500 tasks with the longest allowed description exceed 10 MiB.
       final db = harness.database;
@@ -801,4 +826,10 @@ void main() {
       );
     });
   });
+}
+
+/// A checker with a bug.
+final class _ThrowingChecker implements SnapshotConsistencyChecker {
+  @override
+  List<ImportProblem> check(BackupData data) => throw StateError('bug');
 }

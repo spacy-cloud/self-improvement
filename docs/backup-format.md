@@ -203,7 +203,7 @@ Mahlzeiten ohne Ziele und ohne XP (deshalb kein Eligibility-Feld), sortiert nach
 
 ### `focus_sessions`
 
-Fokus-Sitzungen, sortiert nach `started_at_utc`, `id`. **Eine laufende Sitzung wird als `paused` exportiert**: `accumulated_seconds` ist die bisherige Zeit plus die seit Segmentbeginn verstrichenen Sekunden zum Exportzeitpunkt, begrenzt auf `planned_seconds` (eine zurückgestellte Uhr zählt als 0 zusätzliche Sekunden); `segment_started_at_utc` ist `null`. Die laufende Sitzung in der Datenbank bleibt dabei unverändert. Erreicht die berechnete Zeit die Planzeit, bleibt der Status `paused`.
+Fokus-Sitzungen, sortiert nach `started_at_utc`, `id`. **Eine laufende Sitzung wird als `paused` exportiert**: `accumulated_seconds` ist die bisherige Zeit plus die seit Segmentbeginn verstrichenen Sekunden zum Exportzeitpunkt, begrenzt auf `planned_seconds` (eine zurückgestellte Uhr zählt als 0 zusätzliche Sekunden); `segment_started_at_utc` ist `null`. Die laufende Sitzung in der Datenbank bleibt dabei unverändert; alle übrigen Felder, auch `updated_at_utc` und `row_version`, stehen so in der Datei, wie sie gespeichert sind. Erreicht die berechnete Zeit die Planzeit, bleibt der Status `paused`.
 
 | Feld | Typ | null | Regel |
 |---|---|---|---|

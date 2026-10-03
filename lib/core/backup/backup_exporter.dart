@@ -40,7 +40,8 @@ final class ExportedBackup {
   /// Result of running the import validation over [bytes]. A backup the app
   /// would refuse to import again (for example because it exceeds the import
   /// limits) is still created, but flagged here so the UI can warn instead of
-  /// the user finding out at restore time.
+  /// the user finding out at restore time. If the check itself fails, the file
+  /// counts as not verified.
   final ImportValidationReport importCheck;
 
   /// Location of the temporary file, set once a file gateway wrote it.
@@ -98,8 +99,25 @@ final class BackupExporter {
       bytes: bytes,
       exportedAtUtc: document.exportedAtUtc,
       counts: document.data.counts,
-      importCheck: _validator.validateBytes(bytes).report,
+      importCheck: _selfCheck(bytes),
     );
+  }
+
+  /// Runs the import validation over [bytes]. A failing check (a bug in a
+  /// plugged-in snapshot checker, say) must never prevent the backup itself:
+  /// it only marks the file as not verified.
+  ImportValidationReport _selfCheck(Uint8List bytes) {
+    try {
+      return _validator.validateBytes(bytes).report;
+    } on Object catch (error) {
+      debugPrint('backup self check failed: ${error.runtimeType}');
+      return const ImportValidationReport([
+        ImportProblem(
+          location: 'file',
+          message: 'Die Prüfung der Sicherung ist fehlgeschlagen.',
+        ),
+      ]);
+    }
   }
 
   /// Reads the database into a document as of [nowUtc] (one transaction).
