@@ -8,6 +8,7 @@ import 'package:self_improvement/core/modules/module_id.dart';
 import 'package:self_improvement/core/notifications/application/reminder_providers.dart';
 import 'package:self_improvement/core/notifications/domain/reminder_inputs.dart';
 import 'package:self_improvement/core/notifications/domain/reminder_kind.dart';
+import 'package:self_improvement/core/notifications/domain/reminder_overview.dart';
 import 'package:self_improvement/core/notifications/domain/reminder_status.dart';
 import 'package:self_improvement/core/notifications/domain/scheduled_reminder.dart';
 import 'package:self_improvement/core/notifications/platform/device_time_zone.dart';
@@ -236,6 +237,51 @@ void main() {
             ),
           );
       expect(await c.read(plannedRemindersProvider.future), isEmpty);
+    });
+  });
+
+  group('overview', () {
+    test('combines the planned reminders with the permission status', () async {
+      final c = container();
+      final seen = <AsyncValue<ReminderOverview>>[];
+      c.listen<AsyncValue<ReminderOverview>>(
+        reminderOverviewProvider,
+        (_, next) => seen.add(next),
+        fireImmediately: true,
+      );
+      expect(seen.first, isA<AsyncLoading<ReminderOverview>>());
+      await pumpEventQueue();
+      expect(seen.last.value!.isEmpty, isTrue);
+      expect(seen.last.value!.status.state, ReminderState.off);
+
+      await seed.setWaterHours({10});
+      await c
+          .read(reminderServiceProvider)
+          .enableReminders(commandId: data.ids.newId());
+      await pumpEventQueue();
+
+      final overview = seen.last.value!;
+      expect(overview.reminders, hasLength(7));
+      expect(overview.status.state, ReminderState.active);
+      expect(overview.status.permission, NotificationPermission.granted);
+    });
+
+    test('shows a blocked permission next to an empty list', () async {
+      platform.permission = NotificationPermission.denied;
+      platform.permissionAfterRequest = NotificationPermission.denied;
+      final c = container();
+      c.listen<AsyncValue<ReminderOverview>>(
+        reminderOverviewProvider,
+        (_, _) {},
+      );
+      await seed.setWaterHours({10});
+      await c
+          .read(reminderServiceProvider)
+          .enableReminders(commandId: data.ids.newId());
+      await pumpEventQueue();
+      final overview = c.read(reminderOverviewProvider).value!;
+      expect(overview.isEmpty, isTrue);
+      expect(overview.status.isBlocked, isTrue);
     });
   });
 

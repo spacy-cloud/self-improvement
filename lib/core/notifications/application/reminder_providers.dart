@@ -8,6 +8,7 @@ import 'package:self_improvement/core/notifications/data/reminder_input_reader.d
 import 'package:self_improvement/core/notifications/data/reminder_preferences_repository.dart';
 import 'package:self_improvement/core/notifications/data/scheduled_notification_repository.dart';
 import 'package:self_improvement/core/notifications/domain/reminder_inputs.dart';
+import 'package:self_improvement/core/notifications/domain/reminder_overview.dart';
 import 'package:self_improvement/core/notifications/domain/reminder_planner.dart';
 import 'package:self_improvement/core/notifications/domain/reminder_status.dart';
 import 'package:self_improvement/core/notifications/domain/scheduled_reminder.dart';
@@ -145,6 +146,28 @@ final plannedRemindersProvider = StreamProvider<List<ScheduledReminder>>(
         ],
       ),
 );
+
+/// The V1 notification list as one model: the planned reminders and the
+/// permission status. Loading until both are known; an error of either shows
+/// as an error.
+final reminderOverviewProvider = Provider<AsyncValue<ReminderOverview>>((ref) {
+  final status = ref.watch(reminderStatusProvider);
+  final reminders = ref.watch(plannedRemindersProvider);
+  if (status.hasError) {
+    return AsyncError(status.error!, status.stackTrace!);
+  }
+  if (reminders.hasError) {
+    return AsyncError(reminders.error!, reminders.stackTrace!);
+  }
+  final statusValue = status.value;
+  final remindersValue = reminders.value;
+  if (statusValue == null || remindersValue == null) {
+    return const AsyncLoading();
+  }
+  return AsyncData(
+    ReminderOverview(status: statusValue, reminders: remindersValue),
+  );
+});
 
 /// The enabled water slot hours (subset of 10, 12, 14, 16, 18).
 final waterReminderHoursProvider = StreamProvider<Set<int>>(
