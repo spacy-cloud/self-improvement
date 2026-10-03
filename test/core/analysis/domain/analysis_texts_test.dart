@@ -114,6 +114,11 @@ void main() {
       expect(formatFigureValue(FigureUnit.percent, 54.5454), '55$nb%');
       expect(formatFigureValue(FigureUnit.percent, 0), '0$nb%');
       expect(formatFigureValue(FigureUnit.percent, 100), '100$nb%');
+      expect(
+        formatFigureValue(FigureUnit.percent, 99.78),
+        '99$nb%',
+        reason: '100 % only when the whole is reached',
+      );
     });
   });
 
@@ -173,6 +178,8 @@ void main() {
       expect(spokenFigureValue(FigureUnit.kcal, 1), '1 Kilokalorie');
       expect(spokenFigureValue(FigureUnit.kcal, 1500), '1.500 Kilokalorien');
       expect(spokenFigureValue(FigureUnit.percent, 55), '55 Prozent');
+      expect(spokenFigureValue(FigureUnit.percent, 99.78), '99 Prozent');
+      expect(spokenFigureValue(FigureUnit.percent, 100), '100 Prozent');
     });
   });
 

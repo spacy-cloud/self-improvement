@@ -46,4 +46,15 @@ void main() {
     expect(roundedPercent(1.2), 120);
     expect(roundedPercent(0), 0);
   });
+
+  test('a percentage is 100 only when the whole is reached', () {
+    expect(roundedPercent(0.9966), 99, reason: '99,66 would round up to 100');
+    expect(roundedPercent(0.995), 99);
+    expect(roundedPercent(0.9949), 99);
+    expect(roundedPercent(1), 100);
+    expect(roundedPercent(1.004), 100, reason: 'beyond the whole stays');
+    expect(wholePercent(99.78), 99);
+    expect(wholePercent(100), 100);
+    expect(wholePercent(100.4), 100);
+  });
 }

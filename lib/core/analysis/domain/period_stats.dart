@@ -215,8 +215,18 @@ final class HabitStats {
   /// The ratio in percent (0 to 100); `null` without applicable habit-days.
   double? get ratioPercent => ratioPercentFraction?.value;
 
-  /// The ratio rounded to a whole percent.
-  int? get ratioPercentRounded => ratioPercentFraction?.rounded;
+  /// The ratio rounded to a whole percent. It is 100 only when every
+  /// habit-day is fulfilled: 449 of 450 shows 99, not 100.
+  int? get ratioPercentRounded {
+    final fraction = ratioPercentFraction;
+    if (fraction == null) {
+      return null;
+    }
+    final rounded = fraction.rounded;
+    return fulfilledHabitDays < applicableHabitDays && rounded > 99
+        ? 99
+        : rounded;
+  }
 }
 
 /// How complete the calorie information of the meals is.

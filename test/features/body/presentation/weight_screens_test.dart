@@ -653,6 +653,23 @@ void main() {
       );
     });
 
+    testWidgets('just short of the goal the progress is not 100 percent', (
+      tester,
+    ) async {
+      final env = await _env(tester);
+      await _setProfile(tester, env, start: 100000, target: 70000);
+      await _seed(tester, env, grams: 70100, atUtc: '2026-10-03T06:00:00Z');
+      await _open(tester, env, WeightRoutes.overview);
+      await _settle(tester);
+
+      expect(find.text('Noch 0,1 kg'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel('Fortschritt zum Zielgewicht: 99 Prozent'),
+        findsOneWidget,
+        reason: '99,67 would round up to 100 before the goal is reached',
+      );
+    });
+
     testWidgets('gaining weight: progress counts upwards (AT09)', (
       tester,
     ) async {

@@ -359,6 +359,17 @@ void main() {
       expect(result.ratioPercentRounded, 64, reason: '7/11 = 63.64 %');
     });
 
+    test('the ratio is 100 percent only when every habit-day is fulfilled', () {
+      int? percent(int fulfilled, int applicable) => HabitStats(
+        applicableHabitDays: applicable,
+        fulfilledHabitDays: fulfilled,
+      ).ratioPercentRounded;
+      expect(percent(449, 450), 99, reason: '99,78 would round up to 100');
+      expect(percent(199, 200), 99, reason: '99,5 would round up to 100');
+      expect(percent(450, 450), 100);
+      expect(percent(0, 10), 0);
+    });
+
     test(
       'a habit archived inside the period stops counting after archiving',
       () {

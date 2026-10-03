@@ -287,7 +287,7 @@ class _GoalProgress extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.tokens.colors;
-    final percent = (goal.progress * 100).round();
+    final percent = roundedPercent(goal.progress);
     final secondary = AppTextStyles.captionDefault.copyWith(
       color: colors.textSecondary,
     );

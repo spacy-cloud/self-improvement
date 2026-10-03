@@ -56,5 +56,14 @@ String formatLiters(int milliliters) {
   return '$whole,$trimmed';
 }
 
-/// A percentage rounded half up: `0.745` -> `75`.
-int roundedPercent(double fraction) => (fraction * 100).round();
+/// A fraction as a whole percentage, rounded half up: `0.745` -> `75`. It is
+/// 100 only when the whole is reached (see [wholePercent]).
+int roundedPercent(double fraction) => wholePercent(fraction * 100);
+
+/// A percentage rounded half up, but never 100 while it is below 100:
+/// `99.78` shows `99`, so "100 %" and "reached" always agree. Above 100 it
+/// rounds as usual (`112.4` -> `112`).
+int wholePercent(double percent) {
+  final rounded = percent.round();
+  return percent < 100 && rounded > 99 ? 99 : rounded;
+}

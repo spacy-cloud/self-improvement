@@ -122,7 +122,7 @@ String formatFigureValue(FigureUnit unit, double value) => switch (unit) {
   FigureUnit.workoutMinutes => formatDuration(value.round()),
   FigureUnit.focusSeconds => formatFocusDuration(value.round()),
   FigureUnit.kcal => _withUnit(formatThousands(value.round()), 'kcal'),
-  FigureUnit.percent => _withUnit('${value.round()}', '%'),
+  FigureUnit.percent => _withUnit('${wholePercent(value)}', '%'),
 };
 
 /// The spoken form of a value (units spelled out): `2,15 Liter`,
@@ -144,7 +144,7 @@ String spokenFigureValue(FigureUnit unit, double value) {
     FigureUnit.workoutMinutes => spokenDuration(whole),
     FigureUnit.focusSeconds => spokenFocusDuration(whole),
     FigureUnit.kcal => _count(whole, 'Kilokalorie', 'Kilokalorien'),
-    FigureUnit.percent => '${formatThousands(whole)} Prozent',
+    FigureUnit.percent => '${formatThousands(wholePercent(value))} Prozent',
   };
 }
 
