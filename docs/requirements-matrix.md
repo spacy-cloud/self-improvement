@@ -25,7 +25,7 @@ Das Ergebnis der CI-Läufe steht im Pull Request, nicht in dieser Datei; die Erg
 
 ## 1. Jira-Umsetzungstickets (Epic [BS-51](https://spacy-cloud.atlassian.net/browse/BS-51))
 
-Testzahlen: Ergebnis von `flutter test <Verzeichnis>` am genannten Stand, alle grün. Teilen sich zwei Tickets ein Verzeichnis, ist die Zahl nach Dateipräfix aufgeteilt (Wasser und Mahlzeiten, Aufgaben und Gewohnheiten, Fokus und Workouts); gemeinsame Dateien stehen getrennt dabei. Die Summe über alle Verzeichnisse ist die Gesamtzahl aus [test-report.md](test-report.md). PR 2 ist der Entwurfs-PR des Integrationsbranches; Merge-Commits stehen, wo ein Ticket auf einem eigenen Branch entstand.
+Testzahlen: Ergebnis von `flutter test <Verzeichnis>` am genannten Stand, alle grün. Teilen sich zwei Tickets ein Verzeichnis, ist die Zahl nach Dateipräfix aufgeteilt (Wasser und Mahlzeiten, Aufgaben und Gewohnheiten, Fokus und Workouts); gemeinsame Dateien stehen getrennt dabei. Die vollständige Zählung je Verzeichnis mit der Summe 6160 steht in [test-report.md](test-report.md). PR 2 ist der Entwurfs-PR des Integrationsbranches; Merge-Commits stehen, wo ein Ticket auf einem eigenen Branch entstand.
 
 | Jira | AP | Prio | Arbeitspaket | Anforderungen | Abnahmetests | Screen / Route | Implementierung | Tests | PR / Commit | Jira-Status |
 |---|---|---|---|---|---|---|---|---|---|---|
