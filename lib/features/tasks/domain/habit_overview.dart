@@ -62,6 +62,15 @@ final class HabitTodayItem {
 
   /// "Erledigt" or "Offen" (state in words, not only by colour).
   String get statusText => checkedToday ? 'Erledigt' : 'Offen';
+
+  /// A complete German semantics label for the row, for example "Lesen,
+  /// erledigt, 3 Tage in Folge, Ab morgen archiviert".
+  String get semanticsLabel => [
+    habit.title,
+    statusText.toLowerCase(),
+    currentSeriesText,
+    ?archiveHint,
+  ].join(', ');
 }
 
 /// Today's habit list.
@@ -122,22 +131,23 @@ final class HabitDayEntry {
     required this.date,
     required this.status,
     required this.isToday,
+    required this.editable,
   });
 
   final LocalDate date;
   final HabitDayStatus status;
   final bool isToday;
 
+  /// Whether the habit accepts a check or an uncheck on this day: from the
+  /// start day up to today, at most 30 days back, before the archive date
+  /// (exactly the rules of `checkDateError`). The UI offers a tap only then.
+  final bool editable;
+
   /// Whether the habit applies on this day.
   bool get applicable =>
       status == HabitDayStatus.checked || status == HabitDayStatus.open;
 
   bool get checked => status == HabitDayStatus.checked;
-
-  /// Whether the UI may offer a tap on this cell: exactly the applicable days.
-  /// All grid days lie inside the 30-day window; setting a check on one of them
-  /// is always allowed by the repository.
-  bool get editable => applicable;
 
   /// Text for the cell's semantics, for example "Fr., 02.10.: erledigt". Add
   /// "Heute" in front for the cell with [isToday].
@@ -275,7 +285,13 @@ List<HabitDayEntry> buildHabitHistory({
       status = HabitDayStatus.open;
     }
     entries.add(
-      HabitDayEntry(date: date, status: status, isToday: date == today),
+      HabitDayEntry(
+        date: date,
+        status: status,
+        isToday: date == today,
+        editable:
+            checkDateError(habit: habit, date: date, today: today) == null,
+      ),
     );
   }
   return List.unmodifiable(entries);

@@ -8,6 +8,7 @@ import 'package:self_improvement/shared/local_date.dart';
 import 'package:self_improvement/shared/local_time.dart';
 
 import '../support/habit_test_support.dart';
+import '../support/task_test_support.dart';
 
 void main() {
   Map<String, String> errorsOf(HabitDraft draft) {
@@ -42,8 +43,8 @@ void main() {
     });
 
     test('characters are counted like the database does (code points)', () {
-      expect(errorsOf(HabitDraft(title: '😀' * 80)), isEmpty);
-      expect(errorsOf(HabitDraft(title: '😀' * 81)), isNotEmpty);
+      expect(errorsOf(HabitDraft(title: astralChar * 80)), isEmpty);
+      expect(errorsOf(HabitDraft(title: astralChar * 81)), isNotEmpty);
     });
   });
 

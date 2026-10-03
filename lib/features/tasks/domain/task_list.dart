@@ -153,6 +153,16 @@ final class TaskListItem {
   /// German due text, for example "Überfällig seit 02.10.2026", "Heute fällig"
   /// or "Morgen fällig"; null without a due date.
   String? get dueText => taskDueText(task, today);
+
+  /// A complete German semantics label for the row, for example "Steuer
+  /// machen, Priorität Hoch, Überfällig seit 02.10.2026, offen": the state in
+  /// words, not only by colour or checkbox.
+  String get semanticsLabel => [
+    task.title,
+    'Priorität ${task.priority.label}',
+    ?dueText,
+    task.isCompleted ? 'erledigt' : 'offen',
+  ].join(', ');
 }
 
 /// What the dashboard card shows.

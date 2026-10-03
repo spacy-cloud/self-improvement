@@ -86,6 +86,11 @@ Future<Map<String, int>> awardPoints(DataHarness harness) async {
   return {for (final row in rows) row.awardKey: row.points};
 }
 
+/// One character outside the Basic Multilingual Plane (U+1D49C): two UTF-16
+/// code units but ONE Unicode code point, which is how SQLite `length()` and
+/// the validation count it.
+final String astralChar = String.fromCharCode(0x1D49C);
+
 /// Silences the drift warning about several in-memory databases per test file.
 void allowMultipleDatabases() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;

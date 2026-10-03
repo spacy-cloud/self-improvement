@@ -138,6 +138,24 @@ void main() {
       expect(history.where((day) => day.checked), hasLength(1));
     });
 
+    test('editable follows the repository rules, also for a longer grid', () {
+      final history = buildHabitHistory(
+        habit: makeHabit(startedOn: today.addDays(-50)),
+        checkedDates: const {},
+        today: today,
+        days: 40,
+      );
+      final byDate = {for (final day in history) day.date: day};
+      expect(byDate[today]!.editable, isTrue);
+      expect(byDate[today.addDays(-30)]!.editable, isTrue);
+      expect(
+        byDate[today.addDays(-31)]!.editable,
+        isFalse,
+        reason: 'older than 30 days',
+      );
+      expect(byDate[today.addDays(-31)]!.applicable, isTrue);
+    });
+
     test('a shorter grid can be requested', () {
       final history = buildHabitHistory(
         habit: makeHabit(),
@@ -404,6 +422,34 @@ void main() {
         expect(overview.progressText, '1 von 3 erledigt');
         expect(overview.isEmpty, isFalse);
         expect(overview.archived, isEmpty);
+      },
+    );
+
+    test(
+      'the semantics label has title, state, series and the archive hint',
+      () {
+        final pending = makeHabit(
+          id: 'p',
+          title: 'Lesen',
+          archivedFrom: today.addDays(1),
+        );
+        final item = buildHabitsOverview(
+          habits: [pending],
+          checks: checks({
+            'p': [today, today.addDays(-1), today.addDays(-2)],
+          }),
+          today: today,
+        ).items.single;
+        expect(
+          item.semanticsLabel,
+          'Lesen, erledigt, 3 Tage in Folge, Ab morgen archiviert',
+        );
+        final open = buildHabitsOverview(
+          habits: [h2],
+          checks: HabitCheckIndex.empty,
+          today: today,
+        ).items.single;
+        expect(open.semanticsLabel, 'Sport, offen, Noch keine Serie');
       },
     );
 

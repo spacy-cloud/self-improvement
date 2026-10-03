@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/features/tasks/domain/task_tags.dart';
 import 'package:self_improvement/features/tasks/domain/text_rules.dart';
 
+import '../support/task_test_support.dart';
+
 void main() {
   group('normalizeTags', () {
     test('trims, drops blanks, keeps the order and the first spelling', () {
@@ -110,7 +112,8 @@ void main() {
   test('characterCount counts code points like SQLite length()', () {
     expect(characterCount('abc'), 3);
     expect(characterCount('äöü'), 3);
-    expect(characterCount('😀'), 1);
+    expect(characterCount(astralChar), 1);
+    expect(astralChar.length, 2, reason: 'two UTF-16 code units');
     expect(characterCount(''), 0);
   });
 }

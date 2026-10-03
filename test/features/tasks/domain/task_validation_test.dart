@@ -6,6 +6,8 @@ import 'package:self_improvement/features/tasks/domain/task_priority.dart';
 import 'package:self_improvement/features/tasks/domain/task_validation.dart';
 import 'package:self_improvement/shared/local_date.dart';
 
+import '../support/task_test_support.dart';
+
 void main() {
   /// Runs the validation and returns the field errors (empty when valid).
   Map<String, String> errorsOf(TaskDraft draft) {
@@ -41,9 +43,10 @@ void main() {
     });
 
     test('characters are counted like the database does (code points)', () {
-      // One emoji is one character for the user and for SQLite length().
-      expect(errorsOf(TaskDraft(title: '😀' * 120)), isEmpty);
-      expect(errorsOf(TaskDraft(title: '😀' * 121)), isNotEmpty);
+      // One astral character is one character for the user and for SQLite
+      // length(), although it takes two UTF-16 code units.
+      expect(errorsOf(TaskDraft(title: astralChar * 120)), isEmpty);
+      expect(errorsOf(TaskDraft(title: astralChar * 121)), isNotEmpty);
       expect(errorsOf(TaskDraft(title: 'ä' * 120)), isEmpty);
     });
   });

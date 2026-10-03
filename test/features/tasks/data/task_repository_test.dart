@@ -206,10 +206,13 @@ void main() {
       },
     );
 
-    test('a title of 120 emoji passes the database check too', () async {
-      final id = await create(draft(title: '😀' * 120));
-      expect((await reload(id)).title, '😀' * 120);
-    });
+    test(
+      'a title of 120 astral characters passes the database check too',
+      () async {
+        final id = await create(draft(title: astralChar * 120));
+        expect((await reload(id)).title, astralChar * 120);
+      },
+    );
 
     test(
       'a rejected draft leaves no task, no receipt, no projection call',

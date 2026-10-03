@@ -6,6 +6,6 @@ library;
 ///
 /// The database `CHECK` constraints on titles and descriptions use SQLite's
 /// `length()`; counting the same way guarantees that a value which passes the
-/// validation can never violate a constraint, and an emoji counts as ONE
-/// character for the user-facing limits.
+/// validation can never violate a constraint, and a character outside the Basic
+/// Multilingual Plane counts as ONE character for the user-facing limits.
 int characterCount(String text) => text.runes.length;

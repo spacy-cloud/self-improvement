@@ -366,6 +366,32 @@ void main() {
       );
     });
 
+    test(
+      'the semantics label names priority, due state and completion in words',
+      () {
+        final overdue = TaskListItem(
+          task: makeTask(
+            title: 'Steuer machen',
+            priority: TaskPriority.high,
+            dueDate: yesterday,
+          ),
+          today: today,
+        );
+        expect(
+          overdue.semanticsLabel,
+          'Steuer machen, Priorität Hoch, Überfällig seit 02.10.2026, offen',
+        );
+        final plainDone = TaskListItem(
+          task: makeTask(
+            title: 'Fertig',
+            completedAtUtc: DateTime.utc(2026, 10, 3, 7),
+          ),
+          today: today,
+        );
+        expect(plainDone.semanticsLabel, 'Fertig, Priorität Normal, erledigt');
+      },
+    );
+
     test('TaskListItem exposes the flag and the text for the UI', () {
       final item = TaskListItem(
         task: makeTask(dueDate: yesterday),
@@ -445,6 +471,73 @@ void main() {
       final tasks = [for (var i = 0; i < 5; i++) makeTask(id: 'id$i')];
       expect(buildDashboardTasks(tasks, today, limit: 1).items, hasLength(1));
       expect(buildDashboardTasks(tasks, today).items, hasLength(3));
+    });
+  });
+
+  group('list view model (counts and empty-state reasons)', () {
+    final open = makeTask(id: 'open', createdAtUtc: created(1));
+    final done = makeTask(
+      id: 'done',
+      createdAtUtc: created(2),
+      completedAtUtc: DateTime.utc(2026, 10, 3, 7),
+    );
+
+    TaskListView view(
+      List<Task> tasks, [
+      TaskFilter filter = const TaskFilter(),
+    ]) => buildTaskListView(tasks, filter, today);
+
+    test('counts are over all tasks, whatever the filter', () {
+      final result = view([
+        open,
+        done,
+      ], const TaskFilter(status: TaskStatusFilter.completed));
+      expect(result.totalCount, 2);
+      expect(result.openCount, 1);
+      expect(result.completedCount, 1);
+      expect(ids(result.items.map((i) => i.task)), ['done']);
+      expect(result.today, today);
+    });
+
+    test('items carry the overdue flag of the shown day', () {
+      final overdueTask = makeTask(id: 'late', dueDate: yesterday);
+      expect(view([overdueTask]).items.single.overdue, isTrue);
+    });
+
+    test('no tasks at all: "noTasks", even with a narrowed filter', () {
+      expect(view(const []).emptyReason, TaskListEmptyReason.noTasks);
+      expect(
+        view(const [], const TaskFilter(query: 'x')).emptyReason,
+        TaskListEmptyReason.noTasks,
+      );
+    });
+
+    test('everything done on "Offen": "nothingOpen"', () {
+      expect(view([done]).emptyReason, TaskListEmptyReason.nothingOpen);
+    });
+
+    test('nothing completed yet on "Erledigt": "nothingCompleted"', () {
+      expect(
+        view([
+          open,
+        ], const TaskFilter(status: TaskStatusFilter.completed)).emptyReason,
+        TaskListEmptyReason.nothingCompleted,
+      );
+    });
+
+    test('a search or priority without a hit: "noMatches"', () {
+      expect(
+        view([open], const TaskFilter(query: 'gibtesnicht')).emptyReason,
+        TaskListEmptyReason.noMatches,
+      );
+      expect(
+        view([open], const TaskFilter(priority: TaskPriority.high)).emptyReason,
+        TaskListEmptyReason.noMatches,
+      );
+    });
+
+    test('a list with items has no empty reason', () {
+      expect(view([open]).emptyReason, isNull);
     });
   });
 }

@@ -283,6 +283,16 @@ void main() {
       expect(habit.rowVersion, 2);
     });
 
+    test(
+      'the reminder is a wall clock time: a zone change does not touch it',
+      () async {
+        final id = await create(draft(reminder: const LocalTime(7, 30)));
+        harness.clock.setTimeZone('Asia/Tokyo');
+        expect((await reload(id)).reminderTime, const LocalTime(7, 30));
+        expect((await rawHabit(id)).reminderLocalTime, const LocalTime(7, 30));
+      },
+    );
+
     test('the reminder can be switched off again (stored as null)', () async {
       final id = await create(draft(reminder: const LocalTime(8, 0)));
       await repository.update(

@@ -183,6 +183,22 @@ void main() {
     );
 
     test(
+      'two simultaneous completions with different command ids complete once',
+      () async {
+        final id = await create();
+        final results = await Future.wait([complete(id), complete(id)]);
+        expect(
+          results.where((r) => r.undo != null),
+          hasLength(1),
+          reason: 'only one of them changed the task',
+        );
+        expect((await repository.findById(id))!.rowVersion, 2);
+        expect(await xp(), 10);
+        expect(await awardKeys(), {'task:$id'});
+      },
+    );
+
+    test(
       'a completion across local midnight is counted on its own day',
       () async {
         harness.clock.setNow(DateTime.utc(2026, 10, 3, 21, 55)); // 23:55 Berlin

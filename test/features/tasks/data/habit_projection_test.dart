@@ -311,6 +311,17 @@ void main() {
       expect(await xp(), 5);
     });
 
+    test('two simultaneous checks of the same day with different ids check it once', () async {
+      final id = await create();
+      final results = await Future.wait([check(id, today), check(id, today)]);
+      expect(results.where((r) => r.undo != null), hasLength(1));
+      expect(
+        await harness.database.select(harness.database.habitChecks).get(),
+        hasLength(1),
+      );
+      expect(await xp(), 5);
+    });
+
     test('a retroactive check earns on ITS day, not on today', () async {
       final id = await createStartedOn(LocalDate(2026, 9, 25));
       await check(id, LocalDate(2026, 9, 28));
@@ -635,12 +646,18 @@ void main() {
     test(
       'a deleted habit leaves the ring of today and of past days',
       () async {
+        final yesterday = today.addDays(-1);
         final id = await createStartedOn(LocalDate(2026, 9, 25));
         await check(id, today);
         expect((await status(today)).applicableCount, 6);
+        expect(
+          (await status(yesterday)).applicableCount,
+          6,
+          reason: 'stores the snapshot of yesterday with the habit goal',
+        );
         await repository.delete(commandId: harness.ids.newId(), id: id);
         expect((await status(today)).applicableCount, 5);
-        expect((await status(today.addDays(-1))).applicableCount, 5);
+        expect((await status(yesterday)).applicableCount, 5);
       },
       skip:
           'Core gap (GoalSnapshotService/DayStatusRepository): stored day snapshots '
