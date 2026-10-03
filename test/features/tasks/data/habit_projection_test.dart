@@ -643,28 +643,20 @@ void main() {
       expect(await streak(), (current: 1, longest: 1));
     });
 
-    test(
-      'a deleted habit leaves the ring of today and of past days',
-      () async {
-        final yesterday = today.addDays(-1);
-        final id = await createStartedOn(LocalDate(2026, 9, 25));
-        await check(id, today);
-        expect((await status(today)).applicableCount, 6);
-        expect(
-          (await status(yesterday)).applicableCount,
-          6,
-          reason: 'stores the snapshot of yesterday with the habit goal',
-        );
-        await repository.delete(commandId: harness.ids.newId(), id: id);
-        expect((await status(today)).applicableCount, 5);
-        expect((await status(yesterday)).applicableCount, 5);
-      },
-      skip:
-          'Core gap (GoalSnapshotService/DayStatusRepository): stored day snapshots '
-          'keep the goal item of a soft-deleted habit as applicable, so the ring '
-          'denominator stays too high after a delete or an undone create. '
-          'Enable once habit items of deleted habits are dropped when snapshots are read.',
-    );
+    test('a deleted habit leaves the ring of today and of past days', () async {
+      final yesterday = today.addDays(-1);
+      final id = await createStartedOn(LocalDate(2026, 9, 25));
+      await check(id, today);
+      expect((await status(today)).applicableCount, 6);
+      expect(
+        (await status(yesterday)).applicableCount,
+        6,
+        reason: 'stores the snapshot of yesterday with the habit goal',
+      );
+      await repository.delete(commandId: harness.ids.newId(), id: id);
+      expect((await status(today)).applicableCount, 5);
+      expect((await status(yesterday)).applicableCount, 5);
+    });
   });
 
   group('atomicity (AT27): a storage failure rolls back check and XP', () {
