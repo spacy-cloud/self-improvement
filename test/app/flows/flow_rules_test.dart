@@ -58,6 +58,23 @@ void main() {
     expect(flowCalls(device), isNotEmpty);
   });
 
+  test('the emulator job builds only two test files', () {
+    final names = <String>[
+      for (final entity in Directory(
+        'integration_test',
+      ).listSync(recursive: true))
+        if (entity is File && entity.path.endsWith('_test.dart'))
+          entity.uri.pathSegments.last,
+    ]..sort();
+    expect(
+      names,
+      <String>['app_flows_test.dart', 'app_smoke_test.dart'],
+      reason:
+          'every test file under integration_test costs a native build in '
+          'the CI emulator job: add flows to app_flows_test.dart',
+    );
+  });
+
   test('the emulator and the host run the same flows under the same names', () {
     expect(
       flowCalls(host),
