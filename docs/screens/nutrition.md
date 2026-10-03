@@ -94,7 +94,7 @@ Routenreihenfolge in `NutritionModule.routes`: `/water`, `/water/:id`, `/nutriti
 | `nutrition_module_test.dart` | Routenreihenfolge, Karten-IDs und Ränge, Plus-Menü | - |
 | `visual_check_test.dart` | schreibt PNGs unter `build/` für den Vergleich mit den Frames | - |
 
-Befehle: `flutter test test/features/nutrition` (607 Tests, davon 243 der Oberfläche, die übrigen sind die Engine-Tests) und `flutter test` (Gesamtlauf, 4341 Tests grün). `dart run tool/at_coverage.dart` ordnet die Tests den Abnahmefällen AT10, AT11, AT12, AT14, AT23, AT24 und AT27 zu.
+Befehle: `flutter test test/features/nutrition` (609 Tests, davon 245 der Oberfläche, die übrigen sind die Engine-Tests) und `flutter test` (Gesamtlauf, 4343 Tests grün). `dart run tool/at_coverage.dart` ordnet die Tests den Abnahmefällen AT10, AT11, AT12, AT14, AT23, AT24 und AT27 zu.
 
 ## 7. Offene Punkte
 

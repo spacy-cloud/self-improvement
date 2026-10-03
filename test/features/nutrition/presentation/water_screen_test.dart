@@ -464,6 +464,63 @@ void main() {
       },
     );
 
+    testWidgets('the goal stepper moves in 50 ml steps within 250 to 10000', (
+      tester,
+    ) async {
+      final ui = await NutritionUi.create(tester);
+      await ui.pumpRoute('/water');
+      await tester.tap(find.text('Tagesziel'));
+      await tester.pumpAndSettle();
+
+      String text() =>
+          tester.widget<TextField>(find.byType(TextField)).controller!.text;
+      expect(text(), '2500', reason: 'starts at the stored goal');
+      await tester.enterText(find.byType(TextField), '10000');
+      await tester.pump();
+      expect(
+        tester.widget<QuantityStepper>(find.byType(QuantityStepper)).onIncrease,
+        isNull,
+        reason: 'plus is off at 10000 ml',
+      );
+      await tester.enterText(find.byType(TextField), '250');
+      await tester.pump();
+      expect(
+        tester.widget<QuantityStepper>(find.byType(QuantityStepper)).onDecrease,
+        isNull,
+        reason: 'minus is off at 250 ml',
+      );
+      await tester.tap(find.bySemanticsLabel('um 50 Milliliter erhöhen'));
+      await tester.pump();
+      expect(text(), '300');
+    });
+
+    testWidgets('a changed target asks before it is discarded', (tester) async {
+      final ui = await NutritionUi.create(tester);
+      await ui.pumpRoute('/water');
+      await tester.tap(find.text('Tagesziel'));
+      await tester.pumpAndSettle();
+      await tester.tap(iconButtonLabelled('Schließen'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Änderungen verwerfen?'),
+        findsNothing,
+        reason: 'untouched',
+      );
+      expect(find.text('Tagesziel ändern'), findsNothing);
+
+      await tester.tap(find.text('Tagesziel'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.bySemanticsLabel('um 50 Milliliter erhöhen'));
+      await tester.pump();
+      await tester.tap(iconButtonLabelled('Schließen'));
+      await tester.pumpAndSettle();
+      expect(find.text('Änderungen verwerfen?'), findsOneWidget);
+      await tester.tap(find.text('Verwerfen'));
+      await tester.pumpAndSettle();
+      expect(find.text('Tagesziel ändern'), findsNothing);
+      expect(ui.feedback.events, isEmpty, reason: 'nothing was saved');
+    });
+
     testWidgets('typed targets are checked against 250 to 10000 in 50 steps', (
       tester,
     ) async {
