@@ -4,6 +4,7 @@ import 'package:self_improvement/core/notifications/domain/reminder_kind.dart';
 import 'package:self_improvement/core/notifications/domain/reminder_planner.dart';
 import 'package:self_improvement/core/time/clock_service.dart';
 import 'package:self_improvement/core/time/fake_clock.dart';
+import 'package:self_improvement/shared/local_date.dart';
 import 'package:self_improvement/shared/local_time.dart';
 
 import '../support/planner_fixtures.dart';
@@ -311,6 +312,58 @@ void main() {
           DateTime.utc(2026, 10, 24, 23, 59),
         );
       });
+    });
+  });
+
+  group('unusual gaps in the zone database', () {
+    test(
+      'a gap that swallows a whole day moves the reminder past midnight',
+      () {
+        // Samoa skipped 2011-12-30 completely (UTC-10 to UTC+14). A reminder at
+        // 10:00 on the missing day fires at the first valid time after the gap,
+        // which is already on the next calendar day.
+        final plan = planner.plan(
+          plannerInputs(
+            now: DateTime.utc(2011, 12, 28),
+            zone: 'Pacific/Apia',
+            habits: [
+              habitInput(
+                1,
+                time: const LocalTime(10, 0),
+                started: LocalDate(2011, 1, 1),
+              ),
+            ],
+          ),
+        );
+        DateTime fire(String day) =>
+            planned(plan, 'habit:${uuid(1)}:$day').fireAtUtc;
+
+        expect(fire('2011-12-29'), DateTime.utc(2011, 12, 29, 20));
+        // 2011-12-31 00:00 local (UTC+14) is 2011-12-30 10:00Z.
+        expect(fire('2011-12-30'), DateTime.utc(2011, 12, 30, 10));
+        expect(fire('2011-12-31'), DateTime.utc(2011, 12, 30, 20));
+        expect(planKeys(plan).toSet(), hasLength(plan.notifications.length));
+      },
+    );
+
+    test('a gap at midnight shifts to one o\'clock on the same day', () {
+      // Cuba moves from 00:00 to 01:00 in spring; 00:30 does not exist then.
+      final plan = planner.plan(
+        plannerInputs(
+          now: DateTime.utc(2026, 3, 7),
+          zone: 'America/Havana',
+          habits: [habitInput(1, time: const LocalTime(0, 30))],
+        ),
+      );
+      final onTheDay = planKeys(plan)
+          .where((k) => k.endsWith('2026-03-08'))
+          .toList();
+      expect(onTheDay, hasLength(1));
+      final local = clock.toLocal(
+        planned(plan, onTheDay.single).fireAtUtc,
+        timeZoneId: 'America/Havana',
+      );
+      expect('${local.date} ${local.time}', '2026-03-08 01:00');
     });
   });
 
