@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The notification icon is looked up by name at runtime by flutter_local_notifications, so
+     the resource shrinker of a release build cannot see the reference and would remove it.
+     Without the icon the plugin refuses to initialize and no reminder is delivered. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_stat_notification" />
