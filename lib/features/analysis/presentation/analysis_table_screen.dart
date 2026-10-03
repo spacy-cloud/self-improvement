@@ -21,9 +21,10 @@ class AnalysisTableScreen extends ConsumerWidget {
   /// design). It is an ordinary pushed page: Android back closes it.
   static Future<void> open(BuildContext context) {
     return Navigator.of(context, rootNavigator: true).push<void>(
-      MaterialPageRoute<void>(
+      appPageRoute<void>(
+        context,
+        (context) => const AnalysisTableScreen(),
         settings: const RouteSettings(name: 'analysis-table'),
-        builder: (context) => const AnalysisTableScreen(),
       ),
     );
   }

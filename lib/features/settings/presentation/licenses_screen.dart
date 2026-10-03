@@ -147,8 +147,7 @@ class _NoteText extends StatelessWidget {
 }
 
 Future<void> _open(BuildContext context, Widget screen) {
-  return Navigator.of(context)
-      .push(MaterialPageRoute<void>(builder: (_) => screen));
+  return Navigator.of(context).push(appPageRoute<void>(context, (_) => screen));
 }
 
 /// The packages in alphabetical order, one row each.

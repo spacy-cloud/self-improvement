@@ -20,7 +20,7 @@ import 'package:self_improvement/features/dashboard/presentation/widgets/text_sc
 /// navigation), like the entry forms.
 Future<void> openDashboardCards(BuildContext context) {
   return Navigator.of(context, rootNavigator: true).push<void>(
-    MaterialPageRoute<void>(builder: (context) => const DashboardCardsScreen()),
+    appPageRoute<void>(context, (context) => const DashboardCardsScreen()),
   );
 }
 

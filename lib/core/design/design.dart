@@ -39,6 +39,7 @@ export 'package:self_improvement/core/design/icons/app_icons.dart';
 export 'package:self_improvement/core/design/icons/habit_icon.dart';
 export 'package:self_improvement/core/design/layout/adaptive_grid.dart';
 export 'package:self_improvement/core/design/motion/app_motion.dart';
+export 'package:self_improvement/core/design/motion/app_page_route.dart';
 export 'package:self_improvement/core/design/tokens/app_colors.dart';
 export 'package:self_improvement/core/design/tokens/app_radii.dart';
 export 'package:self_improvement/core/design/tokens/app_shadows.dart';

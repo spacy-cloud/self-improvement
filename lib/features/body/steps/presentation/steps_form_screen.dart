@@ -30,6 +30,7 @@ class StepsFormScreen extends ConsumerStatefulWidget {
 
 class _StepsFormScreenState extends ConsumerState<StepsFormScreen> {
   late final TextEditingController _steps;
+  final FocusNode _stepsFocus = FocusNode();
 
   StepsFormArgs get _args => StepsFormArgs(date: widget.date);
 
@@ -47,6 +48,7 @@ class _StepsFormScreenState extends ConsumerState<StepsFormScreen> {
   @override
   void dispose() {
     _steps.dispose();
+    _stepsFocus.dispose();
     super.dispose();
   }
 
@@ -67,7 +69,13 @@ class _StepsFormScreenState extends ConsumerState<StepsFormScreen> {
         if (!mounted) {
           return;
         }
-        final failure = ref.read(stepsFormProvider(_args)).submitFailure;
+        final rejected = ref.read(stepsFormProvider(_args));
+        // The invalid field takes the focus, so a screen reader reads its
+        // label together with the hint.
+        if (rejected.fieldErrors.containsKey(StepsFields.steps)) {
+          _stepsFocus.requestFocus();
+        }
+        final failure = rejected.submitFailure;
         if (failure != null) {
           feedback.showError(
             'Speichern fehlgeschlagen. Deine Eingabe bleibt erhalten.',
@@ -226,6 +234,7 @@ class _StepsFormScreenState extends ConsumerState<StepsFormScreen> {
             ),
             _StepsField(
               controller: _steps,
+              focusNode: _stepsFocus,
               hint: state.existingSteps == null
                   ? '0'
                   : stepsText(state.existingSteps!),
@@ -357,6 +366,7 @@ class _DateSelector extends StatelessWidget {
 class _StepsField extends StatelessWidget {
   const _StepsField({
     required this.controller,
+    required this.focusNode,
     required this.hint,
     required this.hasError,
     required this.onChanged,
@@ -364,6 +374,7 @@ class _StepsField extends StatelessWidget {
   });
 
   final TextEditingController controller;
+  final FocusNode focusNode;
   final String hint;
   final bool hasError;
   final ValueChanged<String> onChanged;
@@ -385,6 +396,7 @@ class _StepsField extends StatelessWidget {
           textField: true,
           child: TextField(
             controller: controller,
+            focusNode: focusNode,
             style: style,
             cursorColor: colors.primaryButton,
             keyboardType: TextInputType.number,

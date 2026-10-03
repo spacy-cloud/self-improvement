@@ -204,6 +204,14 @@ void main() {
         find.text('Bitte gib höchstens 100.000 Schritte ein.'),
         findsOneWidget,
       );
+      expect(
+        tester
+            .widget<TextField>(find.byType(TextField).first)
+            .focusNode!
+            .hasFocus,
+        isTrue,
+        reason: 'the invalid field takes the focus (Q02)',
+      );
       expect(await _day(tester, env, _today), isNull);
 
       await _type(tester, '100000');
