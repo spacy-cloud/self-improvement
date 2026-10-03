@@ -176,7 +176,7 @@ void main() {
   );
 
   testWidgets(
-    'F7 platform: database, zone and reminder platform after the start',
+    'F7 platform: database file, zone and reminder platform after the start (permission only read, not asserted)',
     (tester) async {
       await _runFlow(tester, realPlatformFlow);
     },
