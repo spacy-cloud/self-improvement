@@ -53,10 +53,10 @@ class SecondaryButton extends StatelessWidget {
         : (danger ? colors.error : colors.textPrimary);
     final border = danger && enabled ? colors.error : colors.borderInput;
 
-    Widget content(bool fill) => Padding(
+    Widget content() => Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
-        mainAxisSize: fill ? MainAxisSize.max : MainAxisSize.min,
+        mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           if (icon != null) ...<Widget>[
@@ -84,7 +84,7 @@ class SecondaryButton extends StatelessWidget {
       child: ButtonWidth(
         expand: expand,
         minWidth: AppSizes.touchMin,
-        builder: (context, fill) => ConstrainedBox(
+        child: ConstrainedBox(
           constraints: const BoxConstraints(
             minHeight: AppSizes.secondaryButtonHeight,
           ),
@@ -96,7 +96,7 @@ class SecondaryButton extends StatelessWidget {
               borderRadius: AppRadii.secondaryButtonBorder,
               side: BorderSide(color: border, width: 1.5),
             ),
-            child: Center(widthFactor: fill ? null : 1, child: content(fill)),
+            child: Center(widthFactor: 1, child: content()),
           ),
         ),
       ),

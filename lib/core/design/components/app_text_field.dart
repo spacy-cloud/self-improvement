@@ -224,17 +224,26 @@ class AppTextField extends StatelessWidget {
                 )
               : null);
 
-    return MergeSemantics(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          labelRow,
-          const SizedBox(height: 6),
-          field,
-          ?feedback,
-        ],
-      ),
+    // Not a MergeSemantics: merging a label, a text field and a unit suffix
+    // makes the framework assert inside scrolling forms. The label names the
+    // field itself; the helper text or the error is its hint, so the visible
+    // feedback row stays out of the semantics tree (nothing is read twice).
+    final semanticLabel = requirementLabel == null
+        ? label
+        : '$label, $requirementLabel';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        ExcludeSemantics(child: labelRow),
+        const SizedBox(height: 6),
+        Semantics(
+          label: semanticLabel,
+          hint: hasError ? errorText : helperText,
+          child: field,
+        ),
+        if (feedback != null) ExcludeSemantics(child: feedback),
+      ],
     );
   }
 }

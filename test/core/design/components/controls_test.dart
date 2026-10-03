@@ -767,6 +767,63 @@ void main() {
       },
     );
 
+    testWidgets(
+      'the field is named by its label, the helper or the error is its hint',
+      (tester) async {
+        final handle = tester.ensureSemantics();
+        await pumpDesign(
+          tester,
+          Column(
+            children: const [
+              AppTextField(
+                label: 'Notiz',
+                requirementLabel: 'optional',
+                helperText: 'Zum Beispiel: nach dem Training',
+              ),
+              AppTextField(label: 'Größe', errorText: 'Bitte prüfen'),
+            ],
+          ),
+        );
+
+        final note = tester.getSemantics(find.byType(TextField).first);
+        expect(note.getSemanticsData().label, contains('Notiz, optional'));
+        expect(note.getSemanticsData().hint, 'Zum Beispiel: nach dem Training');
+        final size = tester.getSemantics(find.byType(TextField).last);
+        expect(size.getSemanticsData().hint, 'Bitte prüfen');
+        expect(find.bySemanticsLabel('Bitte prüfen'), findsNothing);
+        handle.dispose();
+      },
+    );
+
+    testWidgets('a unit suffix in a scrolling form does not break semantics', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await pumpDesign(
+        tester,
+        Column(
+          children: [
+            for (var i = 0; i < 12; i++)
+              AppTextField(
+                label: 'Feld $i',
+                controller: TextEditingController(text: '18$i'),
+                suffixText: 'cm',
+                errorText: i.isEven ? 'Bitte prüfen' : null,
+              ),
+          ],
+        ),
+        height: 500,
+      );
+      for (var i = 0; i < 4; i++) {
+        await tester.drag(find.byType(Scrollable).first, const Offset(0, -300));
+        await tester.pump();
+      }
+      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+      expect(tester.takeException(), isNull);
+      handle.dispose();
+    });
+
     testWidgets('focus is shown through the decorator', (tester) async {
       await pumpDesign(tester, const AppTextField(label: 'Notiz'));
       final decorator = find.byType(InputDecorator);

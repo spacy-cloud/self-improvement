@@ -55,10 +55,10 @@ class PrimaryButton extends StatelessWidget {
     final background = disabled ? colors.track : colors.primaryButton;
     final foreground = disabled ? colors.textTertiary : colors.onPrimary;
 
-    Widget content(bool fill) => Padding(
+    Widget content() => Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
       child: Row(
-        mainAxisSize: fill ? MainAxisSize.max : MainAxisSize.min,
+        mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           if (icon != null && !loading) ...<Widget>[
@@ -87,7 +87,7 @@ class PrimaryButton extends StatelessWidget {
       child: ButtonWidth(
         expand: expand,
         minWidth: AppSizes.touchMin,
-        builder: (context, fill) => ConstrainedBox(
+        child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: AppSizes.buttonHeight),
           child: InkSurface(
             onTap: enabled ? onPressed : null,
@@ -97,7 +97,7 @@ class PrimaryButton extends StatelessWidget {
             ),
             splashColor: colors.onPrimary.withValues(alpha: 0.18),
             highlightColor: colors.onPrimary.withValues(alpha: 0.1),
-            child: Center(widthFactor: fill ? null : 1, child: content(fill)),
+            child: Center(widthFactor: 1, child: content()),
           ),
         ),
       ),
