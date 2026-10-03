@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart' hide isNotNull, isNull;
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/core/database/app_database.dart';
 import 'package:self_improvement/core/modules/module_id.dart';
@@ -80,6 +81,26 @@ void main() {
     waterReached = false;
     expect((await read()).waterGoalReachedToday, isFalse);
   });
+
+  test(
+    'a water goal fact that cannot be answered counts as not reached',
+    () async {
+      final original = debugPrint;
+      debugPrint = (String? message, {int? wrapWidth}) {};
+      addTearDown(() => debugPrint = original);
+      final failing = ReminderInputReader(
+        database: harness.database,
+        modules: harness.data.moduleStatus,
+        waterGoalReachedToday: () async => throw StateError('day status'),
+      );
+      final inputs = await failing.read(
+        nowUtc: harness.data.clock.nowUtc(),
+        timeZoneId: 'Europe/Berlin',
+        permission: NotificationPermission.granted,
+      );
+      expect(inputs.waterGoalReachedToday, isFalse);
+    },
+  );
 
   group('water rules', () {
     test('maps kind water with its time and enabled flag', () async {

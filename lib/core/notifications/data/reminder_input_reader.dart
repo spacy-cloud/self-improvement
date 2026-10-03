@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 import 'package:self_improvement/core/database/app_database.dart';
 import 'package:self_improvement/core/modules/module_status_repository.dart';
 import 'package:self_improvement/core/notifications/domain/reminder_inputs.dart';
@@ -38,7 +39,7 @@ class ReminderInputReader {
     final statuses = await _modules.statuses();
     final waterRules = await _readWaterRules();
     final habits = await _readHabits();
-    final waterReached = await _waterGoalReachedToday();
+    final waterReached = await _waterGoalReached();
     final focus =
         await (_focusSession?.call() ?? readOpenFocusSession(_database));
     return ReminderInputs(
@@ -55,6 +56,18 @@ class ReminderInputReader {
       habits: habits,
       focusSession: focus,
     );
+  }
+
+  /// The injected fact. If it cannot be answered the goal counts as not
+  /// reached: at worst one water reminder too many today, instead of losing
+  /// every reminder of the run.
+  Future<bool> _waterGoalReached() async {
+    try {
+      return await _waterGoalReachedToday();
+    } catch (error) {
+      debugPrint('reminder water goal: ${error.runtimeType}');
+      return false;
+    }
   }
 
   Future<List<WaterReminderRule>> _readWaterRules() async {

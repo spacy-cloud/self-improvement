@@ -48,7 +48,7 @@ final deviceZoneTrackerProvider = Provider<DeviceZoneTracker>(
 /// Override it with a function that answers from committed data and reads the
 /// current state lazily (`ref.read` inside the closure). The provider value
 /// must stay the same object: a function that is rebuilt on every change would
-/// rebuild the whole engine.
+/// rebuild the whole engine. A function that throws counts as "not reached".
 final waterGoalReachedTodayProvider = Provider<Future<bool> Function()>(
   (ref) =>
       () async => false,
