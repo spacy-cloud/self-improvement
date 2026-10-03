@@ -27,7 +27,7 @@ Figma-Datei `K4IWQEjnzuNkRUzkq8JaKz`, Light-Knoten. Dark und OLED ergeben sich a
 
 1. Karte „Aktuell“: der aktuelle Wert (die zeitlich letzte Messung, bei gleicher Zeit nach Kennung), dazu „Heute, 08:32“, eine neutrale Plakette mit dem Wochenvergleich („↓ −0,3 kg seit letzter Woche“) oder „Noch kein Wochenvergleich“. Gibt es ein Start- und ein Zielgewicht im Profil, folgen ein Fortschrittsbalken mit „Start“, dem Rest („Noch 3,5 kg“) oder „Ziel erreicht“ und dem Ziel; sonst die Zeile „Zielgewicht festlegen“ (führt zu `/profile/edit`).
 2. „Verlauf“: Liniendiagramm mit einem Punkt je Tag (die letzte Messung des Tages), Zeitraum „7 T“, „30 T“ oder „3 M“ (90 Tage), Zusammenfassungssatz und Tabelle derselben Werte. Der Zeitraum ist zunächst 7 Tage, bleibt während der Laufzeit der App gewählt und ist nach einem Prozess-Neustart wieder 7 Tage.
-3. „Letzte Einträge“: fünf Zeilen mit relativem Datum, Uhrzeit, Bedingungen, Wert und Veränderung zur vorherigen Messung; „Alle anzeigen“ (zu `/weight/all`) erscheint nur bei mehr als fünf Einträgen. Die zeitlich erste Messung trägt „Startgewicht“, wenn ihr Wert dem ausdrücklichen Startgewicht des Profils entspricht.
+3. „Letzte Einträge“: fünf Zeilen mit relativem Datum, Uhrzeit, Bedingungen, Wert und Veränderung zur vorherigen Messung; „Alle anzeigen“ (zu `/weight/all`) erscheint nur bei mehr als fünf Einträgen. Die zeitlich erste Messung trägt „Startgewicht“, wenn ihr Wert dem ausdrücklichen Startgewicht des Profils entspricht (in der Übersicht nur, solange sie unter den fünf letzten steht, in „Alle Messungen“ immer).
 4. Rechnerischer BMI als Karte („Rein rechnerischer Wert aus Gewicht und Größe, ohne Bewertung und ohne Aussage über deine Gesundheit.“) oder, ohne Größe und Alter im Profil, die Zeile „BMI anzeigen“ mit dem Weg zum Profil.
 
 Die Aktion „Gewicht eintragen“ ist unten angeheftet, sobald es Einträge gibt; ohne Eintrag zeigt die Seite „Noch keine Messung“ mit eigener Aktion. Laden zeigt „Wird geladen …“, ein Lesefehler `ErrorState` mit „Erneut versuchen“.
@@ -43,7 +43,7 @@ Die Aktion „Gewicht eintragen“ ist unten angeheftet, sobald es Einträge gib
 - Beim Bearbeiten öffnet „Eintrag löschen“ das Bestätigungs-Sheet „Messung vom 3. Okt. löschen?“ („Du kannst es direkt danach rückgängig machen.“); danach meldet die Snackbar „Messung gelöscht“ mit „Rückgängig“, das den Eintrag mit derselben Kennung zurückholt.
 - Ein Formular mit Eingaben fragt vor dem Verlassen „Änderungen verwerfen?“ (Weiter bearbeiten oder Verwerfen), auch bei Android-Zurück.
 
-**Dashboard-Karte.** Ohne Messung: „–“, „Noch keine Messung“ und die Aktion „Gewicht eintragen“. Mit Messung der letzten sieben Tage: Wert in kg, eine kleine Kurve der letzten sieben Tage und der Wochenvergleich („↓ −0,3 kg in 7 Tagen“ oder „Noch kein Wochenvergleich“). Liegt die letzte Messung länger zurück, steht „Zuletzt So., 20. Sep.“ ohne Kurve und ohne Vergleich. Die Karte folgt nicht dem Zeitraum der Übersicht.
+**Dashboard-Karte.** Ohne Messung: „–“, „Noch keine Messung“ und die Aktion „Gewicht eintragen“. Mit einer Messung heute oder in den sechs Tagen davor: Wert in kg, eine kleine Kurve dieser sieben Tage und der Wochenvergleich („↓ −0,3 kg in 7 Tagen“ oder „Noch kein Wochenvergleich“). Liegt die letzte Messung sieben Tage oder länger zurück, steht „Zuletzt So., 20. Sep.“ ohne Kurve und ohne Vergleich. Die Karte folgt nicht dem Zeitraum der Übersicht.
 
 **Fachregeln.**
 
@@ -89,7 +89,7 @@ Die Aktion „Gewicht eintragen“ ist unten angeheftet, sobald es Einträge gib
 | Undo-Hinweis von 5 s in der Komponente | 8 Sekunden | Vorgabe des Auftrags, siehe [design-handoff.md](../design-handoff.md) Abschnitt 8.4 |
 | Messbedingungen als Auswahl-Chips | Zeilen mit Titel, Erklärtext und Häkchenfeld, `EntryListTile.check` mit abgerundetem Quadrat wie im Frame `2093:2` | Mehrfachauswahl mit Zustand als Text und Semantik und mit 48 px Tippfläche |
 | Kein Notizfeld | Optionales Feld „Notiz“ bis 500 Zeichen | Datenmodell und Anforderung |
-| Dashboard-Karte mit Kurve und Wochenvergleich | Ohne Messung der letzten sieben Tage „Zuletzt <Datum>“ ohne Kurve und Vergleich | Ehrlicher Zustand; aus einer leeren Punktliste lässt sich keine Kurve zeichnen |
+| Dashboard-Karte mit Kurve und Wochenvergleich | Ohne Messung heute oder in den sechs Tagen davor „Zuletzt <Datum>“ ohne Kurve und Vergleich | Ehrlicher Zustand; aus einer leeren Punktliste lässt sich keine Kurve zeichnen |
 | Beispielzahlen (71,5 kg, Start 74,0 kg, Ziel 68,0 kg) | Nirgends angezeigt; alles aus der Datenbank | Keine erfundenen Werte |
 | Zusatzwerte zu den Schritten (Kilometer, Kalorien, Aktivminuten) | Entfallen | Keine Datenquelle ([design-handoff.md](../design-handoff.md) Abschnitt 6) |
 
