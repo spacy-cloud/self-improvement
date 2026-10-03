@@ -91,7 +91,6 @@ class ProgressRing extends StatelessWidget {
     return Semantics(
       container: true,
       label: semanticLabel,
-      image: true,
       excludeSemantics: true,
       child: SizedBox.square(
         dimension: diameter,

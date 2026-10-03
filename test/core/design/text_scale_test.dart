@@ -245,6 +245,41 @@ final Map<String, Widget Function()> _components = <String, Widget Function()>{
     onConfirm: _noop,
     onCancel: _noop,
   ),
+  'AppBadge': () => const AppBadge(
+    label: 'Noch 1,0 l bis zum Tagesziel erreicht',
+    icon: Icons.water_drop_outlined,
+    accent: AppAccent.water,
+  ),
+  'AppSectionHeader': () => const AppSectionHeader(
+    title: 'Heute getrunken und eingetragen',
+    subtitle: '4 Einträge',
+    actionLabel: 'Alle anzeigen',
+    onAction: _noop,
+  ),
+  'AppSectionHeader group': () =>
+      const AppSectionHeader.group(title: 'Daten und Sicherung'),
+  'AppListGroup': () => const AppListGroup(
+    children: <Widget>[
+      EntryListTile.chevron(
+        title: 'Daten exportieren',
+        subtitle: 'Sicherung als JSON-Datei',
+        onTap: _noop,
+      ),
+      EntryListTile.chevron(
+        title: 'Daten importieren',
+        subtitle: 'Aus einer Sicherung wiederherstellen',
+        onTap: _noop,
+      ),
+    ],
+  ),
+  'PeriodSelector with badges': () => PeriodSelector<String>(
+    options: const <PeriodOption<String>>[
+      PeriodOption<String>(value: 'a', label: 'Aufgaben', badge: '3 offen'),
+      PeriodOption<String>(value: 'g', label: 'Gewohnheiten', badge: '3 / 5'),
+    ],
+    selected: 'g',
+    onChanged: (_) {},
+  ),
   'AppBottomNavBar': () => const AppBottomNavBar(
     selectedIndex: 2,
     onSelected: _noopInt,

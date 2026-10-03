@@ -110,6 +110,23 @@ class ComponentGallery extends StatelessWidget {
           onChanged: (_) {},
         ),
         gap,
+        PeriodSelector<String>(
+          options: const <PeriodOption<String>>[
+            PeriodOption<String>(
+              value: 'a',
+              label: 'Aufgaben',
+              badge: '3 offen',
+            ),
+            PeriodOption<String>(
+              value: 'g',
+              label: 'Gewohnheiten',
+              badge: '3 / 5',
+            ),
+          ],
+          selected: 'g',
+          onChanged: (_) {},
+        ),
+        gap,
         const QuantityStepper(
           valueText: '71,5',
           unit: 'kg',
@@ -153,6 +170,23 @@ class ComponentGallery extends StatelessWidget {
           ),
         ),
         const _Section('Cards und Listen'),
+        const AppSectionHeader.group(title: 'Darstellung'),
+        const AppSectionHeader(
+          title: 'Deine Habits',
+          actionLabel: 'Bearbeiten',
+          onAction: _noop,
+        ),
+        const SizedBox(height: 8),
+        const Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: <Widget>[
+            AppBadge(label: 'Fast geschafft!'),
+            AppBadge(label: 'Noch 1,0 l bis zum Ziel', accent: AppAccent.water),
+            AppBadge(label: 'Nur lokal', accent: AppAccent.focus),
+          ],
+        ),
+        gap,
         const AppCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

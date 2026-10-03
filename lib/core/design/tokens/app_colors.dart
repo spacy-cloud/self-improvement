@@ -316,6 +316,23 @@ class AppColors {
     };
   }
 
+  /// Text colour for small text on the tint of an [accent] (badges): the accent
+  /// itself when it reaches 4.5:1 on the tint, otherwise the primary text
+  /// colour. Pure accent colours on some Light tints (water, steps) stay just
+  /// below 4.5:1, so they must not carry small text.
+  Color accentTextOnTint(AppAccent accent) {
+    final foreground = this.accent(accent);
+    final tint = accentTint(accent);
+    final lighter = foreground.computeLuminance() > tint.computeLuminance()
+        ? foreground
+        : tint;
+    final darker = identical(lighter, foreground) ? tint : foreground;
+    final ratio =
+        (lighter.computeLuminance() + 0.05) /
+        (darker.computeLuminance() + 0.05);
+    return ratio >= 4.5 ? foreground : textPrimary;
+  }
+
   /// All colours in declaration order (used for equality and tests).
   List<Color> get values => <Color>[
     background,

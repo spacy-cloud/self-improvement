@@ -820,6 +820,31 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets(
+      'safeAreaBottom: false lets the content reach the screen bottom',
+      (tester) async {
+        tester.view.padding = const FakeViewPadding(bottom: 34);
+        addTearDown(tester.view.resetPadding);
+        Widget page({required bool safe}) => AppScaffold(
+          title: 'Liste',
+          safeAreaBottom: safe,
+          scrollable: false,
+          body: const SizedBox.expand(key: ValueKey<String>('fill')),
+          padding: EdgeInsets.zero,
+        );
+        await pumpDesign(tester, page(safe: true), wrapScaffold: false);
+        final safeBottom = tester
+            .getRect(find.byKey(const ValueKey<String>('fill')))
+            .bottom;
+        expect(safeBottom, 852 - 34);
+        await pumpDesign(tester, page(safe: false), wrapScaffold: false);
+        final nestedBottom = tester
+            .getRect(find.byKey(const ValueKey<String>('fill')))
+            .bottom;
+        expect(nestedBottom, 852);
+      },
+    );
+
     testWidgets('a sub page scaffold shows the back button', (tester) async {
       await pumpDesign(
         tester,

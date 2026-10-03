@@ -6,14 +6,17 @@
 library;
 
 export 'package:self_improvement/core/design/app_theme.dart';
+export 'package:self_improvement/core/design/components/app_badge.dart';
 export 'package:self_improvement/core/design/components/app_bottom_nav_bar.dart';
 export 'package:self_improvement/core/design/components/app_card.dart';
 export 'package:self_improvement/core/design/components/app_chip.dart';
 export 'package:self_improvement/core/design/components/app_header.dart';
 export 'package:self_improvement/core/design/components/app_icon_button.dart';
 export 'package:self_improvement/core/design/components/app_icon_tile.dart';
+export 'package:self_improvement/core/design/components/app_list_group.dart';
 export 'package:self_improvement/core/design/components/app_progress_bar.dart';
 export 'package:self_improvement/core/design/components/app_scaffold.dart';
+export 'package:self_improvement/core/design/components/app_section_header.dart';
 export 'package:self_improvement/core/design/components/app_snack_bar.dart';
 export 'package:self_improvement/core/design/components/app_switch.dart';
 export 'package:self_improvement/core/design/components/app_text_field.dart';
