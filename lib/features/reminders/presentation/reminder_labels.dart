@@ -1,4 +1,3 @@
-import 'package:self_improvement/core/notifications/domain/reminder_kind.dart';
 import 'package:self_improvement/core/notifications/domain/reminder_status.dart';
 import 'package:self_improvement/core/time/clock_service.dart';
 import 'package:self_improvement/shared/german_date.dart';
@@ -14,17 +13,21 @@ abstract final class ReminderLabels {
   /// What a screen reader says for a slot chip: `10 Uhr`.
   static String slotSpoken(int hour) => '$hour Uhr';
 
-  /// The line under the title of the master switch.
-  static String stateSubtitle(ReminderStatus status) => switch (status.state) {
-    ReminderState.off => 'Aus',
-    ReminderState.blocked => 'Im System blockiert',
-    ReminderState.unavailable => 'Auf diesem Gerät nicht verfügbar',
-    ReminderState.schedulingError => 'Planungsfehler',
-    ReminderState.active =>
-      status.scheduledCount == 0
-          ? 'Eingeschaltet, aktuell nichts geplant'
-          : 'Eingeschaltet, ${status.scheduledCount} geplant',
-  };
+  /// The line under the title of the master switch. [planned] is the number
+  /// of reminders that are still ahead; it defaults to the engine's count.
+  static String stateSubtitle(ReminderStatus status, {int? planned}) {
+    final count = planned ?? status.scheduledCount;
+    return switch (status.state) {
+      ReminderState.off => 'Aus',
+      ReminderState.blocked => 'Im System blockiert',
+      ReminderState.unavailable => 'Auf diesem Gerät nicht verfügbar',
+      ReminderState.schedulingError => 'Planungsfehler',
+      ReminderState.active =>
+        count == 0
+            ? 'Eingeschaltet, aktuell nichts geplant'
+            : 'Eingeschaltet, $count geplant',
+    };
+  }
 
   /// The device permission as the app reads it, shown at the foot of the block.
   static String permissionLine(ReminderStatus status) =>
@@ -56,13 +59,6 @@ abstract final class ReminderLabels {
     };
     return '$cause Deine Einträge sind davon nicht betroffen.';
   }
-
-  /// Short name of [kind] for lists.
-  static String kindName(ReminderKind kind) => switch (kind) {
-    ReminderKind.water => 'Wasser',
-    ReminderKind.habit => 'Gewohnheit',
-    ReminderKind.focusEnd => 'Fokus-Ende',
-  };
 
   /// `Heute, 14:00 Uhr`, `Morgen, 07:30 Uhr`, later `Mo., 5. Okt., 18:00 Uhr`.
   static String when(LocalDateTime local, LocalDate today) {

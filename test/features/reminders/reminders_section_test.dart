@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui' show Tristate;
 
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/core/commands/command_runner.dart';
@@ -719,6 +720,32 @@ void main() {
       },
     );
 
+    testWidgets('a reminder whose time has passed is not listed as planned', (
+      tester,
+    ) async {
+      final env = await createReminderEnv(tester);
+      await openSettings(tester, env);
+      await tapSlot(tester, 12);
+      await tapMasterSwitch(tester);
+      await tapText(tester, 'Geplante Erinnerungen');
+      expect(find.text('Heute, 12:00 Uhr'), findsOneWidget);
+      expect(find.text('Eingeschaltet, 7 geplant'), findsOneWidget);
+
+      // Three hours later the 12:00 notification is past; the projection
+      // still holds its row until the next planning run.
+      env.harness.clock.advance(const Duration(hours: 3));
+      await tapText(tester, 'Geplante Erinnerungen');
+      await tapText(tester, 'Geplante Erinnerungen');
+
+      expect(find.text('Heute, 12:00 Uhr'), findsNothing);
+      expect(find.text('Morgen, 12:00 Uhr'), findsOneWidget);
+      expect(find.text('Eingeschaltet, 6 geplant'), findsOneWidget);
+      expect(
+        find.text('6 geplant, nächste: Morgen, 12:00 Uhr'),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('tapping a reminder opens its target', (tester) async {
       final env = await createReminderEnv(tester);
       final router = await openSettings(tester, env);
@@ -760,6 +787,31 @@ void main() {
 
       expect(router.routerDelegate.currentConfiguration.uri.path, '/');
       expect(find.text('Dashboard'), findsOneWidget);
+    });
+
+    testWidgets('a deleted habit opens the habit list instead (AT29)', (
+      tester,
+    ) async {
+      final env = await createReminderEnv(tester);
+      await env.addHabitsWithReminders(tester, 1);
+      final router = await openSettings(tester, env);
+      await tapMasterSwitch(tester);
+      await tapText(tester, 'Geplante Erinnerungen');
+      expect(find.text(ReminderTexts.habitTitle), findsWidgets);
+      // The habit is deleted after its reminders were planned.
+      await tester.runAsync(() async {
+        final db = env.harness.database;
+        await db
+            .update(db.habits)
+            .write(
+              HabitsCompanion(deletedAtUtc: Value(env.harness.clock.nowUtc())),
+            );
+      });
+
+      await tapText(tester, 'Heute, 18:00 Uhr');
+
+      expect(router.routerDelegate.currentConfiguration.uri.path, '/habits');
+      expect(find.text('Gewohnheiten'), findsOneWidget);
     });
 
     testWidgets('the planning limit is documented', (tester) async {

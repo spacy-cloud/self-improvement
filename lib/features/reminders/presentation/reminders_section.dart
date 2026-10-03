@@ -275,6 +275,13 @@ class _RemindersSectionState extends ConsumerState<RemindersSection>
     final nutritionOn =
         ref.watch(moduleStatusesProvider).value?[ModuleId.nutrition] ?? true;
     final banner = _banner(status);
+    // A row whose time has passed was delivered or lost; it is not "planned"
+    // any more, whatever the projection still holds until the next run.
+    final now = ref.watch(clockProvider).nowUtc();
+    final upcoming = <ScheduledReminder>[
+      for (final reminder in overview.reminders)
+        if (reminder.fireAtUtc.isAfter(now)) reminder,
+    ];
     return AppListGroup(
       children: <Widget>[
         Column(
@@ -282,7 +289,10 @@ class _RemindersSectionState extends ConsumerState<RemindersSection>
           children: <Widget>[
             EntryListTile.toggle(
               title: 'Erinnerungen',
-              subtitle: ReminderLabels.stateSubtitle(status),
+              subtitle: ReminderLabels.stateSubtitle(
+                status,
+                planned: upcoming.length,
+              ),
               // At very large text the word "Erinnerungen" needs the width
               // of the icon tile, or it would break inside the word.
               icon: MediaQuery.textScalerOf(context).scale(1) > 1.5
@@ -301,9 +311,9 @@ class _RemindersSectionState extends ConsumerState<RemindersSection>
           onToggle: _onSlot,
         ),
         const _OtherKindsNote(),
-        if (overview.reminders.isNotEmpty)
+        if (upcoming.isNotEmpty)
           _PlannedBlock(
-            reminders: overview.reminders,
+            reminders: upcoming,
             open: _plannedOpen,
             onToggle: () => setState(() => _plannedOpen = !_plannedOpen),
             onOpen: _open,

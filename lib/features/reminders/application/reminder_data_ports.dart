@@ -26,8 +26,8 @@ final class ReminderNotificationCanceller implements NotificationCanceller {
 /// import the new reminder rules and the wish of the file apply; after a reset
 /// nothing is wanted any more and nothing gets planned.
 ///
-/// `ReminderService.reconcile` never throws, so this listener only fails when
-/// the service was disposed.
+/// `ReminderService.reconcile` never throws, so neither does this listener: a
+/// planning problem shows up in the reminder status of the settings.
 final class ReminderReplanListener implements BackupListener {
   const ReminderReplanListener(this._service);
 

@@ -462,6 +462,37 @@ void main() {
       expect(env.feedback.events.where((e) => e.kind == 'saved'), hasLength(1));
     });
 
+    testWidgets('while the data is replaced the sheet cannot be closed', (
+      tester,
+    ) async {
+      final gated = GatedProjection();
+      final env = await createDataEnv(tester, projectionOverride: gated);
+      final source = await makeSourceBackup(tester);
+      pickFile(env, source.bytes);
+      await openData(tester, env);
+      await tapText(tester, 'Sicherung auswählen');
+
+      await tester.tap(find.text('Ersetzen und wiederherstellen'));
+      await settle(tester);
+      expect(gated.syncs, 1, reason: 'the replace is running');
+      expect(find.text('Wird wiederhergestellt …'), findsOneWidget);
+
+      // Neither the close button, "Abbrechen", the barrier nor the system
+      // back action closes the sheet half way.
+      await tester.tap(find.byType(AppIconButton).last, warnIfMissed: false);
+      await tester.tap(find.text('Abbrechen'), warnIfMissed: false);
+      await tester.tapAt(const Offset(196, 20));
+      await tester.binding.handlePopRoute();
+      await settle(tester);
+      expect(find.text('Sicherung wiederherstellen?'), findsOneWidget);
+
+      gated.gate.complete();
+      await settle(tester);
+      expect(find.text('Sicherung wiederherstellen?'), findsNothing);
+      expect(env.listener.calls, 1);
+      expect(env.feedback.last!.kind, 'saved');
+    });
+
     testWidgets('failing follow-up steps are reported, the data stays', (
       tester,
     ) async {

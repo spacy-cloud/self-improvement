@@ -16,10 +16,12 @@ import 'package:self_improvement/core/backup/platform/backup_file_gateway.dart';
 import 'package:self_improvement/core/backup/platform/backup_file_picker.dart';
 import 'package:self_improvement/core/backup/snapshot_consistency_checker.dart';
 import 'package:self_improvement/core/backup/testing/in_memory_backup_adapters.dart';
+import 'package:self_improvement/core/commands/projection_synchronizer.dart';
 import 'package:self_improvement/core/feedback/feedback_service.dart';
 import 'package:self_improvement/core/testing/data_harness.dart';
 import 'package:self_improvement/core/testing/recording_projection.dart';
 import 'package:self_improvement/features/settings/presentation/data_screen.dart';
+import 'package:self_improvement/shared/local_date.dart';
 
 import '../../../core/backup/support/backup_fixtures.dart';
 import '../../../support/pump_app.dart';
@@ -115,6 +117,22 @@ final class RecordingGateway implements BackupFileGateway {
   );
 }
 
+/// A projection that holds the replace of an import until the test completes
+/// [gate]: the import is busy while it waits.
+final class GatedProjection implements ProjectionSynchronizer {
+  final Completer<void> gate = Completer<void>();
+  int syncs = 0;
+
+  @override
+  Future<void> syncDays(Set<LocalDate> days) async {
+    syncs++;
+    await gate.future;
+  }
+
+  @override
+  Future<int> totalXp() async => 0;
+}
+
 /// A file picker that stays open until the test completes [gate].
 final class GatedPicker implements BackupFilePicker {
   final Completer<PickedBackupFile?> gate = Completer<PickedBackupFile?>();
@@ -132,6 +150,7 @@ final class GatedPicker implements BackupFilePicker {
 Future<DataEnv> createDataEnv(
   WidgetTester tester, {
   BackupFilePicker? pickerOverride,
+  ProjectionSynchronizer? projectionOverride,
   bool oldData = true,
   bool realProjection = false,
   List<Override> overrides = const <Override>[],
@@ -140,7 +159,7 @@ Future<DataEnv> createDataEnv(
   final projection = RecordingProjectionSynchronizer();
   final harness = (await tester.runAsync(
     () => DataHarness.create(
-      projections: realProjection ? null : projection,
+      projections: realProjection ? null : (projectionOverride ?? projection),
       realProjection: realProjection,
     ),
   ))!;

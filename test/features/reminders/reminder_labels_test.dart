@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:self_improvement/core/notifications/domain/reminder_kind.dart';
 import 'package:self_improvement/core/notifications/domain/reminder_status.dart';
 import 'package:self_improvement/core/time/clock_service.dart';
 import 'package:self_improvement/features/reminders/presentation/reminder_labels.dart';
@@ -64,6 +63,17 @@ void main() {
       expect(
         ReminderLabels.stateSubtitle(status(count: 14)),
         'Eingeschaltet, 14 geplant',
+      );
+    });
+
+    test('the number of reminders still ahead wins over the stored rows', () {
+      expect(
+        ReminderLabels.stateSubtitle(status(count: 14), planned: 13),
+        'Eingeschaltet, 13 geplant',
+      );
+      expect(
+        ReminderLabels.stateSubtitle(status(count: 2), planned: 0),
+        'Eingeschaltet, aktuell nichts geplant',
       );
     });
   });
@@ -140,17 +150,11 @@ void main() {
     });
   });
 
-  group('slots and kinds', () {
+  group('slots', () {
     test('slot texts', () {
       expect(ReminderLabels.slot(10), '10:00');
       expect(ReminderLabels.slot(18), '18:00');
       expect(ReminderLabels.slotSpoken(10), '10 Uhr');
-    });
-
-    test('kind names', () {
-      expect(ReminderLabels.kindName(ReminderKind.water), 'Wasser');
-      expect(ReminderLabels.kindName(ReminderKind.habit), 'Gewohnheit');
-      expect(ReminderLabels.kindName(ReminderKind.focusEnd), 'Fokus-Ende');
     });
   });
 

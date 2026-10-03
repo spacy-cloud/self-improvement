@@ -351,7 +351,7 @@ class ImportRejectedSheet extends StatelessWidget {
       onClose: () => Navigator.of(context).pop(false),
       footer: footer,
       children: <Widget>[
-        const SheetBadge(icon: Icons.close_rounded, accent: AppAccent.error),
+        SheetBadge(icon: AppIcon.close.data, accent: AppAccent.error),
         const SizedBox(height: 12),
         Text(
           'Die Datei „$fileName“ ist keine gültige Sicherung dieser App. '
