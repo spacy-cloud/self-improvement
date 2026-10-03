@@ -339,7 +339,9 @@ Future<void> populateRichDatabase(AppDatabase db) async {
         occurredAtUtc: at(2, 7, 0, 0, 1),
         localDate: march(2),
         timezoneId: berlin,
-        note: const Value('Glas Wasser'),
+        note: const Value(
+          'Glas Wasser 💧 „kalt“ "x" \\ äöüß\nzweite Zeile\ttab',
+        ),
         gamificationEligible: true,
         createdAtUtc: at(2, 7),
         updatedAtUtc: at(2, 7),
@@ -743,8 +745,202 @@ Future<Map<String, Object?>> richBackupJson() async {
   }
 }
 
+/// A deep copy of decoded JSON that tests may mutate freely.
+Map<String, Object?> jsonCopy(Map<String, Object?> json) =>
+    jsonDecode(jsonEncode(json)) as Map<String, Object?>;
+
 /// Bytes of [json] as a backup file.
 List<int> bytesOf(Object? json) => utf8.encode(jsonEncode(json));
 
 /// The validator without a snapshot checker.
 const BackupValidator plainValidator = BackupValidator();
+
+/// The rows of the sixteen backup tables a correct export of [db] contains,
+/// rendered as text and sorted: active rows only, and only checks of active
+/// habits.
+Future<Map<String, List<String>>> expectedExportRows(AppDatabase db) async {
+  List<String> text(Iterable<Object> rows) =>
+      rows.map((row) => row.toString()).toList()..sort();
+
+  final habits = await (db.select(
+    db.habits,
+  )..where((t) => t.deletedAtUtc.isNull())).get();
+  final habitIds = {for (final habit in habits) habit.id};
+  final checks = await (db.select(
+    db.habitChecks,
+  )..where((t) => t.deletedAtUtc.isNull())).get();
+  return {
+    'profile': text(await db.select(db.profile).get()),
+    'app_settings': text(await db.select(db.appSettings).get()),
+    'module_status_history': text(
+      await db.select(db.moduleStatusHistory).get(),
+    ),
+    'dashboard_cards': text(await db.select(db.dashboardCards).get()),
+    'goal_versions': text(await db.select(db.goalVersions).get()),
+    'daily_goal_snapshots': text(await db.select(db.dailyGoalSnapshots).get()),
+    'weight_entries': text(
+      await (db.select(
+        db.weightEntries,
+      )..where((t) => t.deletedAtUtc.isNull())).get(),
+    ),
+    'step_days': text(
+      await (db.select(
+        db.stepDays,
+      )..where((t) => t.deletedAtUtc.isNull())).get(),
+    ),
+    'water_entries': text(
+      await (db.select(
+        db.waterEntries,
+      )..where((t) => t.deletedAtUtc.isNull())).get(),
+    ),
+    'meal_entries': text(
+      await (db.select(
+        db.mealEntries,
+      )..where((t) => t.deletedAtUtc.isNull())).get(),
+    ),
+    'focus_sessions': text(
+      await (db.select(
+        db.focusSessions,
+      )..where((t) => t.deletedAtUtc.isNull())).get(),
+    ),
+    'workout_entries': text(
+      await (db.select(
+        db.workoutEntries,
+      )..where((t) => t.deletedAtUtc.isNull())).get(),
+    ),
+    'tasks': text(
+      await (db.select(db.tasks)..where((t) => t.deletedAtUtc.isNull())).get(),
+    ),
+    'habits': text(habits),
+    'habit_checks': text(checks.where((c) => habitIds.contains(c.habitId))),
+    'reminder_rules': text(await db.select(db.reminderRules).get()),
+  };
+}
+
+/// ALL rows of the sixteen backup tables of [db] (no filtering).
+Future<Map<String, List<String>>> backupTablesDump(AppDatabase db) async {
+  final dump = await dumpDatabase(db);
+  return {
+    for (final entry in dump.entries)
+      ...(_isBackupTable(entry.key) ? {entry.key: entry.value} : {}),
+  };
+}
+
+bool _isBackupTable(String name) => const {
+  'profile',
+  'app_settings',
+  'module_status_history',
+  'dashboard_cards',
+  'goal_versions',
+  'daily_goal_snapshots',
+  'weight_entries',
+  'step_days',
+  'water_entries',
+  'meal_entries',
+  'focus_sessions',
+  'workout_entries',
+  'tasks',
+  'habits',
+  'habit_checks',
+  'reminder_rules',
+}.contains(name);
+
+/// Some rows that are unrelated to [populateRichDatabase]: other ids, other
+/// values, plus XP awards, a receipt and a scheduled notification. After an
+/// import none of them may exist.
+Future<void> populateOtherData(AppDatabase db) async {
+  await db
+      .into(db.profile)
+      .insert(
+        ProfileCompanion.insert(
+          id: const Value('local'),
+          displayName: const Value('Anderes Profil'),
+          startedLocalDate: LocalDate(2025, 6, 1),
+          createdAtUtc: DateTime.utc(2025, 6, 1, 6),
+          updatedAtUtc: DateTime.utc(2025, 6, 2, 6),
+          rowVersion: const Value(11),
+        ),
+        mode: InsertMode.insertOrReplace,
+      );
+  await db
+      .into(db.weightEntries)
+      .insert(
+        WeightEntriesCompanion.insert(
+          id: uuid(0xA01),
+          weightGrams: 99900,
+          occurredAtUtc: DateTime.utc(2025, 6, 2, 6),
+          localDate: LocalDate(2025, 6, 2),
+          timezoneId: berlin,
+          gamificationEligible: true,
+          createdAtUtc: DateTime.utc(2025, 6, 2, 6),
+          updatedAtUtc: DateTime.utc(2025, 6, 2, 6),
+        ),
+      );
+  await db
+      .into(db.habits)
+      .insert(
+        HabitsCompanion.insert(
+          id: uuid(0xA02),
+          title: 'Altes Habit',
+          startedLocalDate: LocalDate(2025, 6, 1),
+          createdAtUtc: DateTime.utc(2025, 6, 1, 6),
+          updatedAtUtc: DateTime.utc(2025, 6, 1, 6),
+        ),
+      );
+  await db
+      .into(db.habitChecks)
+      .insert(
+        HabitChecksCompanion.insert(
+          id: uuid(0xA03),
+          habitId: uuid(0xA02),
+          localDate: LocalDate(2025, 6, 2),
+          checkedAtUtc: DateTime.utc(2025, 6, 2, 7),
+          timezoneId: berlin,
+          eligibility: true,
+          createdAtUtc: DateTime.utc(2025, 6, 2, 7),
+          updatedAtUtc: DateTime.utc(2025, 6, 2, 7),
+        ),
+      );
+  await db
+      .into(db.reminderRules)
+      .insert(
+        ReminderRulesCompanion.insert(
+          id: uuid(0xA04),
+          moduleId: 'nutrition',
+          kind: 'water',
+          localTime: const Value(LocalTime(9, 0)),
+          enabled: true,
+          route: '/old',
+        ),
+      );
+  await db
+      .into(db.xpAwards)
+      .insert(
+        XpAwardsCompanion.insert(
+          awardKey: 'weight:2025-06-02',
+          localDate: LocalDate(2025, 6, 2),
+          sourceKind: 'weight',
+          points: 10,
+          ruleVersion: 1,
+        ),
+      );
+  await db
+      .into(db.commandReceipts)
+      .insert(
+        CommandReceiptsCompanion.insert(
+          commandId: uuid(0xA05),
+          commandType: 'weight.create',
+          committedAtUtc: DateTime.utc(2025, 6, 2, 6),
+        ),
+      );
+  await db
+      .into(db.scheduledNotifications)
+      .insert(
+        ScheduledNotificationsCompanion.insert(
+          semanticKey: 'old:key',
+          fireAtUtc: DateTime.utc(2025, 6, 3, 9),
+          route: '/old',
+          sourceRuleId: Value(uuid(0xA04)),
+        ),
+      );
+}
