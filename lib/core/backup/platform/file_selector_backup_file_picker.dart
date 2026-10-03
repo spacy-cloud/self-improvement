@@ -60,19 +60,25 @@ final class FileSelectorBackupFilePicker implements BackupFilePicker {
     }
   }
 
-  /// Removes the picker's copy of the chosen document (`<cache>/<uuid>/<name>`).
-  /// Only a file inside such a folder directly below the cache directory is
-  /// touched: on desktop platforms the picker returns the user's own file, and
-  /// that must never be deleted. Best effort, never throws.
+  /// Removes the picker's copy of the chosen document (`<cache>/<uuid>/<name>`)
+  /// and its folder. Only a file inside such a folder directly below the cache
+  /// directory is touched: on desktop platforms the picker returns the user's
+  /// own file, and that must never be deleted. The folder goes only when the
+  /// copy was all it held. Best effort, never throws.
   Future<void> _discardPickedCopy(XFile file) async {
     try {
       final cache = await _cacheDirectory();
       final folder = p.dirname(file.path);
       if (p.equals(p.dirname(folder), cache.path) &&
           isPickedCopyFolderName(p.basename(folder))) {
+        final copy = File(file.path);
+        if (await copy.exists()) {
+          await copy.delete();
+        }
         final directory = Directory(folder);
-        if (await directory.exists()) {
-          await directory.delete(recursive: true);
+        if (await directory.exists() &&
+            await directory.list(followLinks: false).isEmpty) {
+          await directory.delete();
         }
       }
     } on Object catch (error) {

@@ -157,7 +157,7 @@ void main() {
 
     test(
       'at start the picker copies left in the cache go: UUID folders that hold '
-      'only JSON files, nothing else',
+      'only backup files (.json, .txt, .bin), nothing else',
       () async {
         final sep = Platform.pathSeparator;
         void put(String relative, [String content = '{}']) {
@@ -169,9 +169,14 @@ void main() {
         const copy = '123e4567-e89b-42d3-a456-426614174000';
         const mixed = '223e4567-e89b-42d3-a456-426614174000';
         const foreign = '323e4567-e89b-42d3-a456-426614174000';
+        // The plugin names a copy after the MIME type the provider reports.
+        const asText = '423e4567-e89b-42d3-a456-426614174000';
+        const asBinary = '523e4567-e89b-42d3-a456-426614174000';
         put('$copy${sep}meine-sicherung.json');
+        put('$asText${sep}meine-sicherung.txt');
+        put('$asBinary${sep}meine-sicherung.BIN');
         put('$mixed${sep}a.json');
-        put('$mixed${sep}notes.txt', 'keep');
+        put('$mixed${sep}notes.pdf', 'keep');
         put('$foreign${sep}image.png', 'keep');
         put('notes${sep}b.json');
         put('loose.json');
@@ -185,6 +190,8 @@ void main() {
         );
 
         expect(Directory('${cache.path}$sep$copy').existsSync(), isFalse);
+        expect(Directory('${cache.path}$sep$asText').existsSync(), isFalse);
+        expect(Directory('${cache.path}$sep$asBinary').existsSync(), isFalse);
         expect(
           File('${cache.path}$sep$mixed${sep}a.json').existsSync(),
           isTrue,
@@ -317,6 +324,27 @@ void main() {
           expect(picked!.bytes, bytesOf('{"a":1}'));
           expect(copy.existsSync(), isFalse);
           expect(copy.parent.existsSync(), isFalse);
+        },
+      );
+
+      test(
+        'takes only the copy when its folder holds anything else (a folder '
+        'that merely has a UUID as its name is never deleted as a whole)',
+        () async {
+          final copy = writeFile(
+            cache,
+            '$copyFolder${Platform.pathSeparator}meine-sicherung.txt',
+            '{}',
+          );
+          final other = writeFile(
+            cache,
+            '$copyFolder${Platform.pathSeparator}foto.png',
+            'keep',
+          );
+          await pickerFor(copy).pickBackupFile();
+          expect(copy.existsSync(), isFalse);
+          expect(other.existsSync(), isTrue);
+          expect(other.parent.existsSync(), isTrue);
         },
       );
 

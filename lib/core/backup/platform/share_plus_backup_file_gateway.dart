@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:self_improvement/core/backup/backup_codec.dart';
-import 'package:self_improvement/core/backup/backup_format.dart';
 import 'package:self_improvement/core/backup/platform/backup_file_gateway.dart';
 import 'package:self_improvement/core/backup/platform/picked_copy_folder.dart';
 import 'package:share_plus/share_plus.dart';
@@ -94,7 +93,8 @@ final class SharePlusBackupFileGateway implements BackupFileGateway {
 
   /// Removes copies the file picker left behind when the process ended before
   /// the picker adapter could delete them: UUID folders directly in the cache
-  /// that hold nothing but `.json` files. Anything else stays.
+  /// that hold nothing but files a backup copy can be (`.json`, `.txt`, `.bin`,
+  /// see [pickedCopyExtensions]). Anything else stays.
   Future<void> _sweepPickedCopies() async {
     final cache = await _cacheDirectory();
     if (!await cache.exists()) {
@@ -112,9 +112,7 @@ final class SharePlusBackupFileGateway implements BackupFileGateway {
   Future<bool> _holdsOnlyBackupFiles(Directory folder) async {
     var any = false;
     await for (final entity in folder.list(followLinks: false)) {
-      if (entity is! File ||
-          p.extension(entity.path).toLowerCase() !=
-              '.${BackupFormat.fileExtension}') {
+      if (entity is! File || !isPickedCopyFileName(p.basename(entity.path))) {
         return false;
       }
       any = true;
