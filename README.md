@@ -38,6 +38,7 @@ Der App-Name steht noch nicht fest und wird im Code als eine Konstante geführt 
 - `flutter_riverpod` (ohne Codegenerierung), Navigation mit `go_router`
 - Lokale Datenhaltung mit SQLite über `drift`, Diagramme mit `fl_chart`, lokale Erinnerungen mit `flutter_local_notifications`
 - JSON-Export/Import als Datei; keine Cloud, keine Konten, keine Telemetrie
+- App-Symbol: grüner Verlauf mit weißem Pfeil nach oben wie das Zeichen im Onboarding, adaptiv ab Android 8 und mit einfarbiger Ebene ab Android 13; Quelle und Lizenz in [assets/branding/README.md](assets/branding/README.md). Die iOS-Symbole sind nicht angepasst.
 
 ## Entwicklungsumgebung einrichten
 
