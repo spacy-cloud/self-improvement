@@ -49,7 +49,7 @@ class _FocusSessionDetailScreenState
       // on the session screen (save or discard).
       return AppScaffold.subpage(
         title: 'Sitzung bearbeiten',
-        onBack: () => backOrHome(context),
+        onBack: () => closeOrGoHome(context),
         body: EmptyState(
           title: 'Sitzung noch nicht abgeschlossen',
           message:
@@ -64,7 +64,7 @@ class _FocusSessionDetailScreenState
     }
     return AppScaffold.subpage(
       title: 'Sitzung bearbeiten',
-      onBack: () => backOrHome(context),
+      onBack: () => closeOrGoHome(context),
       body: async.when(
         loading: () => const ScreenLoading(),
         error: (error, stack) => ErrorState(
@@ -241,7 +241,7 @@ class _DetailFormState extends ConsumerState<_DetailForm> {
           },
           child: AppScaffold.subpage(
             title: 'Sitzung bearbeiten',
-            onBack: () => backOrHome(context),
+            onBack: () => closeOrGoHome(context),
             primaryAction: inlineAction ? null : saveButton,
             body: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,

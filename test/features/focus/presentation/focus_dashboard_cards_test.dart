@@ -98,7 +98,7 @@ void main() {
       expect(rich('10 / 25 Min.'), findsOneWidget);
       expect(find.text('Noch 15 Min. bis zu deinem Tagesziel'), findsOneWidget);
       expect(rich('1 / 3 Trainings'), findsOneWidget);
-      expect(find.text('90 Min. diese Woche'), findsOneWidget);
+      expect(find.text('90 Min.'), findsOneWidget);
     });
 
     testWidgets(
@@ -259,7 +259,8 @@ void main() {
       expect(find.text('Workout'), findsOneWidget);
       expect(rich('0 / 3 Trainings'), findsOneWidget);
       expect(find.text('Noch kein Workout diese Woche'), findsOneWidget);
-      expect(find.text('0 Min. diese Woche'), findsOneWidget);
+      expect(find.text('0 Min.'), findsOneWidget);
+      expect(find.text('diese Woche'), findsOneWidget);
       expect(workoutRing(tester).value, 0);
       await tester.tap(find.text('Training eintragen'));
       await tester.pumpAndSettle();
@@ -285,7 +286,7 @@ void main() {
         );
         final router = await pumpCards(tester, ui);
         expect(rich('2 / 3 Trainings'), findsOneWidget);
-        expect(find.text('105 Min. diese Woche'), findsOneWidget);
+        expect(find.text('105 Min.'), findsOneWidget);
         expect(find.text('Zuletzt: Upper Body'), findsOneWidget);
         expect(workoutRing(tester).value, closeTo(2 / 3, 0.0001));
         await tester.tap(find.text('Workout'));
@@ -306,7 +307,7 @@ void main() {
       }
       await pumpCards(tester, ui);
       expect(rich('5 / 3 Trainings'), findsOneWidget);
-      expect(find.text('150 Min. diese Woche'), findsOneWidget);
+      expect(find.text('150 Min.'), findsOneWidget);
       expect(workoutRing(tester).value, 1.0);
     });
 
@@ -318,7 +319,7 @@ void main() {
       expect(rich('0 / 3 Trainings'), findsOneWidget);
       await tester.addWorkout(ui, minutes: 40);
       expect(rich('1 / 3 Trainings'), findsOneWidget);
-      expect(find.text('40 Min. diese Woche'), findsOneWidget);
+      expect(find.text('40 Min.'), findsOneWidget);
 
       ui.harness.clock.setNow(DateTime.utc(2026, 10, 5, 8)); // next Monday
       ui.container.read(todayProvider.notifier).refresh();

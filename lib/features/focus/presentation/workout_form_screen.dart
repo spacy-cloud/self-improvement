@@ -71,7 +71,7 @@ class _EditLoaderState extends ConsumerState<_EditLoader> {
     }
     return AppScaffold.subpage(
       title: 'Training bearbeiten',
-      onBack: () => backOrHome(context),
+      onBack: () => closeOrGoHome(context),
       body: async.when(
         loading: () => const ScreenLoading(),
         error: (error, stack) => ErrorState(
@@ -277,7 +277,7 @@ class _WorkoutFormState extends ConsumerState<_WorkoutForm> {
       },
       child: AppScaffold.subpage(
         title: _isEdit ? 'Training bearbeiten' : 'Workout eintragen',
-        onBack: () => backOrHome(context),
+        onBack: () => closeOrGoHome(context),
         primaryAction: inlineAction ? null : saveButton,
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

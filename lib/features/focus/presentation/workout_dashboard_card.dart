@@ -82,11 +82,22 @@ class _WeekCard extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              '${summary.totalMinutes} Min. diese Woche',
-              style: AppTextStyles.bodyStrong.copyWith(
-                color: colors.textPrimary,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${summary.totalMinutes} Min.',
+                  style: AppTextStyles.bodyStrong.copyWith(
+                    color: colors.textPrimary,
+                  ),
+                ),
+                Text(
+                  'diese Woche',
+                  style: AppTextStyles.captionDefault.copyWith(
+                    color: colors.textSecondary,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
