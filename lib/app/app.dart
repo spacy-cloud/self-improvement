@@ -309,11 +309,12 @@ class _AppView extends ConsumerWidget {
           GlobalCupertinoLocalizations.delegate,
         ],
         // System follows the platform (dark means Dark); OLED only when
-        // chosen explicitly (see `themeFor`).
-        theme: AppTheme.light(),
-        darkTheme: mode == AppThemeMode.oled
-            ? AppTheme.oled()
-            : AppTheme.dark(),
+        // chosen explicitly.
+        theme: themeFor(AppThemeMode.light, Brightness.light),
+        darkTheme: themeFor(
+          mode == AppThemeMode.oled ? AppThemeMode.oled : AppThemeMode.dark,
+          Brightness.dark,
+        ),
         themeMode: mode.themeMode,
         routeInformationProvider: router.routeInformationProvider,
         routeInformationParser: router.routeInformationParser,

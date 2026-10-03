@@ -48,7 +48,7 @@ Future<void> _capture(WidgetTester tester, String name) async {
 void main() {
   group('plus menu semantics (AT34)', () {
     testSemantics(
-      'is announced as a route with its title, entries are labelled buttons',
+      'is announced as a route with its title, entries are labelled buttons (AT34)',
       (tester) async {
         final app = await pumpFullApp(tester, modules: fullFakeModules());
         await _openPlus(app);
@@ -141,7 +141,7 @@ void main() {
   group('large text and keyboard (AT33, Q02)', () {
     for (final size in responsiveSizes) {
       testWidgets(
-        'the menu at ${size.width.toInt()} px and 200 % text has every action reachable',
+        'the menu at ${size.width.toInt()} px and 200 % text has every action reachable (AT33)',
         (tester) async {
           final app = await pumpFullApp(
             tester,
@@ -187,24 +187,25 @@ void main() {
       },
     );
 
-    testWidgets('with the keyboard open the menu stays scrollable and usable', (
-      tester,
-    ) async {
-      final app = await pumpFullApp(
-        tester,
-        size: const Size(360, 640),
-        textScale: 1.5,
-        viewInsets: const EdgeInsets.only(bottom: 280),
-        modules: fullFakeModules(),
-      );
-      await _openPlus(app);
-      expect(tester.takeException(), isNull);
-      await tester.ensureVisible(_entry('meal'));
-      await tester.tap(_entry('meal'));
-      await tester.pump();
-      await app.settle();
-      expect(app.location, '/nutrition/new');
-    });
+    testWidgets(
+      'with the keyboard open the menu stays scrollable and usable (AT33)',
+      (tester) async {
+        final app = await pumpFullApp(
+          tester,
+          size: const Size(360, 640),
+          textScale: 1.5,
+          viewInsets: const EdgeInsets.only(bottom: 280),
+          modules: fullFakeModules(),
+        );
+        await _openPlus(app);
+        expect(tester.takeException(), isNull);
+        await tester.ensureVisible(_entry('meal'));
+        await tester.tap(_entry('meal'));
+        await tester.pump();
+        await app.settle();
+        expect(app.location, '/nutrition/new');
+      },
+    );
   });
 
   group('system bars (Q02)', () {

@@ -38,7 +38,7 @@ Future<void> _seedHabit(DataHarness harness) async {
 void main() {
   group('notification entry (AT29)', () {
     testWidgets(
-      'a cold start from a habit reminder opens the habit above the dashboard',
+      'a cold start from a habit reminder opens the habit above the dashboard (AT29)',
       (tester) async {
         final app = await pumpFullApp(
           tester,
@@ -58,7 +58,7 @@ void main() {
       },
     );
 
-    testWidgets('a habit that does not exist opens the habit list', (
+    testWidgets('a habit that does not exist opens the habit list (AT29)', (
       tester,
     ) async {
       final app = await pumpFullApp(
@@ -74,7 +74,9 @@ void main() {
       expect(find.byType(AppBottomNavBar), findsOneWidget);
     });
 
-    testWidgets('a switched-off module opens the dashboard', (tester) async {
+    testWidgets('a switched-off module opens the dashboard (AT29)', (
+      tester,
+    ) async {
       final app = await pumpFullApp(
         tester,
         tabs: _tabs,
