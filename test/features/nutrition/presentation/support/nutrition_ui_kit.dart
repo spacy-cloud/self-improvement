@@ -190,6 +190,10 @@ class NutritionUi {
     return (await tester.runAsync(() => meals.findById(outcome.entityId!)))!;
   }
 
+  /// The active meals of [day], read from the database.
+  Future<List<MealEntry>> mealsOn(LocalDate day) async =>
+      (await tester.runAsync(() => meals.findBetween(day, day)))!;
+
   /// Total of today's active water entries in ml, read from the database.
   Future<int> waterTotalMl() async =>
       (await tester.runAsync(() => water.loadToday(uiToday)))!.totalMl;

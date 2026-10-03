@@ -276,11 +276,13 @@ class _MealFormState extends ConsumerState<_MealForm> {
             const SizedBox(height: 14),
             AppTextField(
               key: mealKcalFieldKey,
-              label: 'Kalorien',
+              // The unit is part of the label: a suffix inside the merged
+              // field breaks the semantics tree of a scrolling form (the
+              // framework asserts while merging the suffix node).
+              label: 'Kalorien in kcal',
               requirementLabel: 'optional',
               controller: _kcal,
               hint: 'Zum Beispiel: 450',
-              suffixText: 'kcal',
               keyboardType: TextInputType.number,
               textInputAction: TextInputAction.next,
               helperText:
