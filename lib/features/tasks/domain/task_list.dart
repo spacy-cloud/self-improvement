@@ -193,3 +193,88 @@ DashboardTasks buildDashboardTasks(
     applicableOpenCount: applicable.length,
   );
 }
+
+/// Why a task list shows nothing, so the UI can pick the right empty state.
+enum TaskListEmptyReason {
+  /// There is no task at all yet ("Noch keine Aufgaben").
+  noTasks,
+
+  /// Search or priority filter match nothing ("Keine Treffer").
+  noMatches,
+
+  /// "Offen" is selected and everything is done.
+  nothingOpen,
+
+  /// "Erledigt" is selected and nothing has been completed yet.
+  nothingCompleted,
+}
+
+/// Everything the task list screen shows for one filter state.
+@immutable
+final class TaskListView {
+  const TaskListView({
+    required this.filter,
+    required this.today,
+    required this.items,
+    required this.totalCount,
+    required this.openCount,
+    required this.completedCount,
+  });
+
+  final TaskFilter filter;
+
+  /// The local day the list was built for (drives the overdue flags).
+  final LocalDate today;
+
+  /// The filtered tasks in default order, with overdue flag and due text.
+  final List<TaskListItem> items;
+
+  /// All active tasks, whatever the filter (open plus completed).
+  final int totalCount;
+
+  /// All open tasks, whatever the filter (for "Offen (3)").
+  final int openCount;
+
+  /// All completed tasks, whatever the filter.
+  final int completedCount;
+
+  /// The empty state to show, or null when [items] is not empty.
+  TaskListEmptyReason? get emptyReason {
+    if (items.isNotEmpty) {
+      return null;
+    }
+    if (totalCount == 0) {
+      return TaskListEmptyReason.noTasks;
+    }
+    if (filter.isNarrowed) {
+      return TaskListEmptyReason.noMatches;
+    }
+    return switch (filter.status) {
+      TaskStatusFilter.open => TaskListEmptyReason.nothingOpen,
+      TaskStatusFilter.completed => TaskListEmptyReason.nothingCompleted,
+      // Unreachable: "Alle" without narrowing shows every existing task.
+      TaskStatusFilter.all => TaskListEmptyReason.noTasks,
+    };
+  }
+}
+
+/// Builds the list view model of [tasks] for [filter] on the day [today].
+TaskListView buildTaskListView(
+  Iterable<Task> tasks,
+  TaskFilter filter,
+  LocalDate today,
+) {
+  final all = tasks.toList();
+  final completed = all.where((task) => task.isCompleted).length;
+  return TaskListView(
+    filter: filter,
+    today: today,
+    items: List.unmodifiable([
+      for (final task in filterAndSortTasks(all, filter))
+        TaskListItem(task: task, today: today),
+    ]),
+    totalCount: all.length,
+    openCount: all.length - completed,
+    completedCount: completed,
+  );
+}
