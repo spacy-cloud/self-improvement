@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
@@ -74,6 +75,15 @@ void main() {
     await tester.pumpWidget(const NeutralErrorWidget());
     expect(find.text(NeutralErrorWidget.message), findsOneWidget);
     expect(find.byType(Text), findsOneWidget);
+  });
+
+  test('main installs the handling before the app starts', () {
+    // `main` cannot run in a test (it starts the app), so the order is read.
+    final main = File('lib/main.dart').readAsStringSync();
+    final install = main.indexOf('installErrorHandling();');
+    final run = main.indexOf('runApp(');
+    expect(install, greaterThan(-1));
+    expect(run, greaterThan(install), reason: 'before the first frame');
   });
 
   test('a debug build keeps the framework default error widget', () {

@@ -124,4 +124,4 @@ Fehler melden: bitte Gerät und Android-Version, Debug- oder Release-Paket, die 
 adb logcat -d | grep -i "flutter\|AndroidRuntime"
 ```
 
-Die Logs der App enthalten nur Fehlertypen, keine Eingaben.
+Ein Release-Paket protokolliert bei unbekannten Fehlern nur den Fehlertyp und die Bibliothek. Ein Debug-Build (die Variante zum Ausprobieren in Android Studio) gibt zusätzlich den vollständigen Bericht des Frameworks aus; der kann Texte aus deinen Eingaben enthalten. Schau Logs deshalb an, bevor du sie weitergibst.
