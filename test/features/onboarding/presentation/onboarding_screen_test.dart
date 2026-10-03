@@ -17,6 +17,20 @@ import '../../../support/pump_app.dart';
 import '../support/onboarding_steps.dart';
 import '../support/onboarding_test_env.dart';
 
+/// Taps every module card once (a tap anywhere on the card switches it).
+Future<void> switchAllModulesOff(WidgetTester tester) async {
+  for (final title in <String>[
+    'Gewicht & Körper',
+    'Wasser & Ernährung',
+    'Fokus & Workouts',
+    'Aufgaben & Gewohnheiten',
+    'Gamification',
+  ]) {
+    await tester.tap(find.text(title));
+    await tester.pump();
+  }
+}
+
 void main() {
   group('first start', () {
     testWidgets(
@@ -123,10 +137,7 @@ void main() {
           findsNothing,
         );
 
-        for (var i = 0; i < 5; i++) {
-          await tester.tap(switches.at(i));
-          await tester.pump();
-        }
+        await switchAllModulesOff(tester);
         expect(
           tester
               .widgetList<AppSwitch>(switches)
@@ -365,11 +376,7 @@ void main() {
     ) async {
       final env = await pumpOnboarding(tester);
       await goToStep(tester, OnboardingStep.modules);
-      final switches = find.byType(AppSwitch);
-      for (var i = 0; i < 5; i++) {
-        await tester.tap(switches.at(i));
-        await tester.pump();
-      }
+      await switchAllModulesOff(tester);
       await tapPrimary(tester);
       await tapPrimary(tester);
       expect(find.text('Deine Tagesziele'), findsOneWidget);

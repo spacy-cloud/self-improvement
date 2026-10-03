@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:self_improvement/core/commands/command_runner.dart';
+import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/core/errors/app_failure.dart';
 import 'package:self_improvement/core/goals/data/goal_version_repository.dart';
 import 'package:self_improvement/core/goals/domain/goal_version.dart';
@@ -153,6 +154,7 @@ Future<OnboardingEnv> pumpOnboarding(
   double textScale = 1.0,
   EdgeInsets viewInsets = EdgeInsets.zero,
   bool reducedMotion = false,
+  AppThemeVariant theme = AppThemeVariant.light,
   int failures = 0,
   AppFailure error = const StorageFailure(causeType: 'TestFailure'),
   bool withRouter = false,
@@ -196,6 +198,7 @@ Future<OnboardingEnv> pumpOnboarding(
       textScale: textScale,
       viewInsets: viewInsets,
       reducedMotion: reducedMotion,
+      theme: theme,
     );
   } else {
     await pumpApp(
@@ -206,6 +209,7 @@ Future<OnboardingEnv> pumpOnboarding(
       textScale: textScale,
       viewInsets: viewInsets,
       reducedMotion: reducedMotion,
+      theme: theme,
     );
   }
   return OnboardingEnv._(harness, container, repository, exits, router);

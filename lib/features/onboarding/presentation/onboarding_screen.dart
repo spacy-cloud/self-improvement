@@ -258,7 +258,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                                   'Fertig – los geht’s',
                                 _ => 'Weiter',
                               },
-                              loading: state.submitting,
+                              loading: busy,
                               onPressed: busy
                                   ? null
                                   : (step.isLast

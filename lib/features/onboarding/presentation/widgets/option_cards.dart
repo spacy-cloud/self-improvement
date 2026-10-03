@@ -137,8 +137,12 @@ class GoalOptionCard extends StatelessWidget {
 }
 
 /// A card with a switch (a module, an on/off goal): the whole card switches
-/// the option. Uses the design system's list row, so the semantics are the
-/// usual toggle ("ein", "aus") with the name and what it offers.
+/// the option. Screen readers hear one toggle ("ein", "aus") with the name and
+/// what it offers; the switch itself is only the visual state.
+///
+/// With large text (from 160 %) the decorative icon tile is dropped and the
+/// switch moves below the text, so long words such as "Gewohnheiten" keep the
+/// full card width instead of breaking inside the word.
 class ToggleOptionCard extends StatelessWidget {
   const ToggleOptionCard({
     required this.title,
@@ -159,16 +163,76 @@ class ToggleOptionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return OptionCardFrame(
-      selected: enabled,
-      child: EntryListTile.toggle(
-        title: title,
-        subtitle: subtitle,
-        value: enabled,
-        onToggle: onChanged,
-        leading: showOnboardingIconTile(context)
-            ? onboardingIconTile(icon, accent)
-            : null,
+    final colors = context.tokens.colors;
+    final large = !showOnboardingIconTile(context);
+    void toggle() => onChanged(!enabled);
+    final texts = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Text(
+          title,
+          style: AppTextStyles.titleCard.copyWith(color: colors.textPrimary),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          subtitle,
+          style: AppTextStyles.captionDefault.copyWith(
+            color: colors.textSecondary,
+          ),
+        ),
+      ],
+    );
+    final visualSwitch = ExcludeSemantics(
+      child: IgnorePointer(
+        child: AppSwitch(
+          value: enabled,
+          onChanged: (_) {},
+          semanticLabel: title,
+        ),
+      ),
+    );
+    return Semantics(
+      container: true,
+      toggled: enabled,
+      enabled: true,
+      label: '$title, $subtitle',
+      onTap: toggle,
+      excludeSemantics: true,
+      child: OptionCardFrame(
+        selected: enabled,
+        child: TapSurface(
+          onTap: toggle,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 64),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 10, 8),
+              child: large
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4, right: 8),
+                          child: texts,
+                        ),
+                        Align(
+                          alignment: AlignmentDirectional.centerEnd,
+                          child: visualSwitch,
+                        ),
+                      ],
+                    )
+                  : Row(
+                      children: <Widget>[
+                        onboardingIconTile(icon, accent),
+                        const SizedBox(width: 14),
+                        Expanded(child: texts),
+                        const SizedBox(width: 6),
+                        visualSwitch,
+                      ],
+                    ),
+            ),
+          ),
+        ),
       ),
     );
   }
