@@ -112,6 +112,34 @@ void main() {
     });
   });
 
+  group('same data as history and analysis (A01)', () {
+    testWidgets(
+      'the day summary on screen is the summary the repository reads (A01)',
+      (tester) async {
+        final ui = await NutritionUi.create(tester);
+        await ui.addMeal(
+          'Haferflocken',
+          kcal: 420,
+          ago: const Duration(hours: 2),
+        );
+        await ui.addMeal('Apfel', ago: const Duration(hours: 1));
+        await ui.addMeal('Brot', kcal: 0);
+        await ui.pumpRoute('/nutrition');
+
+        final summary = summarizeMeals(await ui.mealsOn(uiToday));
+        expect(summary.mealCount, 3);
+        expect(summary.knownKcal, 420);
+        expect(summary.mealsWithoutKcal, 1);
+        expect(richText('420 kcal bekannt'), findsOneWidget);
+        expect(find.text('3 Mahlzeiten'), findsOneWidget);
+        expect(
+          find.text('Kalorien unvollständig: 1 Mahlzeit ohne Kalorienangabe'),
+          findsOneWidget,
+        );
+      },
+    );
+  });
+
   group('earlier days', () {
     testWidgets('are listed with their own summary and open for editing', (
       tester,

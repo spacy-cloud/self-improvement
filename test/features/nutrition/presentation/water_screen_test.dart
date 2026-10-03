@@ -181,7 +181,7 @@ void main() {
   group('quick add', () {
     testWidgets(
       '250 ml saves a real entry, reports after the commit and the undo '
-      'removes exactly it (AT10)',
+      'removes exactly it (AT10, G01)',
       (tester) async {
         final ui = await NutritionUi.create(tester, realProjection: true);
         await ui.pumpRoute('/water');
@@ -290,7 +290,7 @@ void main() {
       expect(await ui.waterCount(), 0);
     });
 
-    testWidgets('five quick adds of 250 ml earn at most 20 XP (AT11)', (
+    testWidgets('five quick adds of 250 ml earn at most 20 XP (AT11, G01)', (
       tester,
     ) async {
       final ui = await NutritionUi.create(tester, realProjection: true);
@@ -392,6 +392,31 @@ void main() {
       expect(router.state.uri.path, '/water/${entry.id}');
       expect(find.text('Eintrag bearbeiten'), findsOneWidget);
     });
+  });
+
+  group('same data as history and analysis (A01)', () {
+    testWidgets(
+      'the totals on screen are the sums the repository reads for every day '
+      '(A01)',
+      (tester) async {
+        final ui = await NutritionUi.create(tester);
+        await ui.addWater(250, ago: const Duration(hours: 1));
+        await ui.addWater(500, ago: const Duration(hours: 2));
+        await ui.addWater(1200, ago: const Duration(days: 1));
+        await ui.pumpRoute('/water');
+
+        final history = await tester.runAsync(
+          () => ui.water.loadHistory(today: uiToday, days: 14),
+        );
+        final today = history!.daysNewestFirst.first;
+        final yesterday = history.daysNewestFirst.last;
+        expect(today.totalMl, 750);
+        expect(richText('0,75 / 2,5 l'), findsOneWidget);
+        await ui.reveal(find.textContaining('1,2 l'));
+        expect(yesterday.totalMl, 1200);
+        expect(find.text('1,2 l von 2,5 l · 1 Eintrag'), findsOneWidget);
+      },
+    );
   });
 
   group('daily goal', () {
