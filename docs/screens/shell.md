@@ -162,7 +162,9 @@ Die Navigations-Einstiege des Shells (Plus-Menü, Benachrichtigungen) öffnen Se
 | `test/features/modules/...` | Schalter, Sperre, Karten, Neustart, Layout, Lebenszyklus | AT02, AT03, AT04, AT19, AT27, AT33, AT34 |
 | `test/app/error_handling_test.dart` | zentrale Fehlerbehandlung: nur Typ im Log, neutrales Widget außerhalb des Debug-Modus (BS-85) | - |
 | `test/app/module_tab_gate_test.dart` | Habits-Tab bei ausgeschaltetem Aufgabenmodul: Hinweis und Aktivieren, keine Daten, keine Schreibaktion (BS-88) | AT03 |
-| `test/app/motion_test.dart` | Seitenwechsel und Plus-Sheet mit und ohne reduzierte Bewegung (App-Schalter und Systemflag) (BS-87) | - |
+| `test/app/motion_test.dart` | Seitenwechsel und Plus-Sheet mit und ohne reduzierte Bewegung (App-Schalter und Systemflag), Umschalten bei offenen Seiten und Sheets (BS-87, BS-92) | - |
+| `test/app/motion_rules_test.dart` | Quelltext-Regeln: Jedes Sheet, jede Snackbar, jedes Menü und jede gepushte Seite erreicht den Schalter „Reduzierte Bewegung“ (BS-87) | - |
+| `test/app/route_sweep_test.dart` | jede Route ohne Kennung bei fünf Größen (bis 320 px mit 200 % Schrift), mit 30 Tagen Daten und in Dark und OLED: kein Überlauf, Tippflächen ab 48 px, Beschriftungen (BS-78) | AT33, AT35 |
 | `test/app/confirmation_sheet_scope_test.dart` | Bestätigung von einem Tab aus deckt die ganze Fläche inklusive Navigationsleiste ab (BS-86) | AT34 |
 | `test/app/empty_states_scroll_test.dart` | Leer- und Fehlerzustände der Verlaufsseiten scrollen auf kleinen Bildschirmen (BS-86) | AT33 |
 | `integration_test/app_smoke_test.dart` | Start auf In-Memory-Datenbank hinter dem Onboarding, Tabwechsel, Plus öffnen und schließen (läuft im Emulator-Job; kein Abnahme-Id im Namen) | - |

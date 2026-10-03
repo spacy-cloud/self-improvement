@@ -95,7 +95,7 @@ Neue Testdateien unter `test/features/focus/` (240 neue Tests; der Gesamtstand s
 |---|---|---|
 | `presentation/focus_start_screen_test.dart` | 26 | Einrichtung, Grenzen 4/5/180/181 Minuten, Start, Doppeltipp, Wiederaufnahme, Heute-Karte (AT12, AT16, AT25, AT27, F01, F02) |
 | `presentation/focus_session_screen_test.dart` | 36 | laufend/pausiert/Bestätigung, Neustart, Uhrsprung, Mitternacht, Sommerzeit, XP, 299/300 Sekunden, Verwerfen, Fehler, Semantik (AT12, AT16-AT18, AT25, AT27, AT33, AT34, F01, G01) |
-| `presentation/focus_history_screens_test.dart` | 22 | Verlauf, Zonen, seitenweise Laden, Notiz, Löschen mit Rückgängig, Konflikte, Verwerfen-Dialog (AT23, AT25, AT27, AT36, F02) |
+| `presentation/focus_history_screens_test.dart` | 23 | Verlauf, Zonen, seitenweise Laden, Notiz, Löschen mit Rückgängig, Konflikte, Verwerfen-Dialog (AT23, AT25, AT27, AT36, F02) |
 | `presentation/workout_form_screen_test.dart` | 26 | leeres Formular, Grenzen 0/1/600/601, optionale Felder, Fehler, Wiederholung, Bearbeiten, Löschen (AT12, AT20, AT23, AT27, F03) |
 | `presentation/workout_overview_screens_test.dart` | 24 | Woche Montag bis Sonntag, Ring bei 100 Prozent, Wochenwechsel, Liste, Zonen (AT20, AT23, AT25, AT36, F03, A01) |
 | `presentation/focus_dashboard_cards_test.dart` | 16 | Karten, Wiederaufnahme, Übergang auf dem Dashboard, getrennte Zahlen (AT16, AT17, AT20, AT34) |

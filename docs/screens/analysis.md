@@ -63,7 +63,7 @@ Karte, Wochenkarte und Tabellenzeile sind je ein Block mit dem Sprechsatz der En
 - `analysis_accessibility_test.dart` (48; AT33 mit 320/360/393/430 px bei 100 % und 200 %, Tap-Ziele, Sprechtexte AT34, Themen und reduzierte Bewegung AT35, Q03)
 - `analysis_acceptance_test.dart` (10; Ende-zu-Ende mit echter In-Memory-Datenbank: AT15, AT08, AT14, AT20, AT23, Grenztage, AT03/AT04, neuer Tag)
 
-Engine: `flutter test test/core/analysis` (279). Feste Uhr 2026-10-03 Europe/Berlin, synthetische Daten.
+Engine: `flutter test test/core/analysis` (280). Feste Uhr 2026-10-03 Europe/Berlin, synthetische Daten.
 
 ## Offene Punkte
 

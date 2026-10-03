@@ -119,7 +119,7 @@ Die Aktion „Gewicht eintragen“ ist unten angeheftet, sobald es Einträge gib
 
 ## 6. Tests
 
-Befehle: `flutter test test/features/body` (238 Tests, grün), davon `flutter test test/features/body/steps` (79) für die Schritte und 159 für das Gewicht (`application`, `data`, `domain`, `presentation`). Echte In-Memory-Datenbank, feste Uhr 2026-10-03 Europe/Berlin, nur synthetische Gewichte und Schritte. `dart run tool/at_coverage.dart` ordnet die Tests den Abnahmefällen AT05 bis AT09, AT12, AT15, AT23 bis AT27, AT33 und AT34 zu.
+Befehle: `flutter test test/features/body` (239 Tests, grün), davon `flutter test test/features/body/steps` (79) für die Schritte und 160 für das Gewicht (`application`, `data`, `domain`, `presentation`). Echte In-Memory-Datenbank, feste Uhr 2026-10-03 Europe/Berlin, nur synthetische Gewichte und Schritte. `dart run tool/at_coverage.dart` ordnet die Tests den Abnahmefällen AT05 bis AT09, AT12, AT15, AT23 bis AT27, AT33 und AT34 zu.
 
 | Datei in `test/features/body/` | Tests | Schwerpunkt (Abnahme-IDs) |
 |---|---:|---|
@@ -131,7 +131,7 @@ Befehle: `flutter test test/features/body` (238 Tests, grün), davon `flutter te
 | `data/weight_repository_test.dart` | 34 | Anlegen mit Bedingungen, Grenzen, gleiche Messzeit, Bearbeiten (Version, Konflikt, eingefrorenes Datum), Löschen und Undo mit derselben Kennung, Atomarität, Lesen (AT05, AT06, AT07, AT12, AT23, AT26, AT27) |
 | `presentation/weight_labels_test.dart` | 11 | Bedingungstexte, neutrale Veränderungstexte, Ziel- und Zeitraumtexte, Textalternative des Diagramms (AT06, AT08, AT09) |
 | `presentation/weight_dashboard_card_test.dart` | 4 | leer, aktuelle Messung, Messung älter als eine Woche ohne Kurve, Navigation |
-| `presentation/weight_screens_test.dart` | 41 | Formular (Eingaben, Feldfehler mit Fokus, Doppelanlage, Verwerfen), Bearbeiten und Löschen mit Undo, Übersicht (leer, ein Punkt, mehrere, Ziele), Alle Messungen, Layout, Tastatur, Tippflächen, Semantik (AT05 bis AT09, AT27, AT33, AT34) |
+| `presentation/weight_screens_test.dart` | 42 | Formular (Eingaben, Feldfehler mit Fokus, Doppelanlage, Verwerfen), Bearbeiten und Löschen mit Undo, Übersicht (leer, ein Punkt, mehrere, Ziele), Alle Messungen, Layout, Tastatur, Tippflächen, Semantik (AT05 bis AT09, AT27, AT33, AT34) |
 | `steps/steps_input_test.dart` | 8 | Parser, Datumsregeln, Fortschritt (nie 100 vor dem Ziel) |
 | `steps/steps_stats_test.dart` | 14 | Kennzahlen und Texte, erfasste 0, bester Tag, Ziel je Tag (AT15) |
 | `steps/steps_repository_test.dart` | 20 | Ersetzen statt Addieren, erfasste 0, XP mit eingefrorener Schwelle, Löschen und Undo, Atomarität (AT15, AT24, AT26, AT27) |
