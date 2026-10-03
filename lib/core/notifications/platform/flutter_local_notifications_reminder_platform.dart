@@ -30,8 +30,10 @@ import 'package:timezone/timezone.dart' as tz;
 /// and the drawable `ic_stat_notification` (kept from resource shrinking by
 /// `res/raw/keep.xml`). Without the drawable the plugin refuses to initialize.
 ///
-/// ## Honest limits (derived from the plugin's source; not measured on a
-/// device)
+/// ## Honest limits
+///
+/// Derived from the plugin's source and the documented behaviour of Android's
+/// alarm manager; not measured on a device.
 ///
 /// - **Inexact.** The system delivers an inexact alarm *around* the requested
 ///   time; in doze mode a delay of several minutes is normal.

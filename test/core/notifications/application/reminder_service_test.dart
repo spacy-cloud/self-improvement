@@ -539,6 +539,9 @@ void main() {
             'a cancel would remove the delivered notification from the shade',
       );
       expect(h.platform.cancelCalls, isEmpty);
+      expect(h.platform.shade.map((r) => r.id), [
+        tenToday.notificationId,
+      ], reason: 'the delivered reminder is still visible');
       final keys = await h.rowKeys();
       expect(keys, isNot(contains('water:2026-10-03:10:00')));
       expect(keys, contains('water:2026-10-03:12:00'));

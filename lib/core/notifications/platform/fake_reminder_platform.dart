@@ -15,7 +15,10 @@ import 'package:self_improvement/core/time/clock_service.dart';
 ///   [forceStop] clears the alarms but leaves the cache, exactly like the
 ///   Android plugin whose cache outlives a forced stop of the app.
 /// - **Delivery** ([deliverDue]): fires due alarms; a delivered notification
-///   leaves both sets and lands in [delivered].
+///   leaves both sets, lands in [delivered] and stays visible in the
+///   notification [shade] until it is cancelled by id (a cancel removes a
+///   shown notification too, exactly like the plugin; [cancelAllPending] does
+///   not).
 /// - **Permission** with a configurable answer to a permission dialog.
 /// - **Failures** for every call, to test the typed error handling.
 final class FakeReminderPlatform implements ReminderPlatform {
@@ -43,6 +46,10 @@ final class FakeReminderPlatform implements ReminderPlatform {
   final Map<int, PlatformScheduleRequest> _alarms = {};
   final Map<int, PlatformScheduleRequest> _cache = {};
   final List<PlatformScheduleRequest> delivered = [];
+  final List<PlatformScheduleRequest> _shade = [];
+
+  /// Delivered notifications still visible in the notification shade.
+  List<PlatformScheduleRequest> get shade => List.unmodifiable(_shade);
 
   /// Alarms the system would deliver, by id.
   Map<int, PlatformScheduleRequest> get alarms => Map.unmodifiable(_alarms);
@@ -118,6 +125,9 @@ final class FakeReminderPlatform implements ReminderPlatform {
         .toList();
     for (final entry in due) {
       delivered.add(entry.value);
+      _shade
+        ..removeWhere((shown) => shown.id == entry.key)
+        ..add(entry.value);
       _alarms.remove(entry.key);
       _cache.remove(entry.key);
     }
@@ -208,6 +218,7 @@ final class FakeReminderPlatform implements ReminderPlatform {
     }
     _alarms.remove(notificationId);
     _cache.remove(notificationId);
+    _shade.removeWhere((shown) => shown.id == notificationId);
   }
 
   @override

@@ -112,6 +112,24 @@ void main() {
     });
 
     test(
+      'a delivered notification stays in the shade until it is cancelled',
+      () async {
+        await platform.schedule(request(1, at: DateTime.utc(2026, 10, 3, 8)));
+        await platform.schedule(request(2, at: DateTime.utc(2026, 10, 3, 8)));
+        platform.deliverDue(DateTime.utc(2026, 10, 3, 8));
+        expect(platform.shade.map((r) => r.id), [1, 2]);
+
+        // Cancelling pending notifications leaves what is shown alone ...
+        await platform.cancelAllPending();
+        expect(platform.shade.map((r) => r.id), [1, 2]);
+
+        // ... a cancel by id removes the shown notification too.
+        await platform.cancel(1);
+        expect(platform.shade.map((r) => r.id), [2]);
+      },
+    );
+
+    test(
       'a forced stop drops the alarms but the pending list survives',
       () async {
         await platform.schedule(request(1));
