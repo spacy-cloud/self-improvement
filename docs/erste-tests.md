@@ -123,6 +123,7 @@ Eine laufend gepflegte Liste steht in [known-limitations.md](known-limitations.m
 | Problem | Lösung |
 |---|---|
 | `Target of URI doesn't exist: ...g.dart` | `dart run build_runner build` im Projektordner ausführen |
+| Der Build oder `flutter test` bricht mit einem Fehler im Build-Hook von `sqlite3` ab | Der Hook lädt beim ersten Build die vorgebaute SQLite-Bibliothek von GitHub (Version aus `pubspec.lock`) und braucht dafür Netz und erreichbares GitHub; bei einer Störung (auch eine HTML-Fehlerseite statt der Bibliothek) den Befehl später wiederholen, das geladene Ergebnis liegt danach im Projektordner (`.dart_tool`) |
 | Gradle meldet ein falsches JDK | Android Studio, Einstellungen, Build Tools, Gradle: **Gradle JDK** auf das eingebettete JDK (21) stellen |
 | Gerät wird nicht erkannt | USB-Debugging prüfen, `flutter devices` und `flutter doctor` ausführen |
 | SDK-Lizenzen fehlen | `flutter doctor --android-licenses` |

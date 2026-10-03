@@ -143,7 +143,7 @@ Sichtvergleich: Das gerenderte Gewichtsformular wurde mit dem Frame `2093:2` ver
 ## 7. Offene Punkte
 
 - Auf einem Gerät nicht geprüft: TalkBack (Beschriftungen, Lesereihenfolge, Ansage der Fehlermeldungen), echte Systemschrift bis 200 %, echte Tastatur, die Material-Dialoge für Datum und Zeit und die Darstellung der Diagramme. Die Host-Tests prüfen Semantics, Tippflächen und Überlauf.
-- Das Schritteformular setzt nach einem abgelehnten Speichern den Fokus nicht auf das Feld; die Meldung steht als Live-Region am Feld. Im Gewichtsformular (Gewicht, Notiz) tut es der Fokussprung; beim Schritteformular ist das nicht umgesetzt.
+- Nach einem abgelehnten Speichern setzt das Schritteformular den Fokus auf das Feld (wie das Gewichtsformular auf Gewicht oder Notiz), damit ein Screenreader Beschriftung und Hinweis zusammen liest; die Meldung steht außerdem als Live-Region am Feld.
 - Der Anker des Wochenvergleichs kann beliebig weit zurückliegen (Wortlaut der Spezifikation), die Beschriftung „seit letzter Woche“ beziehungsweise „in 7 Tagen“ sagt das nicht.
 - Der gewählte Diagrammzeitraum von Gewicht und Schritten wird nicht über einen Prozess-Neustart gespeichert (immer 7 Tage).
 - Die System-Datums- und Zeitwähler (Material-Dialoge) folgen bei reduzierter Bewegung nur dem Systemflag, nicht dem Schalter der App.
