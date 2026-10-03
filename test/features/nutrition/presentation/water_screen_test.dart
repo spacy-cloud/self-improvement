@@ -180,8 +180,7 @@ void main() {
 
   group('quick add', () {
     testWidgets(
-      '250 ml saves a real entry, reports after the commit and the undo '
-      'removes exactly it (AT10, G01)',
+      '250 ml saves a real entry, reports after the commit and the undo removes exactly it (AT10, G01)',
       (tester) async {
         final ui = await NutritionUi.create(tester, realProjection: true);
         await ui.pumpRoute('/water');
@@ -231,8 +230,7 @@ void main() {
     );
 
     testWidgets(
-      'a failed quick add stores nothing and keeps the retry with the SAME '
-      'command id (AT27, AT12)',
+      'a failed quick add stores nothing and keeps the retry with the SAME command id (AT27, AT12)',
       (tester) async {
         late FlakyProjection flaky;
         late RecordingIdGenerator ids;
@@ -306,8 +304,7 @@ void main() {
 
   group('delete and edit', () {
     testWidgets(
-      'delete asks first, reports after the commit and the undo restores the '
-      'same entry (AT10, AT27)',
+      'delete asks first, reports after the commit and the undo restores the same entry (AT10, AT27)',
       (tester) async {
         final ui = await NutritionUi.create(tester, realProjection: true);
         final entry = await ui.addWater(
@@ -421,8 +418,7 @@ void main() {
 
   group('daily goal', () {
     testWidgets(
-      'a changed goal applies from tomorrow, today keeps its threshold '
-      '(AT24)',
+      'a changed goal applies from tomorrow, today keeps its threshold (AT24)',
       (tester) async {
         final ui = await NutritionUi.create(tester, realProjection: true);
         await ui.addWater(1250, ago: const Duration(hours: 1));

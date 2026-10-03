@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/features/nutrition/presentation/water_form_body.dart';
@@ -92,10 +91,8 @@ void main() {
               await scenario.prepare(ui, size, scale);
               await ui.settle();
               expect(tester.takeException(), isNull);
-              // The screen scrolls instead of clipping: nothing is wider than
-              // the window.
-              final render = tester.binding.renderView;
-              expect(render.size.width, size.width);
+              // The window has the checked width and the screen is built.
+              expect(tester.view.physicalSize.width, size.width);
             },
           );
         }

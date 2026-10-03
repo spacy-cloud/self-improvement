@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/core/feedback/feedback_service.dart';
@@ -10,44 +9,46 @@ import 'support/nutrition_ui_kit.dart';
 
 void main() {
   group('today', () {
-    testWidgets('counts the meals, sums the KNOWN calories and says "Kalorien '
-        'unvollständig" for a missing value (AT14, N02)', (tester) async {
-      final ui = await NutritionUi.create(tester);
-      await ui.addMeal(
-        'Haferflocken mit Beeren',
-        kcal: 420,
-        ago: const Duration(hours: 1, minutes: 50),
-      );
-      await ui.addMeal(
-        'Linsencurry mit Reis',
-        kcal: 650,
-        ago: const Duration(hours: 1),
-      );
-      await ui.addMeal('Apfel', ago: const Duration(minutes: 20));
-      await ui.pumpRoute('/nutrition');
+    testWidgets(
+      'counts the meals, sums the KNOWN calories and says "Kalorien unvollständig" for a missing value (AT14, N02)',
+      (tester) async {
+        final ui = await NutritionUi.create(tester);
+        await ui.addMeal(
+          'Haferflocken mit Beeren',
+          kcal: 420,
+          ago: const Duration(hours: 1, minutes: 50),
+        );
+        await ui.addMeal(
+          'Linsencurry mit Reis',
+          kcal: 650,
+          ago: const Duration(hours: 1),
+        );
+        await ui.addMeal('Apfel', ago: const Duration(minutes: 20));
+        await ui.pumpRoute('/nutrition');
 
-      expect(find.text('Ernährung'), findsOneWidget);
-      expect(find.text('3 Mahlzeiten'), findsOneWidget);
-      expect(richText('1.070 kcal bekannt'), findsOneWidget);
-      expect(
-        find.text('Kalorien unvollständig: 1 Mahlzeit ohne Kalorienangabe'),
-        findsOneWidget,
-      );
-      expect(find.text('420 kcal'), findsOneWidget);
-      expect(find.text('650 kcal'), findsOneWidget);
-      expect(find.text('Keine Angabe'), findsOneWidget);
-      expect(find.text('0 kcal'), findsNothing, reason: 'no invented zero');
-      expect(
-        find.text(
-          'Kalorien sind freiwillig. Ohne Angabe wird nichts geschätzt.',
-        ),
-        findsOneWidget,
-      );
-      // Newest meal first.
-      final apfel = tester.getTopLeft(find.text('Apfel')).dy;
-      final curry = tester.getTopLeft(find.text('Linsencurry mit Reis')).dy;
-      expect(apfel, lessThan(curry));
-    });
+        expect(find.text('Ernährung'), findsOneWidget);
+        expect(find.text('3 Mahlzeiten'), findsOneWidget);
+        expect(richText('1.070 kcal bekannt'), findsOneWidget);
+        expect(
+          find.text('Kalorien unvollständig: 1 Mahlzeit ohne Kalorienangabe'),
+          findsOneWidget,
+        );
+        expect(find.text('420 kcal'), findsOneWidget);
+        expect(find.text('650 kcal'), findsOneWidget);
+        expect(find.text('Keine Angabe'), findsOneWidget);
+        expect(find.text('0 kcal'), findsNothing, reason: 'no invented zero');
+        expect(
+          find.text(
+            'Kalorien sind freiwillig. Ohne Angabe wird nichts geschätzt.',
+          ),
+          findsOneWidget,
+        );
+        // Newest meal first.
+        final apfel = tester.getTopLeft(find.text('Apfel')).dy;
+        final curry = tester.getTopLeft(find.text('Linsencurry mit Reis')).dy;
+        expect(apfel, lessThan(curry));
+      },
+    );
 
     testWidgets('only missing calories show no calorie figure at all (AT14)', (
       tester,
@@ -281,8 +282,7 @@ void main() {
     });
 
     testWidgets(
-      'delete through the menu asks first, reports after the commit and the '
-      'undo restores the same meal (AT23)',
+      'delete through the menu asks first, reports after the commit and the undo restores the same meal (AT23)',
       (tester) async {
         final ui = await NutritionUi.create(tester);
         final meal = await ui.addMeal('Apfel', kcal: 80);

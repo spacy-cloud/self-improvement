@@ -17,8 +17,7 @@ PrimaryButton _primary(WidgetTester tester) =>
 void main() {
   group('edit', () {
     testWidgets(
-      'the entry is shown, save stays off until something changed, then '
-      'saves, reports after the commit and the undo restores it (AT23, AT10)',
+      'the entry is shown, save stays off until something changed, then saves, reports after the commit and the undo restores it (AT23, AT10)',
       (tester) async {
         final ui = await NutritionUi.create(tester, realProjection: true);
         final entry = await ui.addWater(
@@ -83,8 +82,7 @@ void main() {
     });
 
     testWidgets(
-      'a failed save keeps the input and the retry is the same command '
-      '(AT27, AT12)',
+      'a failed save keeps the input and the retry is the same command (AT27, AT12)',
       (tester) async {
         late FlakyProjection flaky;
         late RecordingIdGenerator ids;
@@ -152,8 +150,7 @@ void main() {
 
   group('delete', () {
     testWidgets(
-      'asks first, deletes, reports after the commit and the undo restores the '
-      'same entry (AT10, AT23)',
+      'asks first, deletes, reports after the commit and the undo restores the same entry (AT10, AT23)',
       (tester) async {
         final ui = await NutritionUi.create(tester, realProjection: true);
         final entry = await ui.addWater(500, ago: const Duration(hours: 1));

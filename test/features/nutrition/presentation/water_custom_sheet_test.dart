@@ -137,8 +137,7 @@ void main() {
 
   group('saving', () {
     testWidgets(
-      'saves amount and note at the current time, reports after the commit and '
-      'the undo removes the entry (N01, AT10)',
+      'saves amount and note at the current time, reports after the commit and the undo removes the entry (N01, AT10)',
       (tester) async {
         final ui = await NutritionUi.create(tester, realProjection: true);
         await ui.pumpRoute('/water');
@@ -212,8 +211,7 @@ void main() {
     });
 
     testWidgets(
-      'a failed save keeps the input, says so inside the form and the retry '
-      'is the same command (AT27, AT12)',
+      'a failed save keeps the input, says so inside the form and the retry is the same command (AT27, AT12)',
       (tester) async {
         late FlakyProjection flaky;
         late RecordingIdGenerator ids;

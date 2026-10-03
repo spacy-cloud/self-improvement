@@ -51,8 +51,7 @@ Future<MealEntry> _theMeal(NutritionUi ui) async =>
 void main() {
   group('create', () {
     testWidgets(
-      'a name alone is saved WITHOUT calories (not 0), reports after the '
-      'commit, earns no XP and the undo removes it (AT14, N02)',
+      'a name alone is saved WITHOUT calories (not 0), reports after the commit, earns no XP and the undo removes it (AT14, N02)',
       (tester) async {
         final ui = await NutritionUi.create(tester, realProjection: true);
         final router = await ui.pumpRoute('/');
@@ -263,8 +262,7 @@ void main() {
     });
 
     testWidgets(
-      'a failed save keeps all input and the retry is the same command '
-      '(AT27, AT12)',
+      'a failed save keeps all input and the retry is the same command (AT27, AT12)',
       (tester) async {
         late FlakyProjection flaky;
         late RecordingIdGenerator ids;
@@ -369,8 +367,7 @@ void main() {
 
   group('edit and delete', () {
     testWidgets(
-      'shows the stored values, save stays off until changed, then saves with '
-      'undo (AT23)',
+      'shows the stored values, save stays off until changed, then saves with undo (AT23)',
       (tester) async {
         final ui = await NutritionUi.create(tester);
         final meal = await ui.addMeal('Apfel', kcal: 80, note: 'Bio');
@@ -415,8 +412,7 @@ void main() {
     });
 
     testWidgets(
-      'delete asks first, reports after the commit and the undo restores the '
-      'same meal (AT23)',
+      'delete asks first, reports after the commit and the undo restores the same meal (AT23)',
       (tester) async {
         final ui = await NutritionUi.create(tester);
         final meal = await ui.addMeal('Apfel', kcal: 80);

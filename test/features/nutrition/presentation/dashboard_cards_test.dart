@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/core/feedback/feedback_service.dart';
@@ -39,8 +38,7 @@ void main() {
     );
 
     testWidgets(
-      '+250 ml is ONE operation from the dashboard to the commit, it does not '
-      'open the water screen and the undo takes amount and XP back (AT10)',
+      '+250 ml is ONE operation from the dashboard to the commit, it does not open the water screen and the undo takes amount and XP back (AT10)',
       (tester) async {
         final ui = await NutritionUi.create(tester, realProjection: true);
         final router = await ui.pumpRoute('/');
@@ -99,8 +97,7 @@ void main() {
     });
 
     testWidgets(
-      'a failed quick add stores nothing, the card says so and the retry is '
-      'the same command (AT27, AT12)',
+      'a failed quick add stores nothing, the card says so and the retry is the same command (AT27, AT12)',
       (tester) async {
         late FlakyProjection flaky;
         late RecordingIdGenerator ids;
@@ -221,8 +218,7 @@ void main() {
     });
 
     testWidgets(
-      'counts the meals and sums the known calories; missing ones say '
-      '"Kalorien unvollständig" (AT14)',
+      'counts the meals and sums the known calories; missing ones say "Kalorien unvollständig" (AT14)',
       (tester) async {
         final ui = await NutritionUi.create(tester);
         await ui.addMeal(
