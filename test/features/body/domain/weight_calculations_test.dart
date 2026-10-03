@@ -60,6 +60,62 @@ void main() {
       expect(deltaToPrevious(samples, 'missing'), isNull);
     });
 
+    test('the preview delta of a new value uses the latest earlier entry', () {
+      final samples = [
+        sample('old', '2026-10-01', 7, 72000),
+        sample('prev', '2026-10-02', 7, 71800),
+      ];
+      final when = DateTime.utc(2026, 10, 3, 7);
+      expect(
+        deltaBefore(samples, grams: 71500, occurredAtUtc: when),
+        -300,
+        reason: '71,5 - 71,8',
+      );
+      expect(
+        deltaBefore(samples, grams: 72500, occurredAtUtc: when),
+        700,
+        reason: 'a gain stays signed and neutral',
+      );
+      expect(deltaBefore(samples, grams: 71800, occurredAtUtc: when), 0);
+    });
+
+    test('the preview delta ignores later entries and the edited one', () {
+      final samples = [
+        sample('a', '2026-10-01', 7, 72000),
+        sample('edited', '2026-10-02', 7, 71800),
+        sample('later', '2026-10-03', 7, 71000),
+      ];
+      final at = DateTime.utc(2026, 10, 2, 7);
+      expect(
+        deltaBefore(
+          samples,
+          grams: 71500,
+          occurredAtUtc: at,
+          excludeId: 'edited',
+        ),
+        -500,
+        reason: 'compared with the entry before the edited one',
+      );
+      expect(
+        deltaBefore(
+          samples,
+          grams: 72500,
+          occurredAtUtc: DateTime.utc(2026, 10, 1, 7),
+          excludeId: 'a',
+        ),
+        isNull,
+        reason: 'nothing earlier than the first measurement',
+      );
+      expect(
+        deltaBefore(
+          const [],
+          grams: 71500,
+          occurredAtUtc: DateTime.utc(2026, 10, 1),
+        ),
+        isNull,
+      );
+    });
+
     test('a single measurement has no comparison', () {
       expect(
         deltaToPrevious([sample('a', '2026-10-03', 7, 71500)], 'a'),

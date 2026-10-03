@@ -47,6 +47,29 @@ int? deltaToPrevious(Iterable<WeightSample> samples, String id) {
   return sorted[index].grams - sorted[index - 1].grams;
 }
 
+/// Change of a (new or edited) measurement of [grams] taken at
+/// [occurredAtUtc] compared with the latest measurement taken strictly before
+/// it; [excludeId] leaves the measurement being edited out. Null without an
+/// earlier measurement ("Noch kein Vergleich").
+int? deltaBefore(
+  Iterable<WeightSample> samples, {
+  required int grams,
+  required DateTime occurredAtUtc,
+  String? excludeId,
+}) {
+  final earlier = chronological(
+    samples.where(
+      (sample) =>
+          sample.id != excludeId &&
+          sample.occurredAtUtc.isBefore(occurredAtUtc),
+    ),
+  );
+  if (earlier.isEmpty) {
+    return null;
+  }
+  return grams - earlier.last.grams;
+}
+
 /// Week comparison: current minus the latest measurement dated on or before
 /// `today - 7` calendar days; null without that anchor ("Noch kein
 /// Wochenvergleich") or without a current weight.

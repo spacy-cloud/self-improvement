@@ -135,6 +135,33 @@ final class WeightRejected extends WeightSubmitResult {
   const WeightRejected();
 }
 
+/// Outcome of [WeightFormController.deleteEntry].
+sealed class WeightDeleteResult {
+  const WeightDeleteResult();
+}
+
+/// Deleted. [outcome] carries the undo action that restores the same id.
+final class WeightDeleted extends WeightDeleteResult {
+  const WeightDeleted(this.outcome);
+
+  final CommandOutcome outcome;
+
+  /// Success message after the commit.
+  String get message => 'Messung gelöscht';
+}
+
+/// Ignored because a save or delete is already running (double tap).
+final class WeightDeleteBusy extends WeightDeleteResult {
+  const WeightDeleteBusy();
+}
+
+/// Not deleted (for example the entry vanished or the database failed).
+final class WeightDeleteFailed extends WeightDeleteResult {
+  const WeightDeleteFailed(this.failure);
+
+  final AppFailure failure;
+}
+
 /// Controller of the new/edit weight form.
 class WeightFormController extends Notifier<WeightFormState> {
   WeightFormController(this.args);
@@ -335,6 +362,35 @@ class WeightFormController extends Notifier<WeightFormState> {
       state = state.copyWith(submitting: false, submitFailure: () => failure);
     }
     return const WeightRejected();
+  }
+
+  /// Deletes the edited measurement (soft delete with an undo that restores
+  /// the same id). Only valid in edit mode; the UI asks for confirmation first.
+  Future<WeightDeleteResult> deleteEntry() async {
+    final entry = args.entry;
+    if (entry == null) {
+      throw StateError('Only an existing measurement can be deleted');
+    }
+    if (state.submitting) {
+      return const WeightDeleteBusy();
+    }
+    final commandId = _tracker.idFor(('delete', entry.id));
+    state = state.copyWith(submitting: true, submitFailure: () => null);
+    try {
+      final outcome = await ref
+          .read(weightRepositoryProvider)
+          .delete(commandId: commandId, id: entry.id);
+      _tracker.completed();
+      if (ref.mounted) {
+        state = state.copyWith(submitting: false, dirty: false);
+      }
+      return WeightDeleted(outcome);
+    } on AppFailure catch (failure) {
+      if (ref.mounted) {
+        state = state.copyWith(submitting: false, submitFailure: () => failure);
+      }
+      return WeightDeleteFailed(failure);
+    }
   }
 
   Map<String, String> _without(String field) {

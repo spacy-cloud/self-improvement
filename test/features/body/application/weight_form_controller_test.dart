@@ -388,5 +388,48 @@ void main() {
         70000,
       );
     });
+
+    test('deleting soft-deletes; the undo restores the same id', () async {
+      final entry = await seedEntry();
+      final args = WeightFormArgs.edit(entry);
+      final result = await controller(args).deleteEntry();
+      expect(result, isA<WeightDeleted>());
+      expect((result as WeightDeleted).message, 'Messung gelöscht');
+      final repository = container.read(weightRepositoryProvider);
+      expect(await repository.findById(entry.id), isNull);
+
+      await result.outcome.undo!.run(harness.ids.newId());
+      final restored = (await repository.findById(entry.id))!;
+      expect(restored.id, entry.id);
+      expect(restored.weightGrams, 71800);
+    });
+
+    test('a second delete while one is running is ignored', () async {
+      final entry = await seedEntry();
+      final args = WeightFormArgs.edit(entry);
+      final first = controller(args).deleteEntry();
+      final second = controller(args).deleteEntry();
+      expect(await second, isA<WeightDeleteBusy>());
+      expect(await first, isA<WeightDeleted>());
+    });
+
+    test(
+      'deleting an entry that is already gone reports the failure',
+      () async {
+        final entry = await seedEntry();
+        final args = WeightFormArgs.edit(entry);
+        await container
+            .read(weightRepositoryProvider)
+            .delete(commandId: 'elsewhere', id: entry.id);
+        final result = await controller(args).deleteEntry();
+        expect(result, isA<WeightDeleteFailed>());
+        expect(formState(args).submitting, isFalse);
+        expect(formState(args).submitFailure, isNotNull);
+      },
+    );
+
+    test('only an existing measurement can be deleted', () {
+      expect(() => controller(create).deleteEntry(), throwsStateError);
+    });
   });
 }
