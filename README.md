@@ -13,7 +13,7 @@ Der App-Name steht noch nicht fest und wird im Code als eine Konstante geführt 
 | Design | Freigegeben (V1, 02.10.2026) |
 | Umsetzung | Android V1 im Jira-Epic [BS-51](https://spacy-cloud.atlassian.net/browse/BS-51): Kern und alle fünf Module sind umgesetzt, der Integrationsbranch `feature/BS-51-android-v1` liegt als Entwurfs-PR gegen `main`. Stand der Anforderungen und Abnahmefälle mit Nachweisen und offenen Punkten: [docs/requirements-matrix.md](docs/requirements-matrix.md) |
 | Tests | 6472 Host-Tests lokal bestanden (Stand 2026-10-03, Code-Stand `873f9ff`), Analyse und Format ohne Befund; das CI-Ergebnis steht im Pull Request. Kein Test auf einem Gerät: Details und Grenzen in [docs/test-report.md](docs/test-report.md) |
-| Abnahme | Nicht abgenommen: Die Abnahme entscheidet das Team, kein Jira-Ticket ist auf „Erledigt“ |
+| Abnahme | Nicht abgenommen: Die Abnahme entscheidet das Team, kein Umsetzungsticket der V1 (BS-52 bis BS-92) ist auf „Erledigt“ |
 | iOS | Projektdateien vorbereitet, nicht gebaut und nicht getestet |
 
 ## Dokumentation

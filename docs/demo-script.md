@@ -57,6 +57,6 @@ Die Zeiten sind Richtwerte; Schritte mit „optional“ entfallen bei Zeitnot.
 - **Kein Gerätetest der Barrierefreiheit.** Tippflächen, Beschriftungen, Layout bei 200 % Text und Kontraste sind im Host-Test belegt; TalkBack und die echte Systemschrift wurden nicht geprüft.
 - **Erinnerungen:** Zustellung, Systemdialog und das Verhalten nach Force-Stop sind nicht auf einem Gerät geprüft; die Zustellung ist ungenau getaktet.
 - **Der Release-Build** wird in der CI gebaut (mit Debug-Schlüssel signiert), aber nirgends gestartet.
-- **Keine Abnahme.** Kein Ticket ist abgenommen, die Abnahme entscheidet das Team; der Name „App-Name“ ist ein Platzhalter. Zu den Tests gilt nur, was die Befehle im [Testbericht](test-report.md) zeigen: lokal laufen alle Host-Tests grün (kein Gerätetest), das CI-Ergebnis steht im Pull Request.
+- **Keine Abnahme.** Kein Umsetzungsticket ist abgenommen, die Abnahme entscheidet das Team; der Name „App-Name“ ist ein Platzhalter. Zu den Tests gilt nur, was die Befehle im [Testbericht](test-report.md) zeigen: lokal laufen alle Host-Tests grün (kein Gerätetest), das CI-Ergebnis steht im Pull Request.
 - **XP und Streak sind ein lokaler Motivationsmechanismus.** Die Uhr des Geräts ist ohne Server nicht manipulationssicher.
 - **Die Demo-Daten sind synthetisch.** Die gezeigten Werte beschreiben keine Person.

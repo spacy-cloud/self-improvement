@@ -19,7 +19,7 @@ Letzter Stand: 2026-10-03, Code-Stand `873f9ff` (Integrationsbranch `feature/BS-
 
 Das Ergebnis der CI-Läufe steht im Pull Request, nicht in dieser Datei; die Ergebnisse der lokalen Läufe mit Befehlen stehen in [test-report.md](test-report.md).
 
-**Bedeutung von `umgesetzt`.** Der Code ist vorhanden und die Host-Tests, die das Verhalten der Anforderung prüfen, laufen grün. Das heißt nicht „abgenommen“: Die Abnahme ist eine Entscheidung des Teams, und kein Ticket ist in Jira auf „Erledigt“ gesetzt. `teilweise` heißt: Die Anwendungslogik ist im Host-Test belegt, die Anforderung nennt aber einen Schritt auf Betriebssystem- oder Hardware-Ebene, den kein automatisierter Test ausführt; der offene Teil steht dabei. `nicht prüfbar` heißt: Nur ein Gerät oder ein Mensch kann es beurteilen; Host-Tests liefern höchstens Stellvertreter.
+**Bedeutung von `umgesetzt`.** Der Code ist vorhanden und die Host-Tests, die das Verhalten der Anforderung prüfen, laufen grün. Das heißt nicht „abgenommen“: Die Abnahme ist eine Entscheidung des Teams, und kein Umsetzungsticket (BS-52 bis BS-92) ist in Jira auf „Erledigt“ gesetzt; „Wird überprüft“ heißt nur, dass das Team prüfen kann. `teilweise` heißt: Die Anwendungslogik ist im Host-Test belegt, die Anforderung nennt aber einen Schritt auf Betriebssystem- oder Hardware-Ebene, den kein automatisierter Test ausführt; der offene Teil steht dabei. `nicht prüfbar` heißt: Nur ein Gerät oder ein Mensch kann es beurteilen; Host-Tests liefern höchstens Stellvertreter.
 
 **Zählung der Abnahmefälle.** `dart run tool/at_coverage.dart` (mit `--markdown` als Tabelle) zählt Aufrufe von `test`, `testWidgets` und `group`, deren Name die Id (zum Beispiel `AT12`) nennt. Eine benannte Gruppe zählt einmal, auch wenn sie mehrere Tests enthält. Die Zahlen in Abschnitt 3 sind diese Zählung, Stand dieses Commits; sie sind ein Index, kein Beweis. Die inhaltliche Aussage je Abnahmefall stammt aus dem Lesen der benannten Tests.
 
@@ -171,7 +171,7 @@ Zusammenfassung: von 36 Abnahmefällen sind 23 `umgesetzt` (AT03, AT04, AT05, AT
 
 ## 5. Zugeordnete Jira-Akzeptanzkriterien mit Nachweisen
 
-Die Akzeptanzkriterien jedes Tickets stehen in der Jira-Beschreibung. Diese Datei trägt sie nicht je Kriterium ein, weil kein Ticket abgenommen ist: Die Zuordnung Kriterium zu Nachweis (Testdatei, Testname, CI-Lauf, Gerätenachweis) folgt mit der Teamabnahme. Die Nachweise auf der Ebene der Anforderungen und Abnahmefälle stehen in den Abschnitten 2 und 3.
+Die Akzeptanzkriterien jedes Tickets stehen in der Jira-Beschreibung. Diese Datei trägt sie nicht je Kriterium ein, weil kein Umsetzungsticket abgenommen ist: Die Zuordnung Kriterium zu Nachweis (Testdatei, Testname, CI-Lauf, Gerätenachweis) folgt mit der Teamabnahme. Die Nachweise auf der Ebene der Anforderungen und Abnahmefälle stehen in den Abschnitten 2 und 3.
 
 ## 6. Offene Punkte und nicht prüfbare Anforderungen
 
@@ -192,7 +192,7 @@ Offene Arbeit und Entscheidungen:
 
 - [BS-78](https://spacy-cloud.atlassian.net/browse/BS-78) (Geräteabnahme Responsive, Tastatur, TalkBack, Themes): Der automatisierte Teil (Routen-Durchlauf) ist umgesetzt; TalkBack, echte Systemschrift und Tastatur und der Bildvergleich mit Figma auf einem Gerät sind offen.
 - [BS-76](https://spacy-cloud.atlassian.net/browse/BS-76): Der Emulator-Job führt den Smoke-Test und sieben Abläufe mit dem echten Produktionsstart aus (Beschreibung in [integration-tests.md](integration-tests.md)); nicht automatisiert sind Systemdialoge, Teilen-Menü, Dateiauswahl, TalkBack und die Benachrichtigungszustellung, und es gibt keinen Lauf auf einem echten Handy.
-- [BS-79](https://spacy-cloud.atlassian.net/browse/BS-79): Prüfzyklus 1 ist gelaufen, die Gesamtprüfung nicht abgeschlossen; BS-81 bis BS-89 sind korrigiert, aber nicht abgenommen.
+- [BS-79](https://spacy-cloud.atlassian.net/browse/BS-79): Prüfzyklus 1 und 2 sind gelaufen, Zyklus 3 prüft die Korrekturen aus Zyklus 2 (Ergebnis in Jira, BS-79); die Gesamtprüfung ist nicht abgeschlossen; BS-81 bis BS-92 sind korrigiert, aber nicht abgenommen.
 - Formale Punkte: App-Name ([BS-47](https://spacy-cloud.atlassian.net/browse/BS-47)) und benannte Figma-Version ([BS-49](https://spacy-cloud.atlassian.net/browse/BS-49)).
 - Bekannte, dokumentierte und nicht behobene Eigenschaften der Oberfläche: [known-limitations.md](known-limitations.md).
-- Abnahme: Kein Ticket ist abgenommen; `umgesetzt` in dieser Matrix beschreibt Code und grüne Host-Tests, nicht die Entscheidung des Teams.
+- Abnahme: Kein Umsetzungsticket ist abgenommen; `umgesetzt` in dieser Matrix beschreibt Code und grüne Host-Tests, nicht die Entscheidung des Teams.
