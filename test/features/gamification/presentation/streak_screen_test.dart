@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/core/design/design.dart';
@@ -48,8 +47,7 @@ void main() {
   ];
 
   testWidgets(
-    'shows the running streak, the week with dates and status and the figures '
-    '(G02)',
+    '(G02) shows the running streak, the week with dates and status and the figures',
     (tester) async {
       await _pump(tester, active: activeDays);
       final semantics = tester.ensureSemantics();
@@ -290,8 +288,8 @@ void main() {
   );
 
   testWidgets(
-    'at large text the week becomes a list with full dates and visible '
-    'status words (AT33)',
+    '(AT33) at large text the week becomes a list with full dates and visible '
+    'status words',
     (tester) async {
       await _pump(tester, active: activeDays, scale: 2.0);
       expect(find.text('Sonntag, 27. September'), findsOneWidget);
@@ -304,8 +302,8 @@ void main() {
   for (final size in responsiveSizes) {
     for (final scale in const <double>[1.0, 2.0]) {
       testWidgets(
-        'fits ${size.width.toInt()} px at text scale $scale with reachable '
-        'content and tap targets (Q02, AT33)',
+        '(Q02, AT33) fits ${size.width.toInt()} px at text scale $scale with reachable '
+        'content and tap targets',
         (tester) async {
           await _pump(tester, active: activeDays, size: size, scale: scale);
           final semantics = tester.ensureSemantics();

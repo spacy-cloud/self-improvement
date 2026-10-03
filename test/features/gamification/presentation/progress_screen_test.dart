@@ -62,8 +62,8 @@ Finder _badge(String title, String state) =>
 
 void main() {
   testWidgets(
-    'a fresh installation honestly shows level 1, 0 XP and three locked '
-    'badges (AT01)',
+    '(AT01) a fresh installation honestly shows level 1, 0 XP and three locked '
+    'badges',
     (tester) async {
       await _pump(tester);
       final semantics = tester.ensureSemantics();
@@ -116,8 +116,7 @@ void main() {
   });
 
   testWidgets(
-    'badges unlock from the data and lock again when the data is deleted '
-    '(G02, AT23)',
+    '(G02, AT23) badges unlock from the data and lock again when the data is deleted',
     (tester) async {
       final fixture = await _pump(tester);
       final semantics = tester.ensureSemantics();
@@ -243,8 +242,8 @@ void main() {
   for (final size in responsiveSizes) {
     for (final scale in const <double>[1.0, 2.0]) {
       testWidgets(
-        'fits ${size.width.toInt()} px at text scale $scale with reachable '
-        'content and tap targets (Q02, AT33)',
+        '(Q02, AT33) fits ${size.width.toInt()} px at text scale $scale with reachable '
+        'content and tap targets',
         (tester) async {
           final fixture = await _pump(tester, size: size, scale: scale);
           await seedActiveDays(tester, fixture, [

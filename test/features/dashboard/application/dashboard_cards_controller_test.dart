@@ -195,7 +195,7 @@ void main() {
       final db = harness.database;
       final before = harness.ids.newId();
       await db.customStatement(
-        "CREATE TRIGGER fail_move BEFORE UPDATE ON dashboard_cards "
+        'CREATE TRIGGER fail_move BEFORE UPDATE ON dashboard_cards '
         "BEGIN SELECT RAISE(ABORT, 'simulated write error'); END",
       );
       final failure = await controller(container).moveBy('water', 1);
@@ -237,7 +237,7 @@ void main() {
   test('a different change after a failure gets its own command id', () async {
     final db = harness.database;
     await db.customStatement(
-      "CREATE TRIGGER fail_move BEFORE UPDATE ON dashboard_cards "
+      'CREATE TRIGGER fail_move BEFORE UPDATE ON dashboard_cards '
       "BEGIN SELECT RAISE(ABORT, 'simulated write error'); END",
     );
     expect(

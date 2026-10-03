@@ -1,17 +1,13 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/shared/local_date.dart';
 
-import '../../../support/pump_app.dart';
 import '../support/dashboard_test_kit.dart';
 
 void main() {
   for (final theme in AppThemeVariant.values) {
-    testWidgets('dashboard, streak and progress render in '
-        '${theme.name} without errors and keep readable text (C06, AT35)', (
-      tester,
-    ) async {
+    testWidgets('(C06, AT35) dashboard, streak and progress render in '
+        '${theme.name} without errors and keep readable text', (tester) async {
       final harness = await createHarness(
         tester,
         startedOn: LocalDate(2026, 9, 20),

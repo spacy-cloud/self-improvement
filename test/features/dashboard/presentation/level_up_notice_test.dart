@@ -41,8 +41,7 @@ void main() {
   final startedOn = LocalDate(2026, 9, 20);
 
   testWidgets(
-    'a committed activity that crosses a level boundary shows the notice '
-    '(C04, G02)',
+    '(C04, G02) a committed activity that crosses a level boundary shows the notice',
     (tester) async {
       final harness = await createHarness(tester, startedOn: startedOn);
       await _seedXp(tester, harness, 95);

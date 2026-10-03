@@ -50,8 +50,8 @@ void main() {
   for (final size in responsiveSizes) {
     for (final scale in const <double>[1.0, 2.0]) {
       testWidgets(
-        'the dashboard fits ${size.width.toInt()} px at text scale $scale: '
-        'no overflow, actions reachable, tap targets (C04, Q02, AT33)',
+        '(C04, Q02, AT33) the dashboard fits ${size.width.toInt()} px at text scale $scale: '
+        'no overflow, actions reachable, tap targets',
         (tester) async {
           final harness = await createHarness(
             tester,
@@ -154,31 +154,23 @@ void main() {
     );
   }
 
-  testWidgets(
-    'the water quick action stays reachable and one tap away at 200 % text '
-    'on the narrowest screen (AT10, AT33)',
-    (tester) async {
-      final harness = await createHarness(
-        tester,
-        startedOn: LocalDate(2026, 10, 2),
-      );
-      const size = Size(320, 640);
-      final fixture = await pumpHome(
-        tester,
-        harness,
-        size: size,
-        textScale: 2.0,
-      );
-      await tester.ensureVisible(find.text('+250 ml'));
-      await tester.pump();
-      final rect = tester.getRect(find.text('+250 ml'));
-      expect(rect.bottom, lessThanOrEqualTo(size.height));
-      await tester.tap(find.text('+250 ml'));
-      await tester.pump();
-      // Only the quick action fired, not the card behind it.
-      expect(fixture.log.entries, ['quick:water']);
-    },
-  );
+  testWidgets('(AT10, AT33) the water quick action stays reachable and one tap away at 200 % text '
+      'on the narrowest screen', (tester) async {
+    final harness = await createHarness(
+      tester,
+      startedOn: LocalDate(2026, 10, 2),
+    );
+    const size = Size(320, 640);
+    final fixture = await pumpHome(tester, harness, size: size, textScale: 2.0);
+    await tester.ensureVisible(find.text('+250 ml'));
+    await tester.pump();
+    final rect = tester.getRect(find.text('+250 ml'));
+    expect(rect.bottom, lessThanOrEqualTo(size.height));
+    await tester.tap(find.text('+250 ml'));
+    await tester.pump();
+    // Only the quick action fired, not the card behind it.
+    expect(fixture.log.entries, ['quick:water']);
+  });
 
   testWidgets('a wide screen keeps the content at most 720 px wide', (
     tester,

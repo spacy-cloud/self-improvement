@@ -32,9 +32,7 @@ void main() {
   // at the size of the Figma frames (393 x 852, Light and Dark). The pictures
   // are compared with the nodes 2013:2, 4045:2, 4004:2 and 4042:2 by eye; the
   // deviations are listed in docs/screens/dashboard-gamification.md.
-  testWidgets('first day (Figma 4045:2, Q03)', (
-    tester,
-  ) async {
+  testWidgets('first day (Figma 4045:2, Q03)', (tester) async {
     final harness = await createHarness(tester, displayName: 'Max');
     await pumpHome(tester, harness);
     await _shot(tester, 'home_first_day');

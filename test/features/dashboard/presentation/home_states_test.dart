@@ -41,38 +41,35 @@ void main() {
       },
     );
 
-    testWidgets(
-      'a failed read shows the error state and "Erneut versuchen" loads the '
-      'dashboard (AT27)',
-      (tester) async {
-        final harness = await createHarness(tester, startedOn: _secondDay);
-        var reads = 0;
-        await pumpHome(
-          tester,
-          harness,
-          overrides: [
-            dashboardCardsProvider.overrideWith((ref) {
-              reads++;
-              if (reads == 1) {
-                return Stream<List<DashboardCardConfig>>.error(
-                  StateError('read failed'),
-                );
-              }
-              return ref.watch(dashboardCardRepositoryProvider).watchCards();
-            }),
-          ],
-        );
-        expect(find.text('Daten konnten nicht geladen werden'), findsOneWidget);
-        expect(find.text('Dein Tag im Überblick'), findsNothing);
+    testWidgets('(AT27) a failed read shows the error state and "Erneut versuchen" loads the '
+        'dashboard', (tester) async {
+      final harness = await createHarness(tester, startedOn: _secondDay);
+      var reads = 0;
+      await pumpHome(
+        tester,
+        harness,
+        overrides: [
+          dashboardCardsProvider.overrideWith((ref) {
+            reads++;
+            if (reads == 1) {
+              return Stream<List<DashboardCardConfig>>.error(
+                StateError('read failed'),
+              );
+            }
+            return ref.watch(dashboardCardRepositoryProvider).watchCards();
+          }),
+        ],
+      );
+      expect(find.text('Daten konnten nicht geladen werden'), findsOneWidget);
+      expect(find.text('Dein Tag im Überblick'), findsNothing);
 
-        await tester.tap(find.text('Erneut versuchen'));
-        await tester.pump(const Duration(milliseconds: 50));
-        await tester.runCommand(() async {});
-        expect(find.text('Daten konnten nicht geladen werden'), findsNothing);
-        expect(find.text('Dein Tag im Überblick'), findsOneWidget);
-        expect(reads, 2);
-      },
-    );
+      await tester.tap(find.text('Erneut versuchen'));
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.runCommand(() async {});
+      expect(find.text('Daten konnten nicht geladen werden'), findsNothing);
+      expect(find.text('Dein Tag im Überblick'), findsOneWidget);
+      expect(reads, 2);
+    });
   });
 
   group('first day', () {
@@ -186,33 +183,30 @@ void main() {
   });
 
   group('empty day', () {
-    testWidgets(
-      'a day without records shows honest empty cards, the ring at 0 and the '
-      'streak at 0 (AT01, C04)',
-      (tester) async {
-        final harness = await createHarness(tester, startedOn: _secondDay);
-        await pumpHome(tester, harness, realWeightCard: true);
-        final semantics = tester.ensureSemantics();
+    testWidgets('(AT01, C04) a day without records shows honest empty cards, the ring at 0 and the '
+        'streak at 0', (tester) async {
+      final harness = await createHarness(tester, startedOn: _secondDay);
+      await pumpHome(tester, harness, realWeightCard: true);
+      final semantics = tester.ensureSemantics();
 
-        expect(find.text('Samstag, 3. Oktober'), findsOneWidget);
-        expect(find.text('Dein Tag im Überblick'), findsOneWidget);
-        expect(find.text('0 von 5'), findsOneWidget);
-        expect(
-          find.text('Du hast heute noch kein Ziel erreicht.'),
-          findsOneWidget,
-        );
-        expect(find.text('Noch keine Messung'), findsOneWidget);
-        expect(find.textContaining(' kg'), findsNothing);
-        expect(find.text('Level 1'), findsOneWidget);
-        expect(find.text('0 / 100 XP'), findsOneWidget);
-        expect(
-          find.bySemanticsLabel('Streak: 0 Tage in Folge, öffnen'),
-          findsOneWidget,
-        );
-        expect(find.text('Willkommen!'), findsNothing);
-        semantics.dispose();
-      },
-    );
+      expect(find.text('Samstag, 3. Oktober'), findsOneWidget);
+      expect(find.text('Dein Tag im Überblick'), findsOneWidget);
+      expect(find.text('0 von 5'), findsOneWidget);
+      expect(
+        find.text('Du hast heute noch kein Ziel erreicht.'),
+        findsOneWidget,
+      );
+      expect(find.text('Noch keine Messung'), findsOneWidget);
+      expect(find.textContaining(' kg'), findsNothing);
+      expect(find.text('Level 1'), findsOneWidget);
+      expect(find.text('0 / 100 XP'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel('Streak: 0 Tage in Folge, öffnen'),
+        findsOneWidget,
+      );
+      expect(find.text('Willkommen!'), findsNothing);
+      semantics.dispose();
+    });
 
     testWidgets('the motivation text is one of the five fixed texts', (
       tester,
@@ -245,10 +239,8 @@ void main() {
       },
     );
 
-    testWidgets('switching a module off hides its cards and the ring follows, '
-        'switching it on restores them with the entries (AT03, C03)', (
-      tester,
-    ) async {
+    testWidgets('(AT03, C03) switching a module off hides its cards and the ring follows, '
+        'switching it on restores them with the entries', (tester) async {
       final harness = await createHarness(tester, startedOn: _secondDay);
       final fixture = await pumpHome(tester, harness, realWeightCard: true);
       final manager = fixture.container.read(moduleManagerProvider);
@@ -328,9 +320,8 @@ void main() {
     );
 
     testWidgets(
-      'with the gamification module off the ring and the streak keep working '
-      'and nothing of XP is shown; switching it on does not back-credit '
-      '(AT26, C03)',
+      '(AT26, C03) with the gamification module off the ring and the streak keep working '
+      'and nothing of XP is shown; switching it on does not back-credit',
       (tester) async {
         final harness = await createHarness(
           tester,

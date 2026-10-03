@@ -62,8 +62,7 @@ void main() {
   });
 
   testWidgets(
-    'the switch hides a card: the row says so and the dashboard follows '
-    '(C04)',
+    '(C04) the switch hides a card: the row says so and the dashboard follows',
     (tester) async {
       final harness = await createHarness(tester, startedOn: _secondDay);
       await pumpHome(tester, harness);
@@ -89,8 +88,8 @@ void main() {
   );
 
   testWidgets(
-    'the buttons "nach oben" and "nach unten" move a card (no drag needed, '
-    'AT34)',
+    '(AT34) the buttons "nach oben" and "nach unten" move a card without '
+    'dragging',
     (tester) async {
       final harness = await createHarness(tester, startedOn: _secondDay);
       await pumpHome(tester, harness);
@@ -157,8 +156,7 @@ void main() {
   });
 
   testWidgets(
-    'order and visibility survive a restart and show on the dashboard '
-    '(AT02, C04)',
+    '(AT02, C04) order and visibility survive a restart and show on the dashboard',
     (tester) async {
       final harness = await createHarness(tester, startedOn: _secondDay);
       await pumpHome(tester, harness);
@@ -186,78 +184,68 @@ void main() {
     },
   );
 
-  testWidgets(
-    'a failed change keeps the order, offers a retry and the retry applies '
-    'it (AT27)',
-    (tester) async {
-      final harness = await createHarness(tester, startedOn: _secondDay);
-      final fixture = await pumpHome(tester, harness);
-      final semantics = tester.ensureSemantics();
-      await _open(tester);
+  testWidgets('(AT27) a failed change keeps the order, offers a retry and the retry applies '
+      'it', (tester) async {
+    final harness = await createHarness(tester, startedOn: _secondDay);
+    final fixture = await pumpHome(tester, harness);
+    final semantics = tester.ensureSemantics();
+    await _open(tester);
 
-      await tester.runAsync(
-        () => harness.database.customStatement(
-          'CREATE TRIGGER fail_move BEFORE UPDATE ON dashboard_cards '
-          "BEGIN SELECT RAISE(ABORT, 'simulated write error'); END",
-        ),
-      );
-      await _tapSemantic(tester, 'Wasser nach oben verschieben');
-      expect(_listed(tester).take(2), ['Schritte', 'Wasser']);
-      final error = fixture.feedback.last!;
-      expect(error.kind, 'error');
-      expect(error.message, contains('nicht gespeichert'));
-      expect(error.onRetry, isNotNull);
+    await tester.runAsync(
+      () => harness.database.customStatement(
+        'CREATE TRIGGER fail_move BEFORE UPDATE ON dashboard_cards '
+        "BEGIN SELECT RAISE(ABORT, 'simulated write error'); END",
+      ),
+    );
+    await _tapSemantic(tester, 'Wasser nach oben verschieben');
+    expect(_listed(tester).take(2), ['Schritte', 'Wasser']);
+    final error = fixture.feedback.last!;
+    expect(error.kind, 'error');
+    expect(error.message, contains('nicht gespeichert'));
+    expect(error.onRetry, isNotNull);
 
-      await tester.runAsync(
-        () => harness.database.customStatement('DROP TRIGGER fail_move'),
-      );
-      error.onRetry!();
-      await settle(tester);
-      expect(_listed(tester).take(2), ['Wasser', 'Schritte']);
-      semantics.dispose();
-    },
-  );
+    await tester.runAsync(
+      () => harness.database.customStatement('DROP TRIGGER fail_move'),
+    );
+    error.onRetry!();
+    await settle(tester);
+    expect(_listed(tester).take(2), ['Wasser', 'Schritte']);
+    semantics.dispose();
+  });
 
-  testWidgets(
-    'cards of a switched-off module are not listed, say where they are and '
-    'come back with the module (AT03, C03)',
-    (tester) async {
-      final harness = await createHarness(tester, startedOn: _secondDay);
-      final fixture = await pumpHome(tester, harness);
-      await _open(tester);
-      expect(find.textContaining('weitere Karte'), findsNothing);
+  testWidgets('(AT03, C03) cards of a switched-off module are not listed, say where they are and '
+      'come back with the module', (tester) async {
+    final harness = await createHarness(tester, startedOn: _secondDay);
+    final fixture = await pumpHome(tester, harness);
+    await _open(tester);
+    expect(find.textContaining('weitere Karte'), findsNothing);
 
-      await tester.runCommand(
-        () => fixture.container
-            .read(moduleManagerProvider)
-            .setEnabled(
-              commandId: 'off',
-              module: ModuleId.body,
-              enabled: false,
-            ),
-      );
-      await settle(tester);
-      expect(_listed(tester), isNot(contains('Schritte')));
-      expect(_listed(tester), isNot(contains('Gewicht')));
-      await tester.ensureVisible(find.text('Module verwalten'));
-      expect(
-        find.text(
-          '2 weitere Karten gehören zu ausgeschalteten Modulen. Sie '
-          'erscheinen wieder, sobald du die Module einschaltest.',
-        ),
-        findsOneWidget,
-      );
+    await tester.runCommand(
+      () => fixture.container
+          .read(moduleManagerProvider)
+          .setEnabled(commandId: 'off', module: ModuleId.body, enabled: false),
+    );
+    await settle(tester);
+    expect(_listed(tester), isNot(contains('Schritte')));
+    expect(_listed(tester), isNot(contains('Gewicht')));
+    await tester.ensureVisible(find.text('Module verwalten'));
+    expect(
+      find.text(
+        '2 weitere Karten gehören zu ausgeschalteten Modulen. Sie '
+        'erscheinen wieder, sobald du die Module einschaltest.',
+      ),
+      findsOneWidget,
+    );
 
-      await tester.runCommand(
-        () => fixture.container
-            .read(moduleManagerProvider)
-            .setEnabled(commandId: 'on', module: ModuleId.body, enabled: true),
-      );
-      await settle(tester);
-      expect(_listed(tester), _defaultOrder);
-      expect(find.textContaining('weitere Karte'), findsNothing);
-    },
-  );
+    await tester.runCommand(
+      () => fixture.container
+          .read(moduleManagerProvider)
+          .setEnabled(commandId: 'on', module: ModuleId.body, enabled: true),
+    );
+    await settle(tester);
+    expect(_listed(tester), _defaultOrder);
+    expect(find.textContaining('weitere Karte'), findsNothing);
+  });
 
   testWidgets('"Module verwalten" leads to the module selection', (
     tester,
@@ -312,8 +300,8 @@ void main() {
   for (final size in responsiveSizes) {
     for (final scale in const <double>[1.0, 2.0]) {
       testWidgets(
-        'the configuration fits ${size.width.toInt()} px at text scale $scale: '
-        'every control reachable, tap targets (Q02, AT33)',
+        '(Q02, AT33) the configuration fits ${size.width.toInt()} px at text scale $scale: '
+        'every control reachable, tap targets',
         (tester) async {
           final harness = await createHarness(tester, startedOn: _secondDay);
           await pumpHome(tester, harness, size: size, textScale: scale);
