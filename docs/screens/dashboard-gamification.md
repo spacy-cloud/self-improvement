@@ -84,14 +84,14 @@ Streak-Einstieg, XP-Karte und Level-up-Hinweis erscheinen nur bei aktivem Modul 
 
 ## 9. Tests und Abnahme-IDs
 
-Befehl: `flutter test test/features/dashboard test/features/gamification/presentation` (197 Testfälle, grün).
+Befehl: `flutter test test/features/dashboard test/features/gamification/presentation` (198 Testfälle, grün).
 
 | Datei | Fälle | Abnahme-IDs |
 |---|---:|---|
 | `test/features/dashboard/presentation/home_states_test.dart` | 19 | AT01, AT03, AT04, AT10, AT26, AT27, C01, C02, C03, C04, Q03 |
 | `.../home_live_data_test.dart` | 9 | AT01, AT02, AT10, AT13, AT20, AT22, AT23, C04 |
 | `.../home_responsive_test.dart` | 16 | AT01, AT04, AT10, AT33, C04, Q02 |
-| `.../home_real_modules_test.dart` | 8 | AT03, C02, C03, C04, Q02 |
+| `.../home_real_modules_test.dart` | 9 | AT03, AT10, C02, C03, C04, Q02 |
 | `.../home_themes_test.dart` | 4 | AT35, C06 |
 | `.../dashboard_cards_screen_test.dart` | 21 | AT02, AT03, AT27, AT33, AT34, C03, C04, C06 |
 | `.../level_up_notice_test.dart` | 8 | AT23, AT26, AT27, C04, G02 |
@@ -117,5 +117,5 @@ Visueller Vergleich (Q03): `screenshots_test.dart` schreibt PNGs der Zustände (
 - Die Karte `weight` stürzt ab, wenn die letzte Messung älter als sieben Tage ist: `WeightSparkline` ruft `reduce` auf eine leere Punkteliste auf. Das gehört zum Körpermodul und muss dort behoben werden (leere Punkte abfangen).
 - Die Seite "Karten anpassen" wird mit einer ungetypten Navigator-Route über dem Root-Navigator geöffnet, weil die Shell nur `/`, `/streak` und `/progress` kennt. Android-Zurück ist im Zusammenspiel mit der Shell auf dem Gerät zu prüfen; alternativ kann `DashboardCardsScreen` als eigene Route registriert werden.
 - `GamificationModule.routes` registriert `/streak` und `/progress` bereits; die Shell darf sie nicht ein zweites Mal registrieren (oder muss die Modulrouten verwenden).
-- Die Module Ernährung, Fokus und Aufgaben liefern ihre Dashboard-Karten noch nicht; bis dahin zeigt das Dashboard nur die Karten von Körper und Fortschritt.
-- Die Zuordnung `+250 ml`/`+500 ml` und die Aufgabenkarte bleiben in den Modulkarten; ihre Erreichbarkeit im Raster ist getestet, die Karten selbst nicht.
+- Stand dieses Branches liefern die Module Fokus und Aufgaben ihre Dashboard-Karten noch nicht (Körper, Ernährung und Fortschritt schon); bis dahin fehlen Workout, Fokus und Aufgaben auf dem Dashboard.
+- Die Karten der Module sind nicht Teil dieses Pakets. Getestet ist ihr Zusammenspiel mit dem Raster: Quick-Actions lösen den Kartenklick nicht aus und sind bei 320 px und 200 % Text erreichbar; die echte Wasserkarte speichert mit einem Tap und das Rückgängig nimmt Menge und XP zurück.

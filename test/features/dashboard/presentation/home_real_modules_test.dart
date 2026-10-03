@@ -26,10 +26,9 @@ Future<_Home> _pump(
     startedOn: startedOn ?? LocalDate(2026, 10, 2),
     enabledModules: enabledModules,
   );
+  final feedback = RecordingFeedbackService();
   final container = harness.createContainer(
-    overrides: [
-      feedbackServiceProvider.overrideWithValue(RecordingFeedbackService()),
-    ],
+    overrides: [feedbackServiceProvider.overrideWithValue(feedback)],
   );
   final router = await pumpRouterApp(
     tester,
@@ -43,14 +42,15 @@ Future<_Home> _pump(
     ],
   );
   await settle(tester);
-  return _Home(container, router);
+  return _Home(container, router, feedback);
 }
 
 final class _Home {
-  const _Home(this.container, this.router);
+  const _Home(this.container, this.router, this.feedback);
 
   final ProviderContainer container;
   final GoRouter router;
+  final RecordingFeedbackService feedback;
 }
 
 void main() {
@@ -107,6 +107,31 @@ void main() {
     expect(find.text('Gewicht'), findsNothing);
     expect(find.text('XP und Level'), findsOneWidget);
   });
+
+  testWidgets(
+    '(AT10) the real water card: one tap saves 250 ml, the numbers follow and '
+    'undo takes amount and XP back',
+    (tester) async {
+      final home = await _pump(tester);
+      final semantics = tester.ensureSemantics();
+      expect(find.text('0 / 100 XP'), findsOneWidget);
+
+      await tester.tap(
+        find.bySemanticsLabel('250 Milliliter Wasser hinzufügen'),
+      );
+      await settle(tester);
+      expect(home.feedback.last?.kind, 'saved');
+      expect(home.feedback.last?.undo, isNotNull);
+      expect(find.text('5 / 100 XP'), findsOneWidget);
+      // The tap did not open the water screen.
+      expect(find.text('Wasser'), findsOneWidget);
+
+      await tester.runCommand(() => home.feedback.last!.undo!.perform());
+      await settle(tester);
+      expect(find.text('0 / 100 XP'), findsOneWidget);
+      semantics.dispose();
+    },
+  );
 
   for (final size in responsiveSizes) {
     testWidgets(
