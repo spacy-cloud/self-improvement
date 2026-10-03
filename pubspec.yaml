@@ -38,3 +38,20 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  # Inter (SIL OFL 1.1) is bundled locally, see assets/fonts/README.md.
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700
+
+  assets:
+    # Licence text, registered in the LicenseRegistry by registerDesignLicenses().
+    - assets/fonts/OFL.txt
