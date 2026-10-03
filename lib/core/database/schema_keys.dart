@@ -24,6 +24,19 @@ abstract final class SchemaKeys {
     'xp',
   ];
 
+  /// Default card order: Schritte, Wasser, Gewicht, Workout, Fokus, Aufgaben,
+  /// Ernährung, XP.
+  static const List<String> defaultCardOrder = [
+    'steps',
+    'water',
+    'weight',
+    'workout',
+    'focus',
+    'tasks',
+    'nutrition',
+    'xp',
+  ];
+
   /// Which module owns which dashboard card.
   static const Map<String, String> dashboardCardModule = {
     'steps': 'body',

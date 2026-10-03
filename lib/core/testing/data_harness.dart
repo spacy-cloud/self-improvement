@@ -166,16 +166,7 @@ class DataHarness {
             );
       }
       var index = 0;
-      for (final card in const [
-        'steps',
-        'water',
-        'weight',
-        'workout',
-        'focus',
-        'tasks',
-        'nutrition',
-        'xp',
-      ]) {
+      for (final card in SchemaKeys.defaultCardOrder) {
         await database
             .into(database.dashboardCards)
             .insert(
