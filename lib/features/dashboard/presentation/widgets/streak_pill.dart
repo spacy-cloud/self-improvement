@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/core/goals/application/goal_providers.dart';
+import 'package:self_improvement/features/dashboard/presentation/dashboard_routes.dart';
 import 'package:self_improvement/features/dashboard/presentation/widgets/tap_surface.dart';
+import 'package:self_improvement/features/gamification/presentation/gamification_labels.dart';
 
 /// The streak entry in the dashboard header: a flame and the number of days in
 /// a row. It opens the streak screen (`/streak`).
@@ -22,11 +24,9 @@ class StreakPill extends ConsumerWidget {
       return const SizedBox.shrink();
     }
     final days = summary.current;
-    final label = days == 1
-        ? 'Streak: 1 Tag in Folge'
-        : 'Streak: $days Tage in Folge';
+    final label = streakPillLabel(days);
     final colors = context.tokens.colors;
-    void open() => context.push('/streak');
+    void open() => context.push(DashboardRoutes.streak);
     return Semantics(
       container: true,
       button: true,

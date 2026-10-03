@@ -308,4 +308,60 @@ void main() {
       expect(find.text('Seite /settings/modules'), findsOneWidget);
     },
   );
+
+  for (final size in responsiveSizes) {
+    for (final scale in const <double>[1.0, 2.0]) {
+      testWidgets(
+        'the configuration fits ${size.width.toInt()} px at text scale $scale: '
+        'every control reachable, tap targets (Q02, AT33)',
+        (tester) async {
+          final harness = await createHarness(tester, startedOn: _secondDay);
+          await pumpHome(tester, harness, size: size, textScale: scale);
+          await _open(tester);
+          final semantics = tester.ensureSemantics();
+          expect(tester.takeException(), isNull);
+          for (final target in [
+            find.text('Schritte'),
+            find.bySemanticsLabel('Schritte nach unten verschieben'),
+            find.bySemanticsLabel('XP und Level nach oben verschieben'),
+            find.bySemanticsLabel('XP und Level auf dem Dashboard anzeigen'),
+          ]) {
+            await tester.scrollUntilVisible(
+              target,
+              120,
+              scrollable: find
+                  .descendant(
+                    of: find.byType(DashboardCardsScreen),
+                    matching: find.byType(Scrollable),
+                  )
+                  .first,
+            );
+            await tester.pump();
+            final rect = tester.getRect(target);
+            expect(rect.left, greaterThanOrEqualTo(-0.5), reason: '$target');
+            expect(rect.right, lessThanOrEqualTo(size.width + 0.5));
+            expect(rect.bottom, lessThanOrEqualTo(size.height + 0.5));
+          }
+          tester.view.physicalSize = Size(size.width, 9000);
+          await tester.pump();
+          await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+          await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+          semantics.dispose();
+        },
+      );
+    }
+  }
+
+  for (final theme in AppThemeVariant.values) {
+    testWidgets(
+      'the configuration keeps readable text in ${theme.name} (C06)',
+      (tester) async {
+        final harness = await createHarness(tester, startedOn: _secondDay);
+        await pumpHome(tester, harness, theme: theme);
+        await _open(tester);
+        expect(tester.takeException(), isNull);
+        await expectLater(tester, meetsGuideline(textContrastGuideline));
+      },
+    );
+  }
 }

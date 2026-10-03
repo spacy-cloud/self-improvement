@@ -42,7 +42,7 @@ class HomeScreen extends ConsumerWidget {
       actions: <Widget>[if (showStreak) const StreakPill()],
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.s16,
-        AppSpacing.s8,
+        AppSpacing.s16,
         AppSpacing.s16,
         AppSpacing.s32,
       ),

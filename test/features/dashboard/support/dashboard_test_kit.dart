@@ -260,6 +260,7 @@ Future<HomeFixture> pumpHome(
   TapLog? log,
   String initialLocation = '/',
   AppThemeVariant theme = AppThemeVariant.light,
+  bool reducedMotion = false,
 }) async {
   final tapLog = log ?? TapLog();
   final feedback = RecordingFeedbackService();
@@ -281,6 +282,7 @@ Future<HomeFixture> pumpHome(
     size: size,
     textScale: textScale,
     theme: theme,
+    reducedMotion: reducedMotion,
     initialLocation: initialLocation,
     routes: <RouteBase>[
       GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
