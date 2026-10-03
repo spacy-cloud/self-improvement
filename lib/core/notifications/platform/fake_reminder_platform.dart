@@ -90,6 +90,11 @@ final class FakeReminderPlatform implements ReminderPlatform {
   /// Thrown by [requestPermission] while set.
   Object? requestFailure;
 
+  /// While set, every [schedule] call waits for this future before it does
+  /// anything: holds a reconcile run in the middle of its work, to test how
+  /// concurrent calls are handled.
+  Future<void>? scheduleGate;
+
   // -------------------------------------------------------- tap / launch
 
   final StreamController<String> _taps = StreamController<String>.broadcast();
@@ -165,6 +170,10 @@ final class FakeReminderPlatform implements ReminderPlatform {
   @override
   Future<void> schedule(PlatformScheduleRequest request) async {
     scheduleCalls.add(request);
+    final gate = scheduleGate;
+    if (gate != null) {
+      await gate;
+    }
     final failure = scheduleFailure;
     if (failure != null) {
       throw failure;
