@@ -90,6 +90,9 @@ final class FakeReminderPlatform implements ReminderPlatform {
   /// Thrown by [requestPermission] while set.
   Object? requestFailure;
 
+  /// Thrown by [initialize] while set.
+  Object? initializeFailure;
+
   /// While set, every [schedule] call waits for this future before it does
   /// anything: holds a reconcile run in the middle of its work, to test how
   /// concurrent calls are handled.
@@ -136,6 +139,10 @@ final class FakeReminderPlatform implements ReminderPlatform {
   @override
   Future<void> initialize() async {
     initializeCalls++;
+    final failure = initializeFailure;
+    if (failure != null) {
+      throw failure;
+    }
   }
 
   @override

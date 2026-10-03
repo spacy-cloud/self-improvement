@@ -241,6 +241,54 @@ void main() {
     });
   });
 
+  group('water slots', () {
+    test('storing the selection plans it right away', () async {
+      await create(permission: NotificationPermission.granted);
+      await h.service.enableReminders(commandId: commandId());
+      final status = await h.service.setWaterSlots(
+        commandId: commandId(),
+        hours: {14, 18},
+      );
+      expect(status.scheduledCount, 14);
+      expect(
+        (await h.rowKeys()).where((k) => k.endsWith(':14:00')),
+        hasLength(7),
+      );
+      expect(
+        (await h.rowKeys()).where((k) => k.endsWith(':10:00')),
+        isEmpty,
+        reason: 'the slots set up before are replaced',
+      );
+    });
+
+    test(
+      'an hour that is not offered is rejected before anything changes',
+      () async {
+        await create(permission: NotificationPermission.granted);
+        await h.service.enableReminders(commandId: commandId());
+        await expectLater(
+          h.service.setWaterSlots(commandId: commandId(), hours: {11}),
+          throwsA(isA<ValidationFailure>()),
+        );
+        expect(await h.rows(), hasLength(14));
+      },
+    );
+
+    test(
+      'with reminders off the selection is stored and nothing planned',
+      () async {
+        await create(permission: NotificationPermission.granted);
+        final status = await h.service.setWaterSlots(
+          commandId: commandId(),
+          hours: {16},
+        );
+        expect(status.state, ReminderState.off);
+        expect(await h.rows(), isEmpty);
+        expect(await h.preferences.enabledWaterHours(), {16});
+      },
+    );
+  });
+
   group('status', () {
     test(
       'before any run: the wish, the permission and the projection',

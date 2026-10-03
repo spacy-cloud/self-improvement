@@ -233,9 +233,12 @@ void main() {
       expect(taps, ['/habits']);
     });
 
-    test('initialize is counted', () async {
+    test('initialize is counted and can fail', () async {
       await platform.initialize();
       expect(platform.initializeCalls, 1);
+      platform.initializeFailure = StateError('x');
+      await expectLater(platform.initialize(), throwsStateError);
+      expect(platform.initializeCalls, 2);
     });
   });
 }

@@ -344,6 +344,41 @@ void main() {
       expect(status.permission, NotificationPermission.unavailable);
     });
 
+    test('the platform is initialized before anything is scheduled', () async {
+      await waterOn();
+      await h.service.reconcile();
+      expect(h.platform.initializeCalls, greaterThan(0));
+    });
+
+    test(
+      'reminders that nobody asked for never initialize the platform',
+      () async {
+        // No channel and no callbacks for a user who never switched them on.
+        await h.service.reconcile();
+        expect(h.platform.initializeCalls, 0);
+      },
+    );
+
+    test(
+      'a platform that cannot initialize ends the run with one error',
+      () async {
+        await waterOn();
+        h.platform.initializeFailure = platformFailure;
+
+        final status = await h.service.reconcile();
+
+        expect(status.state, ReminderState.schedulingError);
+        expect(status.lastError, ReminderErrorCategory.platform);
+        expect(status.failedCount, 1);
+        expect(h.platform.scheduleCalls, isEmpty);
+        expect(await rows(), isEmpty);
+
+        h.platform.initializeFailure = null;
+        expect((await h.service.reconcile()).state, ReminderState.active);
+        expect(await rows(), hasLength(14));
+      },
+    );
+
     test('an unknown time zone never throws', () async {
       await waterOn();
       h.data.clock.setTimeZone('Mars/Olympus');

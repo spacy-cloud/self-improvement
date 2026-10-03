@@ -30,7 +30,7 @@ abstract final class ReminderTexts {
       'Erinnerungen an Wasser, Gewohnheiten und das Ende deiner Fokuszeit.';
 
   /// Shown by the settings screen when more reminders are due than the global
-  /// limit allows ([ReminderStatus.planLimitReached]).
+  /// limit allows (`ReminderStatus.planLimitReached`).
   static const String limitNotice =
       'Bei sehr vielen Erinnerungen wird nur ein Teil der nächsten sieben Tage '
       'im Voraus geplant. Der Rest wird beim nächsten Öffnen der App ergänzt.';

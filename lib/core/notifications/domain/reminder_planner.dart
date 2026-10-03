@@ -57,8 +57,8 @@ final class ReminderPlan {
 ///   or without the system permission, the plan is empty
 ///   ([ReminderPlanSkip]); the caller then cancels everything pending.
 /// - **Horizon.** Seven local calendar days: today and the next six, found by
-///   calendar arithmetic ([LocalDate.addDays]), never by adding 24 hours. The
-///   sum of days is therefore correct across daylight saving changes.
+///   calendar arithmetic ([LocalDate.addDays]) and never by adding 24 hours,
+///   so a day with a daylight saving change is still exactly one day.
 /// - **Cap.** At most [maxNotifications] (40) future notifications overall,
 ///   ordered by fire time; on equal time the focus end comes first, then
 ///   habits, then water, then by semantic key. What the cap cuts is reported

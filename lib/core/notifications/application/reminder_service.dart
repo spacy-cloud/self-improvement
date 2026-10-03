@@ -50,8 +50,11 @@ import 'package:self_improvement/core/time/clock_service.dart';
 /// the system is **removed** from the projection (it is not kept for a later
 /// retry as a "pending" row), so the next run sees it as missing and tries
 /// again, and a notification whose rescheduling failed is cancelled instead of
-/// being left at its old time. A row is only ever present for a notification
-/// the system accepted.
+/// being left at its old time. Apart from the moment between inserting a row
+/// and handing it to the system, a row only describes a notification the system
+/// accepted; a crash in that moment is repaired by the next run (see below).
+/// The schema's `cancelled` state is not used: a cancelled notification has no
+/// row.
 ///
 /// The service also heals itself: an id the system reports as pending but the
 /// projection does not know (an orphan, e.g. after data was replaced) is
@@ -64,7 +67,7 @@ import 'package:self_improvement/core/time/clock_service.dart';
 ///
 /// App start, resume from background, after a data import or reset, after a
 /// change of goals, modules, reminder rules or habits, and after the time zone
-/// changed. [ReminderAutoReconciler] covers every change that is written to
+/// changed. `ReminderAutoReconciler` covers every change that is written to
 /// the database; start, resume and the time zone have to be called from the
 /// lifecycle. Concurrent calls are coalesced: while a run is busy, further
 /// calls share one follow-up run that starts after it.
@@ -131,11 +134,16 @@ final class ReminderService {
   /// Brings the operating system in line with the wishes of the user and
   /// returns the resulting status. Never throws. See the class documentation.
   Future<ReminderStatus> reconcile() {
+    // A follow-up run that is already waiting sees everything changed so far.
+    final queued = _queued;
+    if (queued != null) {
+      return queued;
+    }
     final active = _active;
     if (active == null) {
       return _start();
     }
-    return _queued ??= active.then((_) {
+    return _queued = active.then((_) {
       _queued = null;
       return _start();
     });
@@ -211,6 +219,15 @@ final class ReminderService {
 
     if (plan.skipped != null) {
       await _cancelEverything(run, rows, pending);
+      return;
+    }
+
+    // Reminders are wanted and allowed: make sure the platform is ready (the
+    // app shell normally did it at start; this is idempotent). Without it
+    // nothing can be scheduled, so the run ends here and tries again later.
+    final notReady = await _platformCall(_platform.initialize);
+    if (notReady != null) {
+      run.fail(_categoryOf(notReady), notReady);
       return;
     }
     await _apply(run, plan.notifications, rows, pending);
@@ -616,6 +633,19 @@ final class ReminderService {
       commandId: commandId,
       enabled: false,
     );
+    return reconcile();
+  }
+
+  /// The user chose which water slots (10, 12, 14, 16, 18 o'clock) remind
+  /// them: stores the selection and reconciles. Throws only what the command
+  /// throws (`ValidationFailure` for an hour that is not offered, or a storage
+  /// failure), like [enableReminders]; everything after it reports through the
+  /// returned status.
+  Future<ReminderStatus> setWaterSlots({
+    required String commandId,
+    required Set<int> hours,
+  }) async {
+    await _preferences.setWaterSlots(commandId: commandId, hours: hours);
     return reconcile();
   }
 
