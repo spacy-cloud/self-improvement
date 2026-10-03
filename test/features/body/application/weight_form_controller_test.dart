@@ -312,6 +312,41 @@ void main() {
       },
     );
 
+    test('a retry of unchanged content keeps the instant of the first attempt, '
+        'so it reuses the command id (AT12)', () async {
+      final firstAttempt = harness.clock.nowUtc();
+      controller(create).setWeightText('71,5');
+      projection.failure = StateError('disk full');
+      expect(await controller(create).submit(), isA<WeightRejected>());
+      harness.clock.advance(const Duration(minutes: 2));
+      projection.failure = null;
+      expect(await controller(create).submit(), isA<WeightSaved>());
+      final entries = await container
+          .read(weightRepositoryProvider)
+          .watchActive()
+          .first;
+      expect(entries.single.occurredAtUtc, firstAttempt);
+    });
+
+    test(
+      'edited content after a failure takes a fresh "now" for the new attempt',
+      () async {
+        controller(create).setWeightText('71,5');
+        projection.failure = StateError('disk full');
+        await controller(create).submit();
+        harness.clock.advance(const Duration(minutes: 2));
+        final later = harness.clock.nowUtc();
+        projection.failure = null;
+        controller(create).setWeightText('71,6');
+        expect(await controller(create).submit(), isA<WeightSaved>());
+        final entries = await container
+            .read(weightRepositoryProvider)
+            .watchActive()
+            .first;
+        expect(entries.single.occurredAtUtc, later);
+      },
+    );
+
     test(
       'after success a further save is a new entry (new command id)',
       () async {

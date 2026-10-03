@@ -108,6 +108,22 @@ void main() {
       },
     );
 
+    test('the percentage is never 100 while the target is not reached', () {
+      for (final (steps, percent) in <(int, int)>[
+        (9949, 99),
+        (9950, 99),
+        (9999, 99),
+        (10000, 100),
+        (10049, 100),
+        (10050, 101),
+        (7450, 75),
+      ]) {
+        final progress = StepsProgress(steps: steps, target: 10000);
+        expect(progress.percent, percent, reason: '$steps of 10000');
+        expect(progress.percent == 100, progress.reached && steps < 10050);
+      }
+    });
+
     test('without a target there is no bar and no percent', () {
       const p = StepsProgress(steps: 5000, target: null);
       expect(p.fraction, 0);

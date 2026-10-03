@@ -75,9 +75,17 @@ final class StepsProgress {
   double get fraction =>
       target == null || target == 0 ? 0 : (steps / target!).clamp(0.0, 1.0);
 
-  /// Real percentage, also above 100 %; null without a target.
-  int? get percent =>
-      target == null || target == 0 ? null : (steps * 100 / target!).round();
+  /// Real percentage, rounded half up, also above 100 %; null without a
+  /// target. It is never 100 while the target is not reached (9,950 of 10,000
+  /// steps shows `99`), so "100 %" and [reached] always agree.
+  int? get percent {
+    final goal = target;
+    if (goal == null || goal == 0) {
+      return null;
+    }
+    final rounded = (steps * 200 + goal) ~/ (2 * goal);
+    return steps < goal && rounded > 99 ? 99 : rounded;
+  }
 
   bool get reached => target != null && steps >= target!;
 }

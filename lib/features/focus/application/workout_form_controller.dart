@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:self_improvement/core/commands/attempt_clock.dart';
 import 'package:self_improvement/core/commands/command_runner.dart';
 import 'package:self_improvement/core/commands/submission_tracker.dart';
 import 'package:self_improvement/core/errors/app_failure.dart';
@@ -181,6 +182,7 @@ class WorkoutFormController extends Notifier<WorkoutFormState> {
   final WorkoutFormArgs args;
 
   late SubmissionTracker _tracker;
+  final AttemptClock _attempt = AttemptClock();
   DateTime? _originalInstant;
   var _timeTouched = false;
 
@@ -192,6 +194,7 @@ class WorkoutFormController extends Notifier<WorkoutFormState> {
     // build() runs again after invalidation: reset all per-form bookkeeping.
     _tracker = SubmissionTracker(ref.read(idGeneratorProvider));
     _timeTouched = false;
+    _attempt.reset();
     final entry = args.entry;
     final local = clock.toLocal(entry?.occurredAtUtc ?? clock.nowUtc());
     _originalInstant = entry?.occurredAtUtc;
@@ -312,8 +315,16 @@ class WorkoutFormController extends Notifier<WorkoutFormState> {
     if (!_timeTouched && _originalInstant != null) {
       occurredAt = _originalInstant;
     } else if (!_timeTouched && !isEdit) {
-      // Untouched new entry: "now" at the moment of saving (not form open).
-      occurredAt = clock.nowUtc();
+      // Untouched new entry: "now" at the moment of saving (not form open),
+      // frozen for retries of the same content so they reuse the command id.
+      occurredAt = _attempt.instantFor((
+        category?.key,
+        state.title.trim(),
+        minutes,
+        [for (final group in state.muscleGroups) group.key].join(','),
+        state.intensity?.key,
+        state.note.trim(),
+      ), clock.nowUtc);
     } else {
       switch (clock.toUtc(state.date, state.time)) {
         case ZonedResolved(:final utc):
@@ -370,6 +381,7 @@ class WorkoutFormController extends Notifier<WorkoutFormState> {
               expectedRowVersion: entry.rowVersion,
             );
       _tracker.completed();
+      _attempt.reset();
       state = state.copyWith(submitting: false, dirty: false);
       return WorkoutSaved(outcome, wasEdit: entry != null);
     } on ValidationFailure catch (failure) {

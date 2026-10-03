@@ -632,6 +632,42 @@ void main() {
         reason: 'undo restores it',
       );
     });
+
+    test(
+      'a habit without any row (a backup does not carry deleted habits) is not '
+      'a goal that nobody can fulfil',
+      () async {
+        await db
+            .into(db.habits)
+            .insert(
+              HabitsCompanion.insert(
+                id: 'h1',
+                title: 'Lesen',
+                startedLocalDate: LocalDate(2026, 9, 1),
+                createdAtUtc: DateTime.utc(2026, 9, 1),
+                updatedAtUtc: DateTime.utc(2026, 9, 1),
+              ),
+            );
+        final repo = harness.dayStatusRepository();
+        final before = (await repo.statusFor(today))!;
+        expect(before.goals.map((g) => g.goalKey), contains('habit:h1'));
+        expect(before.applicableCount, 6);
+
+        // The state after export and import of a deleted habit: the snapshot
+        // rows are still there, the habit row is not.
+        await (db.delete(db.habits)..where((h) => h.id.equals('h1'))).go();
+        final after = (await repo.statusFor(today))!;
+        expect(after.goals.map((g) => g.goalKey), isNot(contains('habit:h1')));
+        expect(after.applicableCount, 5);
+        expect(
+          (await db.select(db.dailyGoalSnapshots).get()).where(
+            (row) => row.goalKey == 'habit:h1',
+          ),
+          isNotEmpty,
+          reason: 'the history rows stay in the database',
+        );
+      },
+    );
   });
 
   group('day status and streak from real data', () {

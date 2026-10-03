@@ -148,6 +148,26 @@ void main() {
       expect(weekDelta(samples, today), 71500 - 72500);
     });
 
+    test('a measurement is never compared with itself', () {
+      expect(
+        weekDelta([sample('only', '2026-09-20', 7, 71500)], today),
+        isNull,
+        reason: 'one old measurement: Noch kein Wochenvergleich, not 0,0 kg',
+      );
+      expect(
+        weekDelta([
+          sample('older', '2026-09-18', 7, 72000),
+          sample('last', '2026-09-24', 7, 71500),
+        ], today),
+        isNull,
+        reason: 'nothing was measured in the last seven days',
+      );
+      expect(
+        weekDelta([sample('on-boundary', '2026-09-26', 7, 71500)], today),
+        isNull,
+      );
+    });
+
     test('week comparison boundary: day -7 counts, day -6 does not', () {
       final onBoundary = [
         sample('a', '2026-09-26', 7, 72000),

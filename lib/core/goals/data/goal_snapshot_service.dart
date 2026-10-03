@@ -125,15 +125,17 @@ class GoalSnapshotService {
     }
   }
 
-  /// The stored snapshot of [day], or null. Goals of habits that were deleted
-  /// are left out: deleting a habit removes it from the statistics, and an
-  /// undo (restoring the habit) brings its goal items back.
+  /// The stored snapshot of [day], or null. Goals of habits that are not
+  /// active are left out: deleting a habit removes it from the statistics, an
+  /// undo (restoring the habit) brings its goal items back, and a habit that
+  /// has no row at all (a backup does not carry deleted habits) never shows
+  /// up as a goal that nobody can fulfil.
   Future<DaySnapshot?> snapshotFor(LocalDate day) async {
     final stored = await _storedBetween(day, day);
     final rows = stored[day];
     return rows == null
         ? null
-        : _toSnapshot(day, rows, await _deletedHabitKeys());
+        : _toSnapshot(day, rows, await _activeHabitKeys());
   }
 
   /// Stored snapshots of `[from, to]` (days without one are absent).
@@ -142,10 +144,10 @@ class GoalSnapshotService {
     LocalDate to,
   ) async {
     final stored = await _storedBetween(from, to);
-    final deleted = await _deletedHabitKeys();
+    final active = await _activeHabitKeys();
     return {
       for (final entry in stored.entries)
-        entry.key: _toSnapshot(entry.key, entry.value, deleted),
+        entry.key: _toSnapshot(entry.key, entry.value, active),
     };
   }
 
@@ -202,23 +204,27 @@ class GoalSnapshotService {
     return map;
   }
 
-  /// Goal keys (`habit:<id>`) of soft-deleted habits.
-  Future<Set<String>> _deletedHabitKeys() async {
-    final deleted = await (_database.select(
+  /// Goal keys (`habit:<id>`) of the habits that are not deleted.
+  Future<Set<String>> _activeHabitKeys() async {
+    final active = await (_database.select(
       _database.habits,
-    )..where((h) => h.deletedAtUtc.isNotNull())).get();
-    return {for (final habit in deleted) habitGoalKey(habit.id)};
+    )..where((h) => h.deletedAtUtc.isNull())).get();
+    return {for (final habit in active) habitGoalKey(habit.id)};
   }
 
+  /// Turns stored rows into a snapshot. With [activeHabitKeys] every habit
+  /// goal whose habit is not in the set is left out; null keeps all rows.
   DaySnapshot _toSnapshot(
     LocalDate day,
     List<DailyGoalSnapshotRow> rows, [
-    Set<String> excludedKeys = const {},
+    Set<String>? activeHabitKeys,
   ]) => DaySnapshot(
     date: day,
     items: [
       for (final row in rows)
-        if (!excludedKeys.contains(row.goalKey))
+        if (activeHabitKeys == null ||
+            !isHabitGoalKey(row.goalKey) ||
+            activeHabitKeys.contains(row.goalKey))
           if (ModuleId.tryParse(row.moduleId) case final module?)
             GoalSnapshotItem(
               goalKey: row.goalKey,

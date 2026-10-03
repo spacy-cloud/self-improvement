@@ -23,6 +23,8 @@ Wird bis zur Abnahme laufend ergänzt. Offene Anforderungen stehen zusätzlich i
 - Analyse: Der Wochenstreifen gilt nur für 7 Tage, der gewählte Zeitraum wird nach einem Neustart auf 7 Tage zurückgesetzt, und die Tabellenseite hat keine eigene Route (kein Deep Link).
 - Daten & Sicherung: „Letzte Sicherung“ wird nicht angezeigt, weil kein Zeitpunkt gespeichert wird.
 - Import: Die Tages-Snapshots einer Sicherungsdatei werden nicht gegen die Ziel-, Modul- und Gewohnheitshistorie derselben Datei abgeglichen (der optionale Erweiterungspunkt `SnapshotConsistencyChecker` ist nicht belegt); die XP-Vergaben werden beim Import dagegen vollständig neu berechnet. Eine von Hand veränderte Datei könnte also falsche Tagesringe der Vergangenheit enthalten.
+- Import: Eine fremde Datei ohne Einträge in `dashboard_cards` wird akzeptiert; das Dashboard zeigt dann „Alle Karten sind ausgeblendet“, und „Karten anpassen“ hat nichts zum Einblenden. Die App exportiert immer alle Karten, betroffen sind nur von Hand erzeugte Dateien.
+- Zeitzone: Die zuletzt bekannte Zeitzone in den Einstellungen wird nur beim ersten Start gesetzt und nicht nachgeführt; keine Rechnung liest sie (die Planung liest die Gerätezone bei jedem Start und jeder Rückkehr neu), sie steht aber in der Sicherung. Meldet ein Gerät eine Zeitzonenkennung, die die mitgelieferte Zeitzonen-Datenbank nicht kennt, rechnet die App in UTC, und Fachdaten rund um Mitternacht können dann verschoben erscheinen. Für Europe/Berlin ist das nicht zu erwarten; auf Geräten ist es nicht geprüft.
 
 ## Fachliche Grenzen von V1
 

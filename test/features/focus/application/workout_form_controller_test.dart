@@ -430,6 +430,33 @@ void main() {
         expect((await entries()).single.durationMinutes, 40);
       },
     );
+
+    test('a retry of unchanged content keeps the instant of the first attempt, '
+        'so it reuses the command id (AT12)', () async {
+      final firstAttempt = harness.clock.nowUtc();
+      fillRequired(create, minutes: '30');
+      projection.failure = StateError('disk full');
+      expect(await controller(create).submit(), isA<WorkoutRejected>());
+      harness.clock.advance(const Duration(minutes: 2));
+      projection.failure = null;
+      expect(await controller(create).submit(), isA<WorkoutSaved>());
+      expect((await entries()).single.occurredAtUtc, firstAttempt);
+    });
+
+    test(
+      'edited content after a failure takes a fresh "now" for the new attempt',
+      () async {
+        fillRequired(create, minutes: '30');
+        projection.failure = StateError('disk full');
+        await controller(create).submit();
+        harness.clock.advance(const Duration(minutes: 2));
+        final later = harness.clock.nowUtc();
+        projection.failure = null;
+        controller(create).setDurationText('40');
+        expect(await controller(create).submit(), isA<WorkoutSaved>());
+        expect((await entries()).single.occurredAtUtc, later);
+      },
+    );
   });
 
   group('edit', () {

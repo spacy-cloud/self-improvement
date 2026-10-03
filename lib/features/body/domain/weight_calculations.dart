@@ -84,6 +84,10 @@ int? deltaBefore(
 /// Week comparison: current minus the latest measurement dated on or before
 /// `today - 7` calendar days; null without that anchor ("Noch kein
 /// Wochenvergleich") or without a current weight.
+///
+/// Also null when the current measurement is itself that anchor (nothing was
+/// measured in the last seven days): a measurement compared with itself says
+/// nothing, and "0,0 kg in 7 Tagen" would claim an unchanged weight.
 int? weekDelta(Iterable<WeightSample> samples, LocalDate today) {
   final sorted = chronological(samples);
   if (sorted.isEmpty) {
@@ -91,7 +95,7 @@ int? weekDelta(Iterable<WeightSample> samples, LocalDate today) {
   }
   final cutoff = today.addDays(-7);
   final anchors = sorted.where((s) => s.localDate <= cutoff).toList();
-  if (anchors.isEmpty) {
+  if (anchors.isEmpty || anchors.last.id == sorted.last.id) {
     return null;
   }
   return sorted.last.grams - anchors.last.grams;
