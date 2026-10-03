@@ -207,6 +207,31 @@ void main() {
     });
   });
 
+  group('system bars (Q02)', () {
+    testWidgets(
+      'with a gesture bar the menu floats directly above the navigation',
+      (tester) async {
+        final app = await pumpFullApp(
+          tester,
+          systemPadding: const EdgeInsets.only(top: 24, bottom: 34),
+          tabs: _tabs,
+          modules: fullFakeModules(),
+        );
+        await _openPlus(app);
+        final navigationTop = tester
+            .getTopLeft(find.byType(AppBottomNavBar))
+            .dy;
+        final sheetBottom = tester.getBottomLeft(find.byType(PlusSheet)).dy;
+        expect(sheetBottom, lessThanOrEqualTo(navigationTop));
+        expect(navigationTop - sheetBottom, lessThan(24));
+        // The navigation bar keeps clear of the gesture bar itself.
+        final navigation = tester.getRect(find.byType(AppBottomNavBar));
+        expect(navigation.bottom, tester.view.physicalSize.height);
+        expect(navigation.height, greaterThan(88));
+      },
+    );
+  });
+
   group('visual verification (PNG in build/shell)', () {
     testWidgets('shell, plus menu and module manager in Light', (tester) async {
       final app = await pumpFullApp(

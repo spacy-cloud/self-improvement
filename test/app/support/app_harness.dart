@@ -144,6 +144,7 @@ Future<AppFixture> pumpFullApp(
   Size size = const Size(393, 852),
   double textScale = 1.0,
   EdgeInsets viewInsets = EdgeInsets.zero,
+  EdgeInsets systemPadding = EdgeInsets.zero,
   String nowIso = '2026-10-03T08:00:00Z',
   List<Override> overrides = const <Override>[],
   Future<AppServices> Function(DataHarness harness)? starter,
@@ -170,6 +171,14 @@ Future<AppFixture> pumpFullApp(
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1.0;
   tester.view.viewInsets = FakeViewPadding(bottom: viewInsets.bottom);
+  tester.view.padding = FakeViewPadding(
+    top: systemPadding.top,
+    bottom: systemPadding.bottom,
+  );
+  tester.view.viewPadding = FakeViewPadding(
+    top: systemPadding.top,
+    bottom: systemPadding.bottom,
+  );
   addTearDown(tester.view.reset);
   final app = SelfImprovementApp(
     starter: starter == null

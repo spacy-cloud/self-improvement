@@ -104,6 +104,7 @@ Die Navigations-Einstiege des Shells (Plus-Menü, Benachrichtigungen) öffnen Se
 
 ## 8. Verdrahtung der Engines
 
+- Modul-Lebenszyklus: `moduleLifecycleProvider` ruft `initialize` für jedes aktive Modul beim Start und bei erneuter Aktivierung und `dispose` beim Ausschalten sowie beim Beenden der App. Die Aufrufe laufen seriell, ein fehlschlagendes Modul wird nur mit dem Fehlertyp protokolliert und stoppt die anderen nicht. Es werden nie Daten angefasst.
 - Zone: `RuntimeZoneSource` bindet die Gerätezone der Bootstrap-Uhr an `DeviceZoneTracker`; die Frage nach der Zone aktualisiert zuerst den gemeinsamen Wert, sodass die Uhr die neue Zone schon nutzt, wenn die Erinnerungsplanung neu rechnet. Beim Start liest die App die Zone einmal.
 - Erinnerungen: Plattform-`initialize()` vor dem ersten Frame, `reminderAutoReconcileProvider` (ein Lauf beim Start, einer je Datenbankänderung), `reminderLifecycleProvider` (Resume: Zone lesen, dann `reconcile`), `waterGoalReachedTodayProvider` aus dem echten Tagesstatus (Wasserziel erfüllt und anwendbar).
 - Benachrichtigungs-Einstieg: Kaltstart-Payload genau einmal und nur nach abgeschlossenem Onboarding, Taps über `tapStream`; jeder Payload geht durch `NotificationEntryResolver`. Unbekannt oder Modul aus: Dashboard; Gewohnheit fehlt oder archiviert: Habit-Liste; sonst die Route. Bildschirmziele werden über den aktuellen Stand gelegt (ein offenes Formular bleibt erhalten); Tab-Ziele wählen den Tab nur, wenn gerade ein Tab oben liegt.
@@ -135,6 +136,7 @@ Die Navigations-Einstiege des Shells (Plus-Menü, Benachrichtigungen) öffnen Se
 - Navigation: ausgewählter Tab wird angesagt; Plus heißt "Eintrag hinzufügen" bzw. "Schließen".
 - Modulverwaltung: Schalter melden ihren Zustand, jede Zeile nennt Position und Zustand ("Position 1 von 8, Modul ausgeschaltet"), jeder Button hat eine deutsche Beschriftung mit Kartenname, Zustand nie nur über Farbe (Text "Aus", "Ausgeblendet", "Modul ausgeschaltet").
 - Tippflächen mindestens 48 x 48; Schrift bis 200 % ohne Abschneiden (Inhalt scrollt, Kopfzeilen stapeln); Tastatur-Inset wird beachtet; keine Aktion nur per Geste.
+- Systemleisten: Edge-to-Edge; die Navigationsleiste hält den unteren Systemabstand selbst frei, das Plus-Menü schwebt direkt darüber, die Systemnavigation übernimmt Farbe und Symbolhelligkeit des Themes.
 - Snackbar: Live-Region; Fehler bleiben bis zur Aktion, wenn es "Erneut" gibt.
 - Bewegung: nur `AppMotion`; mit reduzierter Bewegung (System oder App) sofortiger Wechsel.
 
@@ -152,7 +154,7 @@ Die Navigations-Einstiege des Shells (Plus-Menü, Benachrichtigungen) öffnen Se
 | `test/app/app_settings_test.dart` | Theme-Modi, reduzierte Bewegung, Sprache | C06, Q03 |
 | `test/app/feedback_service_test.dart` | Snackbar, Rückgängig, Fehler mit Wiederholen | AT10, AT27 |
 | `test/app/plus_entries_test.dart` | Auflösung der Plus-Einträge | C02, AT04 |
-| `test/features/modules/...` | Schalter, Sperre, Karten, Neustart, Layout | AT02, AT03, AT04, AT19, AT27, AT33, AT34 |
+| `test/features/modules/...` | Schalter, Sperre, Karten, Neustart, Layout, Lebenszyklus | AT02, AT03, AT04, AT19, AT27, AT33, AT34 |
 | `integration_test/app_smoke_test.dart` | Start, Tabwechsel, Plus öffnen und schließen (läuft im Emulator-Job) | AT01 |
 
 ## 13. Offene Punkte

@@ -5,8 +5,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/app/bootstrap/app_services.dart';
 import 'package:self_improvement/app/bootstrap/bootstrap_screens.dart';
 import 'package:self_improvement/core/config/app_config.dart';
+import 'package:self_improvement/core/database/app_database.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/core/errors/app_failure.dart';
+import 'package:self_improvement/core/testing/broken_executor.dart';
 import 'package:self_improvement/core/testing/data_harness.dart';
 import 'package:self_improvement/features/onboarding/presentation/onboarding_screen.dart';
 
@@ -147,6 +149,40 @@ void main() {
       expect(calls, 2);
       expect(find.byType(BootstrapErrorScreen), findsNothing);
     });
+
+    testWidgets(
+      'a database that opens but cannot be read shows the same error',
+      (tester) async {
+        final app = await pumpFullApp(
+          tester,
+          waitForReady: false,
+          starter: (harness) async => AppServices(
+            database: AppDatabase(BrokenQueryExecutor()),
+            clock: harness.clock,
+            zoneSource: const FixedZoneSource(),
+            dispose: () async {},
+          ),
+        );
+        await tester.pumpUntil(
+          () => find.byType(BootstrapErrorScreen).evaluate().isNotEmpty,
+          reason: 'the failed preparation did not show the error screen',
+        );
+        expect(
+          find.text('Daten konnten nicht geöffnet werden'),
+          findsOneWidget,
+        );
+        expect(find.byType(AppBottomNavBar), findsNothing);
+        // The retry runs the preparation again and fails visibly again.
+        await tester.tap(find.text('Erneut versuchen'));
+        await app.settle();
+        await app.settle();
+        expect(find.byType(BootstrapErrorScreen), findsOneWidget);
+        expect(find.text('Erneut versuchen'), findsOneWidget);
+        // Dispose the app and let the database streams finish closing.
+        await tester.pumpWidget(const SizedBox());
+        await tester.pump(const Duration(seconds: 1));
+      },
+    );
 
     testWidgets('an error of any kind is shown, not swallowed', (tester) async {
       await pumpFullApp(

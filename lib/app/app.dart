@@ -212,7 +212,6 @@ class _RunningAppState extends State<_RunningApp> {
   /// device zone is known, and the data the router and the theme depend on has
   /// been read (no flash of a wrong theme or screen).
   Future<void> _prepare() async {
-    setState(() => _prepareError = null);
     try {
       try {
         await _container.read(reminderPlatformProvider).initialize();
@@ -246,6 +245,7 @@ class _RunningAppState extends State<_RunningApp> {
   }
 
   void _retryPrepare() {
+    setState(() => _prepareError = null);
     _container
       ..invalidate(profileProvider)
       ..invalidate(moduleStatusesProvider)

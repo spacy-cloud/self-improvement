@@ -10,10 +10,13 @@ import 'package:self_improvement/core/backup/backup_providers.dart';
 import 'package:self_improvement/core/notifications/application/reminder_providers.dart';
 import 'package:self_improvement/core/providers/core_providers.dart';
 import 'package:self_improvement/core/time/clock_service.dart';
+import 'package:self_improvement/features/modules/application/module_lifecycle.dart';
 import 'package:self_improvement/shared/local_time.dart';
 
 /// Everything that keeps running for the lifetime of the app after a
-/// successful start: the reminder triggers, the clock (resume and midnight),
+/// successful start: the module lifecycle (`initialize` for active modules,
+/// `dispose` when one is switched off), the reminder triggers, the clock
+/// (resume and midnight),
 /// the cleanup of temporary export files and the way notifications lead into
 /// the app.
 ///
@@ -47,6 +50,7 @@ final class AppWiring {
     // Reminders: one run now and one for every database change, and one on
     // every resume (after the device zone was read again).
     container
+      ..read(moduleLifecycleProvider)
       ..read(reminderAutoReconcileProvider)
       ..read(reminderLifecycleProvider);
     _clock = _ClockLifecycle(container)..attach();
