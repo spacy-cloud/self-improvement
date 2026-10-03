@@ -17,7 +17,7 @@ Dark und OLED entstehen aus den Theme-Tokens, es gibt keine eigenen Varianten im
 
 ## 2. Aufbau und Datenfluss
 
-- Das Dashboard rendert die Karten der aktiven Module (`SelfImprovementModule.dashboardCards`) in der gespeicherten Reihenfolge und Sichtbarkeit (`DashboardCardRepository`). Es baut keine Karte eines anderen Moduls. Die einzige eigene Karte ist die XP- und Level-Karte (`xp`) des Moduls Fortschritt.
+- Das Dashboard rendert die Karten der aktiven Module (`SelfImprovementModule.dashboardCards`) in der gespeicherten Reihenfolge und Sichtbarkeit (`DashboardCardRepository`). Es baut keine Karte eines anderen Moduls. Die einzige eigene Karte ist die XP- und Level-Karte (`xp`) des Moduls Fortschritt. Alle acht Karten sind vorhanden: `steps` und `weight` (Körper), `water` und `nutrition` (Ernährung), `workout` und `focus` (Fokus), `tasks` (Aufgaben, volle Breite) und `xp` (Fortschritt, volle Breite); die Standardreihenfolge ist Schritte, Wasser, Gewicht, Workout, Fokus, Aufgaben, Ernährung, XP.
 - Quellen sind ausschließlich vorhandene Datenbank-Streams und gemeinsame Projektionen: Kartenkonfiguration, Modulstatus, Tagesstatus (`todayStatusProvider`), Streak (`streakProvider`), XP und Badges (`gamificationSummaryProvider`). Das Widget rechnet nichts neu. Die einzige neue Abfrage ist `hasAnyEntryProvider` (existiert irgendein Datensatz?), sie steuert den Willkommenszustand.
 - Datum und Tageswechsel laufen über `todayProvider` und die injizierte Uhr, nie über `DateTime.now()`.
 - Das Raster (`DashboardCardGrid`) setzt kleine Karten zu zweit in eine Reihe (ab 360 px und Textskalierung bis 1,3), große Karten (`fullWidth`) nehmen eine eigene Reihe und beenden die laufende Gruppe, damit die Reihenfolge des Nutzers immer erhalten bleibt. Jede Karte baut sich in einem eigenen `Consumer`, eine Datenänderung baut nur diese Karte neu.
@@ -84,11 +84,11 @@ Streak-Einstieg, XP-Karte und Level-up-Hinweis erscheinen nur bei aktivem Modul 
 
 ## 9. Tests und Abnahme-IDs
 
-Befehl: `flutter test test/features/dashboard test/features/gamification/presentation` (198 Testfälle, grün).
+Befehl: `flutter test test/features/dashboard test/features/gamification/presentation` (200 Testfälle, grün). Der Stand des Gesamtlaufs steht in [test-report.md](../test-report.md).
 
 | Datei | Fälle | Abnahme-IDs |
 |---|---:|---|
-| `test/features/dashboard/presentation/home_states_test.dart` | 19 | AT01, AT03, AT04, AT10, AT26, AT27, C01, C02, C03, C04, Q03 |
+| `test/features/dashboard/presentation/home_states_test.dart` | 21 | AT01, AT03, AT04, AT10, AT26, AT27, C01, C02, C03, C04, Q03 |
 | `.../home_live_data_test.dart` | 9 | AT01, AT02, AT10, AT13, AT20, AT22, AT23, C04 |
 | `.../home_responsive_test.dart` | 16 | AT01, AT04, AT10, AT33, C04, Q02 |
 | `.../home_real_modules_test.dart` | 9 | AT03, AT10, C02, C03, C04, Q02 |
@@ -114,8 +114,7 @@ Visueller Vergleich (Q03): `screenshots_test.dart` schreibt PNGs der Zustände (
 ## 10. Offene Punkte
 
 - Fortschrittsseite: "Heute verdient" (Einzelvergaben des Tages) fehlt, weil kein Lesemodell für die Vergaben des Tages existiert. Der Auftrag nennt die Liste nicht; bei Bedarf wäre eine Abfrage auf `xp_awards` nach lokalem Datum nötig.
-- Die Karte `weight` stürzt ab, wenn die letzte Messung älter als sieben Tage ist: `WeightSparkline` ruft `reduce` auf eine leere Punkteliste auf. Das gehört zum Körpermodul und muss dort behoben werden (leere Punkte abfangen).
-- Die Seite "Karten anpassen" wird mit einer ungetypten Navigator-Route über dem Root-Navigator geöffnet, weil die Shell nur `/`, `/streak` und `/progress` kennt. Android-Zurück ist im Zusammenspiel mit der Shell auf dem Gerät zu prüfen; alternativ kann `DashboardCardsScreen` als eigene Route registriert werden.
-- `GamificationModule.routes` registriert `/streak` und `/progress` bereits; die Shell darf sie nicht ein zweites Mal registrieren (oder muss die Modulrouten verwenden).
-- Stand dieses Branches liefern die Module Fokus und Aufgaben ihre Dashboard-Karten noch nicht (Körper, Ernährung und Fortschritt schon); bis dahin fehlen Workout, Fokus und Aufgaben auf dem Dashboard.
-- Die Karten der Module sind nicht Teil dieses Pakets. Getestet ist ihr Zusammenspiel mit dem Raster: Quick-Actions lösen den Kartenklick nicht aus und sind bei 320 px und 200 % Text erreichbar; die echte Wasserkarte speichert mit einem Tap und das Rückgängig nimmt Menge und XP zurück.
+- Die Seite "Karten anpassen" wird mit einer ungetypten `MaterialPageRoute` über dem Root-Navigator geöffnet (`dashboard_cards_screen.dart`), weil sie keine eigene Route hat. Android-Zurück ist im Zusammenspiel mit der Shell auf dem Gerät zu prüfen; alternativ kann `DashboardCardsScreen` als eigene Route registriert werden. Da die Seite nicht über `appPageFor` entsteht, erreicht der App-Schalter "Reduzierte Bewegung" ihren Seitenübergang nicht (dasselbe gilt für "Analyse als Tabelle" und den Lizenztext).
+- Die Ansage nach dem Verschieben einer Karte ("an Position n von m verschoben") wird beim Tippen aus der angezeigten Position gebildet; wird ein zweiter Zug ignoriert, weil der erste noch läuft, nennt die Ansage trotzdem "verschoben". Bekannt, nicht behoben (siehe [known-limitations.md](../known-limitations.md)).
+- Die Karten der Module sind nicht Teil dieses Pakets. Getestet ist ihr Zusammenspiel mit dem Raster (`home_real_modules_test.dart` mit den echten Modulen): Quick-Actions lösen den Kartenklick nicht aus und sind bei 320 px und 200 % Text erreichbar; die echte Wasserkarte speichert mit einem Tap und das Rückgängig nimmt Menge und XP zurück.
+- Erledigt und deshalb keine offenen Punkte mehr: Die Gewichtskarte zeigt bei einer Messung, die älter als sieben Tage ist, "Zuletzt <Datum>" ohne Kurve und ohne Vergleich statt abzustürzen (`weight_dashboard_card_test.dart`); alle acht Karten kommen von den Modulen; `GamificationModule` liefert `/streak` und `/progress`, die Shell registriert sie nicht noch einmal (`findDuplicatePaths` prüft es).

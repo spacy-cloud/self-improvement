@@ -6,23 +6,23 @@ Dieses Dokument beschreibt den tatsächlich umgesetzten Zustand von Start, Route
 
 | Datei | Aufgabe |
 |---|---|
-| `lib/main.dart` | startet `SelfImprovementApp`, Edge-to-Edge |
+| `lib/main.dart` | installiert die zentrale Fehlerbehandlung, schaltet Edge-to-Edge ein, startet `SelfImprovementApp` |
 | `lib/app/app.dart` | Start-Gate (Laden, Fehler mit Wiederholen, laufende App), Theme, Reduzierte Bewegung, Sprache |
-| `lib/app/bootstrap/` | `AppServices` (Datenbank, Uhr, Zonenquelle), Produktionsstart über `AppRuntime`, neutrale Lade- und Fehlerseite |
-| `lib/app/router/` | Routen (`app_routes.dart`, `app_router.dart`), Guards (`route_guard.dart`, `guarded_routes.dart`), Zurück-Verhalten (`app_back_dispatcher.dart`) |
+| `lib/app/bootstrap/` | `AppServices` (Datenbank, Uhr, Zonenquelle), Produktionsstart über `AppRuntime`, neutrale Lade- und Fehlerseite, `error_handling.dart` (zentrale Fehlerbehandlung) |
+| `lib/app/router/` | Routen (`app_routes.dart`, `app_router.dart`), Guards (`route_guard.dart`, `guarded_routes.dart`), Zurück-Verhalten (`app_back_dispatcher.dart`), Seitenbau (`app_pages.dart`: Material-Übergang, bei reduzierter Bewegung keiner) |
 | `lib/app/shell/` | Tab-Gerüst mit Navigationsleiste (`app_shell.dart`), Plus-Menü (`plus_sheet.dart`, `plus_entries.dart`) |
-| `lib/app/screens/` | Seiten "Nicht gefunden" und "Modul ausgeschaltet" |
+| `lib/app/screens/` | Seiten "Nicht gefunden" und "Modul ausgeschaltet", dazu der Habits-Tab bei ausgeschaltetem Aufgabenmodul (`module_disabled_tab.dart`) |
 | `lib/app/feedback/` | Snackbar-Umsetzung von `FeedbackService` |
 | `lib/app/wiring/` | Overrides und Dauerverdrahtung (Erinnerungen, Backup, Uhr, Benachrichtigungs-Einstieg) |
 | `lib/features/modules/` | Modulverwaltung (Bildschirm, Controller, Kartenreihenfolge) |
 
 ## 2. Start (Bootstrap)
 
-1. `SelfImprovementApp` ruft den Starter auf. Produktion: `AppRuntime.create()` öffnet und migriert die lokale Datenbank, erkennt die Zeitzone und legt die Singleton-Zeilen an.
+1. `main()` installiert zuerst die zentrale Fehlerbehandlung (Abschnitt 8). `SelfImprovementApp` ruft den Starter auf. Produktion: `AppRuntime.create()` öffnet und migriert die lokale Datenbank, erkennt die Zeitzone und legt die Singleton-Zeilen an. Die Abfolge von `main()` bis zum ersten Frame steht als Sequenz in [architecture.md](../architecture.md) (Abschnitt 11).
 2. Währenddessen zeigt die App eine neutrale Seite: leerer Hintergrund, nach 400 ms ein kleiner Fortschrittsanzeiger. Kein Logo, kein Fake-Splash.
 3. Scheitert der Start (Datenbank nicht zu öffnen), erscheint "Daten konnten nicht geöffnet werden" mit "Erneut versuchen", dem Hinweis, dass nichts gelöscht wurde, und einem Fehlercode. Die Wiederholung startet den Starter neu. Es gibt keine automatische Zurücksetzung und keine technischen Meldungstexte.
 4. Danach erzeugt die App einen eigenen `ProviderContainer` (automatischer Provider-Retry ist aus). Vor dem ersten echten Frame sind erledigt: Erinnerungs-Plattform initialisiert (Fehler dort lassen die App trotzdem starten), Gerätezone gelesen, Onboarding-Status, Modulstatus und Einstellungen gelesen. Dadurch gibt es weder einen Theme- noch einen Screen-Flackern.
-5. Die Einstellung "Darstellung" (System, Hell, Dunkel, OLED) wird live angewendet: System folgt der Plattform und wählt nie OLED, OLED nur bei ausdrücklicher Wahl. "Reduzierte Bewegung" speist `ReducedMotionScope`; das Systemflag wirkt unabhängig davon (logisches ODER).
+5. Die Einstellung "Darstellung" (System, Hell, Dunkel, OLED) wird live angewendet: System folgt der Plattform und wählt nie OLED, OLED nur bei ausdrücklicher Wahl. "Reduzierte Bewegung" speist `ReducedMotionScope`; das Systemflag wirkt unabhängig davon (logisches ODER). Die Reichweite des App-Schalters: die eigenen `AppMotion`-Widgets, das Plus-Sheet, alle modalen Sheets und die Snackbars (über `AppMotion.surfaceStyleOf`, weil das Framework nur das Systemflag kennt) und die Seitenwechsel (`app_pages.dart`). Die System-Datums- und Zeitwähler folgen nur dem Systemflag.
 
 ## 3. Routen (final)
 
@@ -32,12 +32,12 @@ Dieses Dokument beschreibt den tatsächlich umgesetzten Zustand von Start, Route
 |---|---|---|---|
 | `/` | `HomeScreen` | Tab 0 | Dashboard |
 | `/analysis` | `AnalysisScreen` | Tab 1 | |
-| `/habits` | `HabitsTabScreen` | Tab 2 | `?tab=tasks` wählt die Aufgabenliste (`showTasks`) |
+| `/habits` | `HabitsTabScreen` | Tab 2 | `?tab=tasks` wählt die Aufgabenliste (`showTasks`); bei ausgeschaltetem Aufgabenmodul ersetzt `ModuleTabGate` den Inhalt (Abschnitt 4) |
 | `/profile` | `ProfileScreen` | Tab 3 | |
 | `/profile/edit` | `ProfileEditScreen` | Unterseite | |
 | `/goals` | `GoalsScreen` | Unterseite | |
 | `/settings` | `SettingsScreen` | Unterseite | |
-| `/settings/modules` | `ModulesScreen` | Unterseite | Modulverwaltung (Abschnitt 6) |
+| `/settings/modules` | `ModulesScreen` | Unterseite | Modulverwaltung (Abschnitt 7) |
 | `/settings/data` | `DataScreen` | Unterseite | |
 | `/settings/licenses` | `LicensesScreen` | Unterseite | |
 | `/onboarding` | `OnboardingScreen` | eigener Fluss | die fünf Schritte laufen innerhalb dieser einen Route |
@@ -45,16 +45,19 @@ Dieses Dokument beschreibt den tatsächlich umgesetzten Zustand von Start, Route
 
 ### 3.2 Über die Modulklassen registriert (durch den Modulstatus geschützt)
 
-| Modul | Pfade (Reihenfolge wie registriert) | Stand in diesem Branch |
-|---|---|---|
-| `body` | `/weight`, `/weight/new`, `/weight/all`, `/weight/:id` | registriert; Schnellaktion `weight` (Plus-Reihenfolge 0) und Karte `weight` (Rang 2) |
-| `gamification` | `/streak`, `/progress` | registriert; die Screens gehören zum Modul, ausgeschaltet zeigen sie "Modul aktivieren" |
-| `nutrition` | `/water`, `/nutrition`, `/nutrition/new` (laut Handoff) | von den Modul-Eigentümern zu ergänzen |
-| `body` (Schritte) | `/steps`, `/steps/new` | von den Modul-Eigentümern zu ergänzen |
-| `focus` | `/focus`, `/focus/session`, `/workouts`, `/workouts/new` | von den Modul-Eigentümern zu ergänzen |
-| `tasks` | `/tasks/new`, `/habits/new`, `/habits/:id` | von den Modul-Eigentümern zu ergänzen |
+Alle fünf mitgelieferten Module registrieren ihre Routen (`bundledModules`, Stand `c0ce096`). Die Reihenfolge ist die des jeweiligen `routes`-Getters.
 
-Regeln: `/weight/new` und `/weight/all` stehen vor `/weight/:id`, damit sie nie als Kennung gelesen werden. Jeder Pfad ist genau einmal registriert; `findDuplicatePaths` prüft das beim Erzeugen des Routers (`assert`) und in Tests. Modulrouten müssen `GoRoute` mit `builder` sein; `pageBuilder` oder andere Routentypen scheitern beim Erzeugen des Routers, damit nie eine Route ungeschützt bleibt.
+| Modul | Pfade (Reihenfolge wie registriert) | Schnellaktionen (Plus-Position) und Dashboard-Karten (Rang) |
+|---|---|---|
+| `body` | `/weight`, `/weight/new`, `/weight/all`, `/weight/:id`, `/steps`, `/steps/new` | `weight` (0), `steps` (3); Karten `steps` (0), `weight` (2) |
+| `nutrition` | `/water`, `/water/:id`, `/nutrition`, `/nutrition/new`, `/nutrition/:id` | `water` (2), `meal` (7); Karten `water` (1), `nutrition` (6) |
+| `focus` | `/focus`, `/focus/session`, `/focus/history`, `/focus/history/:id`, `/workouts`, `/workouts/new`, `/workouts/all`, `/workouts/:id` | `workout` (1), `focus` (4); Karten `workout` (3), `focus` (4) |
+| `tasks` | `/tasks/new`, `/tasks/:id`, `/habits/new`, `/habits/:id` mit dem Unterpfad `edit` (`/habits/:id/edit`) | `task` (5), `habit` (6); Karte `tasks` (5, volle Breite) |
+| `gamification` | `/streak`, `/progress` | keine Schnellaktion; Karte `xp` (7, volle Breite); die Screens gehören zum Modul, ausgeschaltet zeigen sie "Modul aktivieren" |
+
+Das Plus-Menü hat damit acht Einträge (Abschnitt 6), das Dashboard acht Karten (Standardreihenfolge Schritte, Wasser, Gewicht, Workout, Fokus, Aufgaben, Ernährung, XP). Die Aufgabenliste ist kein eigener Pfad: sie ist die Ansicht `/habits?tab=tasks` des Tabs.
+
+Regeln: In jedem Modul stehen statische Pfade vor parametrischen (`/weight/new` und `/weight/all` vor `/weight/:id`, `/workouts/new` und `/workouts/all` vor `/workouts/:id`, `/nutrition/new` vor `/nutrition/:id`, `/focus/history` vor `/focus/history/:id`, `/tasks/new` vor `/tasks/:id`, `/habits/new` vor `/habits/:id`), damit ein Schlüsselwort nie als Kennung gelesen wird. Jeder Pfad ist genau einmal registriert; `findDuplicatePaths` prüft das beim Erzeugen des Routers (`assert`) und in Tests (`/streak` und `/progress` stehen nur bei der Gamification, nicht noch einmal in der Shell). Modulrouten müssen `GoRoute` mit `builder` sein; `pageBuilder` oder andere Routentypen scheitern beim Erzeugen des Routers, damit nie eine Route ungeschützt bleibt. Die Seite jeder Route entsteht über `appPageFor` (Material-Übergang, bei reduzierter Bewegung keiner).
 
 ### 3.3 Tab- und Unterseiten-Modell
 
@@ -67,6 +70,7 @@ Die vier Tabs liegen in einer `StatefulShellRoute` (indexierter Stapel): jeder T
 | Onboarding nicht abgeschlossen | jeder Ort führt zu `/onboarding` (Redirect); nach Abschluss oder Überspringen (Profilwechsel im Stream) führt der Router zu `/` |
 | Zurücksetzen aller Daten | Profil ist wieder ohne Onboarding, der Router führt von selbst zu `/onboarding` |
 | Modul ausgeschaltet | die Route bleibt erhalten, ihr Inhalt wird durch "Modul ausgeschaltet" ersetzt (Titel, Hinweis "Deine Daten bleiben erhalten", "Modul aktivieren", "Module verwalten"). Nach der Aktivierung wird derselbe Platz mit dem echten Screen gefüllt, ohne Navigation. Dasselbe gilt für eine bereits offene Seite, deren Modul ausgeschaltet wird |
+| Habits-Tab bei ausgeschaltetem Aufgabenmodul | Der Tab bleibt ein Kernziel der Navigation, zeigt aber nur "Aufgaben und Gewohnheiten sind ausgeschaltet" ("Deine Einträge bleiben erhalten …") mit "Aufgaben und Gewohnheiten aktivieren" und "Module verwalten": keine Daten, keine Schreibaktion (`ModuleTabGate`, `module_disabled_tab.dart`). Nach der Aktivierung steht derselbe Platz wieder mit dem echten Inhalt |
 | Ungültige Kennung | jeder Pfadparameter `id` oder `...Id`, der keine kanonische UUID ist, zeigt "Nicht gefunden", nie den Screen (hat Vorrang vor dem Modulstatus) |
 | Gültige, aber unbekannte Kennung | der Screen zeigt seinen eigenen Zustand (z. B. "Eintrag nicht gefunden"), kein Absturz |
 | Unbekannte Route | "Diese Seite gibt es nicht" mit Zurück-Pfeil und "Zur Startseite" |
@@ -110,6 +114,7 @@ Die Navigations-Einstiege des Shells (Plus-Menü, Benachrichtigungen) öffnen Se
 - Benachrichtigungs-Einstieg: Kaltstart-Payload genau einmal und nur nach abgeschlossenem Onboarding, Taps über `tapStream`; jeder Payload geht durch `NotificationEntryResolver`. Unbekannt oder Modul aus: Dashboard; Gewohnheit fehlt oder archiviert: Habit-Liste; sonst die Route. Bildschirmziele werden über den aktuellen Stand gelegt (ein offenes Formular bleibt erhalten); Tab-Ziele wählen den Tab nur, wenn gerade ein Tab oben liegt.
 - Backup: `notificationCancellerProvider` (alle ausstehenden Benachrichtigungen der Plattform), `backupListenerProvider` (Daten-Epoche erhöhen, Kernprovider neu lesen, heute neu lesen, Erinnerungen neu planen), `cleanUpTemporaryExports` einmal nach dem Start.
 - Uhr: "Heute" wird beim Resume und zum lokalen Mitternacht (Timer, eine Sekunde danach) neu gelesen.
+- Fehlerbehandlung: `installErrorHandling` (`lib/app/bootstrap/error_handling.dart`, aufgerufen in `main()`) fängt unbekannte Fehler an einer Stelle und protokolliert nur Fehlertyp und Bibliothek, nie Meldung oder Stacktrace. Im Debug-Modus bleiben die Details des Frameworks; sonst ersetzt der Satz "Dieser Bereich konnte nicht angezeigt werden." ein fehlgeschlagenes Widget.
 - Feedback: `SnackBarFeedbackService` (Erfolg 4 s, Rückgängig 8 s mit höchstens einer sichtbaren Aktion, Fehler mit "Erneut" bleibt bis zur Aktion). Die Leiste schwebt auf Tabs über der Navigation und sonst über dem festen Primärbutton (`pinnedActionArea`); die Position wird erst nach dem Aufrufer-Code bestimmt, damit sie zum danach sichtbaren Screen passt.
 
 ## 9. Abweichungen von Figma und Gründe
@@ -120,7 +125,7 @@ Die Navigations-Einstiege des Shells (Plus-Menü, Benachrichtigungen) öffnen Se
 | Einträge mit eigenen SVG-Symbolen | Symbole kommen aus den `quickActions` der Module (Material-Symbole der Design-Zuordnung) | Modulvertrag; die Zuordnung steht in `docs/design-handoff.md` |
 | Modulverwaltung: nur Nach-oben/Nach-unten | zusätzlich Ausblenden/Einblenden je Karte | BS-58 verlangt einzeln ausblendbare Karten; ohne Frame nach dem Muster der Zeilen |
 | Frame zeigt sechs Karten | alle acht Karten der Konfiguration | der Frame ist abgeschnitten |
-| Seiten "Nicht gefunden", "Modul ausgeschaltet", Startfehler | ohne Frame, aus `EmptyState` und `ErrorState` nach dem Fallback-Muster des Handoffs | kein eigener Frame |
+| Seiten "Nicht gefunden", "Modul ausgeschaltet", Startfehler, Habits-Tab bei ausgeschaltetem Aufgabenmodul | ohne Frame, aus `EmptyState` und `ErrorState` nach dem Fallback-Muster des Handoffs | kein eigener Frame |
 | Onboarding `/onboarding/*` | eine Route `/onboarding`, Schritte innerhalb | Vertrag des Onboarding-Screens |
 | iPhone-Chrome (Statusleiste, Insel, Home-Indikator) | nicht umgesetzt | nur Figma-Rahmen |
 
@@ -138,7 +143,7 @@ Die Navigations-Einstiege des Shells (Plus-Menü, Benachrichtigungen) öffnen Se
 - Tippflächen mindestens 48 x 48; Schrift bis 200 % ohne Abschneiden (Inhalt scrollt, Kopfzeilen stapeln); Tastatur-Inset wird beachtet; keine Aktion nur per Geste.
 - Systemleisten: Edge-to-Edge; die Navigationsleiste hält den unteren Systemabstand selbst frei, das Plus-Menü schwebt direkt darüber, die Systemnavigation übernimmt Farbe und Symbolhelligkeit des Themes.
 - Snackbar: Live-Region; Fehler bleiben bis zur Aktion, wenn es "Erneut" gibt.
-- Bewegung: nur `AppMotion`; mit reduzierter Bewegung (System oder App) sofortiger Wechsel.
+- Bewegung: nur `AppMotion`; mit reduzierter Bewegung (System oder App) sofortiger Wechsel in den eigenen Animationen, im Plus-Sheet, in allen modalen Sheets, in den Snackbars und beim Seitenwechsel. Die System-Datums- und Zeitwähler folgen nur dem Systemflag (Abschnitt 2).
 
 ## 12. Tests (Abnahme-Ids in den Testnamen)
 
@@ -155,14 +160,21 @@ Die Navigations-Einstiege des Shells (Plus-Menü, Benachrichtigungen) öffnen Se
 | `test/app/feedback_service_test.dart` | Snackbar, Rückgängig, Fehler mit Wiederholen | AT10, AT27 |
 | `test/app/plus_entries_test.dart` | Auflösung der Plus-Einträge | C02, AT04 |
 | `test/features/modules/...` | Schalter, Sperre, Karten, Neustart, Layout, Lebenszyklus | AT02, AT03, AT04, AT19, AT27, AT33, AT34 |
-| `integration_test/app_smoke_test.dart` | Start, Tabwechsel, Plus öffnen und schließen (läuft im Emulator-Job) | AT01 |
+| `test/app/error_handling_test.dart` | zentrale Fehlerbehandlung: nur Typ im Log, neutrales Widget außerhalb des Debug-Modus (BS-85) | - |
+| `test/app/module_tab_gate_test.dart` | Habits-Tab bei ausgeschaltetem Aufgabenmodul: Hinweis und Aktivieren, keine Daten, keine Schreibaktion (BS-88) | AT03 |
+| `test/app/motion_test.dart` | Seitenwechsel und Plus-Sheet mit und ohne reduzierte Bewegung (App-Schalter und Systemflag) (BS-87) | - |
+| `test/app/confirmation_sheet_scope_test.dart` | Bestätigung von einem Tab aus deckt die ganze Fläche inklusive Navigationsleiste ab (BS-86) | AT34 |
+| `test/app/empty_states_scroll_test.dart` | Leer- und Fehlerzustände der Verlaufsseiten scrollen auf kleinen Bildschirmen (BS-86) | AT33 |
+| `integration_test/app_smoke_test.dart` | Start auf In-Memory-Datenbank hinter dem Onboarding, Tabwechsel, Plus öffnen und schließen (läuft im Emulator-Job; kein Abnahme-Id im Namen) | - |
 
 ## 13. Offene Punkte
 
-- Die sieben weiteren Schnellaktionen (Workout, Wasser, Schritte, Fokus, Aufgabe, Gewohnheit, Mahlzeit) und ihre Routen müssen von den Modulklassen der jeweiligen Eigentümer ergänzt werden; bis dahin zeigt das echte Plus nur "Gewicht". Beim Zusammenführen sollte geprüft werden, dass alle acht Ids vorhanden sind und `findDuplicatePaths` leer bleibt.
+- Alle acht Schnellaktionen und alle Modulrouten sind registriert; `findDuplicatePaths` bleibt leer (Test `route_guard_test.dart`: jeder Pfad einmal, mit allen fünf Modulen). Ein neuer Eintrag im Plus-Menü braucht eine neue Id in `plusEntryIds` und eine Schnellaktion in einer Modulklasse.
 - Das Speichern oder Verwerfen einer offenen Fokus-Sitzung geschieht auf dem Sitzungs-Screen; die Modulverwaltung führt dorthin. Der Fokus-Eigentümer kann `canDeactivate` für eigene Texte überschreiben.
-- Der Fokus-Zähler hat keinen Stopp-Haken: `dataEpochProvider` zählt Datenersetzungen (Import, Zurücksetzen); der Zähler und andere zwischenspeichernde Provider sollten ihn beobachten.
+- Bei `resumed` liest die Verdrahtung nur Zone und Datum neu (`AppWiring`, Abschnitt 8); sie ruft `FocusRestorer.restore()` nicht auf, obwohl der Kommentar an der Klasse das beschreibt. Den Aufruf bei der Rückkehr macht nur der geöffnete Sitzungsbildschirm (Einzelheiten in [focus-workouts.md](focus-workouts.md), Abschnitt 3.1).
+- `dataEpochProvider` zählt Datenersetzungen (Import, Zurücksetzen) und wird nach jeder Ersetzung erhöht, aber von keinem Provider im Code beobachtet; Provider, die mehr als ihren Datenbank-Stream zwischenspeichern, sollten ihn beobachten.
 - `snapshotConsistencyCheckerProvider` hat keine Umsetzung (Zielfunktion); der Standard übernimmt Snapshots unverändert.
 - Scroll nach oben beim erneuten Tippen auf den Tab ist Sache der Tab-Screens (der Shell setzt den Tab nur auf seine Wurzel zurück).
-- Das System-Zurück nutzt den klassischen Pfad (kein Opt-in zum vorhersagenden Zurück); das `PopScope` im Gerüst funktioniert in beiden Modi, der Zurück-Fallback für Seiten ohne Verlauf nur im klassischen.
+- Das System-Zurück läuft über den klassischen Pfad: Das Android-Manifest schaltet das vorhersagende Zurück ausdrücklich ab (`android:enableOnBackInvokedCallback="false"`), weil Android 16 es mit targetSdk 36 sonst standardmäßig aktivierte und die App vor ihrer eigenen Zurück-Reihenfolge (eine Seite ohne Verlauf führt zu Home) schlösse. Das `PopScope` im Gerüst funktioniert in beiden Modi, der Zurück-Fallback für Seiten ohne Verlauf nur im klassischen. Auf keinem Gerät geprüft.
+- Die Rückgängig-Snackbar wird für TalkBack nicht verlängert (`persist` ist aus, 8 Sekunden wie vorgegeben). Das ist eine bekannte, nicht behobene Grenze (siehe [known-limitations.md](../known-limitations.md)).
 - Nicht auf dem Host prüfbar: echte Datenbankdatei, echtes Benachrichtigungs-Plugin, Emulator (der Integrationstest läuft in der CI).

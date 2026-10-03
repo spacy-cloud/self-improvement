@@ -106,10 +106,10 @@ Die Datenbanktests nutzen die In-Memory-Datenbank und ihre echte Transaktion. Mu
 
 ## 9. Offene Punkte
 
-- Der Router registriert `/onboarding` und leitet beim ersten Start dorthin um (Shell-Paket, nicht Teil dieses Pakets). Die Rückmeldung nach dem Abschluss setzt den Guard voraus, der `/onboarding` nach dem Commit verlässt; der Screen funktioniert auch ohne ihn, weil er selbst zu `/` navigiert.
-- Ehrliche Leerzustände des Dashboards nach Erststart und Überspringen gehören zum Dashboard-Paket (AT01 gesamt).
+- Der Router registriert `/onboarding`, leitet beim ersten Start dorthin um und verlässt `/onboarding` nach dem Commit (Guard der Shell, siehe [shell.md](shell.md)); der Screen funktioniert auch ohne den Guard, weil er selbst zu `/` navigiert.
+- Die ehrlichen Leerzustände des Dashboards nach Erststart und Überspringen sind umgesetzt (Zustand „Erster Tag“ in [dashboard-gamification.md](dashboard-gamification.md); AT01 ist im Host-Test über beide Bereiche belegt).
 - Kein Gerätetest: Android-Gesten, Tastaturverhalten und TalkBack-Lesereihenfolge sind nur über Host-Tests abgedeckt und sollten einmal auf einem Gerät geprüft werden.
 - Die Schrittweiten der Plus/Minus-Tasten (500 Schritte, 250 ml, 5 Minuten, 1 Workout) sind eine Entscheidung dieser Umsetzung; Spezifikation und Figma nennen nur Grenzen und Startwerte.
 - Der Hinweis zu Erinnerungen verweist auf die Einstellungen; der Einstieg dort gehört zum Einstellungen-Paket.
 - Auf 320 px bei 200 Prozent Schrift bleibt wenig Platz für scrollenden Inhalt, weil Kopfzeile und Primärbutton fest bleiben. Nichts wird abgeschnitten.
-- Zur Konsolidierung durch die Koordination: Design-Handoff (Abweichungen Abschnitt 5, Route `/onboarding` statt `/onboarding/*`) und Anforderungsmatrix (C01, C02, C03, C07, AT01, AT02, AT04 nachgewiesen durch die Tests oben).
+- Konsolidiert: Die Abweichungen dieses Dokuments stehen in [design-handoff.md](../design-handoff.md), Abschnitt 9; die Nachweise für C01, C02, C03, C07, AT01, AT02 und AT04 in der [Anforderungsmatrix](../requirements-matrix.md).
