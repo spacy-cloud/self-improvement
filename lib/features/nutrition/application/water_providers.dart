@@ -25,20 +25,21 @@ final waterTodayProvider = StreamProvider<WaterToday>((ref) {
 /// The entries of the last N local days (including today) grouped per day,
 /// newest first, with each day's total. [defaultWaterHistoryDays] is the
 /// default window; a longer one makes older entries reachable for editing.
-final waterHistoryProvider = StreamProvider.family<WaterHistory, int>((
-  ref,
-  days,
-) {
-  final today = ref.watch(todayProvider);
-  return ref
-      .watch(waterRepositoryProvider)
-      .watchHistory(today: today, days: days);
-});
+/// Released when the screen stops watching it.
+final waterHistoryProvider = StreamProvider.autoDispose
+    .family<WaterHistory, int>((ref, days) {
+      final today = ref.watch(todayProvider);
+      return ref
+          .watch(waterRepositoryProvider)
+          .watchHistory(today: today, days: days);
+    });
 
 /// One water entry by id; emits null when it does not exist (any more).
-final waterEntryProvider = StreamProvider.family<WaterEntry?, String>(
-  (ref, id) => ref.watch(waterRepositoryProvider).watchById(id),
-);
+/// Released when the screen stops watching it.
+final waterEntryProvider = StreamProvider.autoDispose
+    .family<WaterEntry?, String>(
+      (ref, id) => ref.watch(waterRepositoryProvider).watchById(id),
+    );
 
 /// The daily goal as the goal editor needs it: today's threshold and what
 /// applies from tomorrow. Loading until goals and today's model are known.
