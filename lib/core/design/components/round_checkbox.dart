@@ -4,7 +4,9 @@ import 'package:self_improvement/core/design/motion/app_motion.dart';
 import 'package:self_improvement/core/design/tokens/app_sizes.dart';
 import 'package:self_improvement/core/design/tokens/app_tokens.dart';
 
-/// Round checkbox (28 px circle) inside a 48 x 48 tap area.
+/// Round checkbox (28 px circle) inside a 48 x 48 tap area. With [squared] the
+/// box is a rounded square, the convention for multi-select options (the
+/// round form stays for completing a task or habit).
 ///
 /// Checked: button green with a white check mark. Unchecked: surface with a
 /// 2 px input border. The state is never colour only: it is announced as
@@ -20,6 +22,7 @@ class RoundCheckbox extends StatelessWidget {
     super.key,
     this.checkedStateLabel,
     this.uncheckedStateLabel,
+    this.squared = false,
   });
 
   /// Whether the box is checked.
@@ -37,6 +40,9 @@ class RoundCheckbox extends StatelessWidget {
   /// Spoken state when unchecked (for example "offen").
   final String? uncheckedStateLabel;
 
+  /// Rounded square instead of a circle (multi-select options).
+  final bool squared;
+
   @override
   Widget build(BuildContext context) {
     final colors = context.tokens.colors;
@@ -50,7 +56,8 @@ class RoundCheckbox extends StatelessWidget {
       height: AppSizes.checkbox,
       decoration: BoxDecoration(
         color: value ? colors.primaryButton : colors.surface,
-        shape: BoxShape.circle,
+        shape: squared ? BoxShape.rectangle : BoxShape.circle,
+        borderRadius: squared ? BorderRadius.circular(8) : null,
         border: value ? null : Border.all(color: colors.borderInput, width: 2),
       ),
       child: AnimatedOpacity(
@@ -71,7 +78,9 @@ class RoundCheckbox extends StatelessWidget {
         dimension: AppSizes.touchMin,
         child: InkSurface(
           onTap: enabled ? () => onChanged!(!value) : null,
-          shape: const CircleBorder(),
+          shape: squared
+              ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+              : const CircleBorder(),
           child: Center(
             child: Opacity(opacity: enabled ? 1 : 0.5, child: box),
           ),
