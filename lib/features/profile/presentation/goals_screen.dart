@@ -137,6 +137,10 @@ class _GoalsFormState extends ConsumerState<_GoalsForm> {
   }
 
   Future<void> _submit() async {
+    // A retry offered by a snack bar can outlive the screen: nothing to save.
+    if (!mounted) {
+      return;
+    }
     FocusScope.of(context).unfocus();
     final feedback = ref.read(feedbackServiceProvider);
     final result = await _controller.submit();

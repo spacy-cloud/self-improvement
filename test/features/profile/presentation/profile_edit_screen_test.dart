@@ -407,6 +407,38 @@ void main() {
       },
     );
 
+    testWidgets(
+      'a retry offered after the editor was left does nothing and does not crash',
+      (tester) async {
+        final env = await createScreenEnv(tester);
+        await openScreen(tester, env, ProfileRoutes.edit);
+        await tester.enterText(field('Name'), 'Max');
+        await tester.pump();
+        env.projection.failure = StateError('disk full');
+        await save(tester);
+        expect(env.feedback.last!.kind, 'error');
+
+        await tester.tap(iconButton('Zurück'));
+        await settle(tester);
+        await tester.tap(find.text('Verwerfen'));
+        await settle(tester);
+        expect(find.text('Seite /'), findsOneWidget);
+
+        env.projection.failure = null;
+        env.feedback.last!.onRetry!(); // the snack bar is still on screen
+        await settle(tester);
+        expect(
+          env.profileCommands.commandIds,
+          hasLength(1),
+          reason: 'only the failed attempt',
+        );
+        final stored = (await tester.runAsync(
+          () => env.container.read(profileRepositoryProvider).get(),
+        ))!;
+        expect(stored.displayName, isNull);
+      },
+    );
+
     testWidgets('a double tap on save sends one command', (tester) async {
       final env = await createScreenEnv(tester);
       await openScreen(tester, env, ProfileRoutes.edit);

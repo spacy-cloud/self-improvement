@@ -89,13 +89,14 @@ class _SettingsContent extends ConsumerWidget {
   final Map<ModuleId, bool> modules;
 
   /// Runs one settings change. A failed write keeps the old value on screen
-  /// (the switches show the stored state) and offers a retry.
+  /// (the switches show the stored state) and offers a retry. The retry only
+  /// needs the two services, so it still works after the user left the page.
   Future<void> _apply(
-    WidgetRef ref,
+    FeedbackService feedback,
+    SettingsActions actions,
     Future<SettingsResult> Function(SettingsActions actions) change,
   ) async {
-    final feedback = ref.read(feedbackServiceProvider);
-    final result = await change(ref.read(settingsActionsProvider));
+    final result = await change(actions);
     if (result is SettingsFailed) {
       final failure = result.failure;
       feedback.showError(
@@ -103,9 +104,20 @@ class _SettingsContent extends ConsumerWidget {
             ? 'Die Einstellung konnte nicht gespeichert werden. '
                   'Der bisherige Wert bleibt aktiv.'
             : failure.userMessage,
-        onRetry: () => fireAndForget(() => _apply(ref, change)),
+        onRetry: () => fireAndForget(() => _apply(feedback, actions, change)),
       );
     }
+  }
+
+  Future<void> _run(
+    WidgetRef ref,
+    Future<SettingsResult> Function(SettingsActions actions) change,
+  ) {
+    return _apply(
+      ref.read(feedbackServiceProvider),
+      ref.read(settingsActionsProvider),
+      change,
+    );
   }
 
   Future<void> _chooseTheme(BuildContext context, WidgetRef ref) async {
@@ -127,7 +139,7 @@ class _SettingsContent extends ConsumerWidget {
     if (chosen == null || chosen == current) {
       return;
     }
-    await _apply(ref, (actions) => actions.setThemeMode(chosen));
+    await _run(ref, (actions) => actions.setThemeMode(chosen));
   }
 
   @override
@@ -233,7 +245,7 @@ class _SettingsContent extends ConsumerWidget {
               leading: neutralTile(AppIcon.reducedMotion),
               value: settings.reduceMotion,
               onToggle: (value) => fireAndForget(
-                () => _apply(
+                () => _run(
                   ref,
                   (actions) => actions.setReduceMotion(value: value),
                 ),
@@ -245,10 +257,7 @@ class _SettingsContent extends ConsumerWidget {
               leading: neutralTile(AppIcon.haptics),
               value: settings.haptics,
               onToggle: (value) => fireAndForget(() async {
-                await _apply(
-                  ref,
-                  (actions) => actions.setHaptics(value: value),
-                );
+                await _run(ref, (actions) => actions.setHaptics(value: value));
                 if (value) {
                   await ref.read(appHapticsProvider).confirm(force: true);
                 }

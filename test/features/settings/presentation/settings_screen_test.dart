@@ -296,6 +296,37 @@ void main() {
       },
     );
 
+    testWidgets(
+      'the retry of a failed write still works after leaving the page',
+      (tester) async {
+        final env = await createScreenEnv(tester);
+        await openScreen(tester, env, SettingsRoutes.settings);
+        env.projection.failure = StateError('disk full');
+        await tapRow(tester, 'Haptisches Feedback');
+        expect(env.feedback.last!.kind, 'error');
+
+        await tester.tap(
+          find.byWidgetPredicate(
+            (w) => w is AppIconButton && w.semanticLabel == 'Zurück',
+          ),
+        );
+        await settle(tester);
+        expect(find.text('Seite /'), findsOneWidget);
+
+        env.projection.failure = null;
+        env.feedback.last!.onRetry!();
+        await settle(tester);
+        final settings = (await tester.runAsync(
+          () => env.container.read(appSettingsRepositoryProvider).get(),
+        ))!;
+        expect(
+          settings.haptics,
+          isFalse,
+          reason: 'the retried change was saved',
+        );
+      },
+    );
+
     testWidgets('a double tap writes once', (tester) async {
       final env = await createScreenEnv(tester);
       await openScreen(tester, env, SettingsRoutes.settings);
