@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:self_improvement/core/analysis/domain/analysis_cards.dart';
 import 'package:self_improvement/core/analysis/domain/analysis_figures.dart';
+import 'package:self_improvement/core/analysis/domain/period_comparison.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/features/analysis/presentation/analysis_visuals.dart';
 import 'package:self_improvement/features/analysis/presentation/analysis_widgets.dart';
@@ -15,9 +16,14 @@ import 'package:self_improvement/features/analysis/presentation/analysis_widgets
 /// says so (`Noch keine Daten`) and shows no number, never a fake 0. The whole
 /// card is one block for screen readers (the label of the engine).
 class AnalysisMetricCard extends StatelessWidget {
-  const AnalysisMetricCard({required this.card, super.key});
+  const AnalysisMetricCard({required this.card, this.hiddenReason, super.key});
 
   final AnalysisCard card;
+
+  /// A reason of a missing comparison that the screen already explains once
+  /// for all cards (the previous period lies before the usage start): the
+  /// card then only says "Noch kein Vergleich".
+  final NoComparisonReason? hiddenReason;
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +56,7 @@ class AnalysisMetricCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             if (card.hasData)
-              _CardFigures(card: card)
+              _CardFigures(card: card, hiddenReason: hiddenReason)
             else
               Text(
                 card.emptyText,
@@ -66,9 +72,10 @@ class AnalysisMetricCard extends StatelessWidget {
 }
 
 class _CardFigures extends StatelessWidget {
-  const _CardFigures({required this.card});
+  const _CardFigures({required this.card, required this.hiddenReason});
 
   final AnalysisCard card;
+  final NoComparisonReason? hiddenReason;
 
   /// The figure that is shown big: the first one with a value (the weight
   /// change of a single measurement has none yet, then the last value leads).
@@ -89,10 +96,13 @@ class _CardFigures extends StatelessWidget {
         .toList(growable: false);
     // The reason of a missing comparison is spelled out once per distinct
     // sentence, so a card does not repeat it for every figure.
-    final shown = <String>{?headline.explanation};
+    final shown = <String>{};
     bool explain(AnalysisFigure figure) {
       final text = figure.explanation;
-      return text != null && shown.add(text);
+      if (text == null || figure.comparison?.reason == hiddenReason) {
+        return false;
+      }
+      return shown.add(text);
     }
 
     return Column(
@@ -117,7 +127,10 @@ class _CardFigures extends StatelessWidget {
           Text(headline.coverage!.text, style: secondary),
         if (headline.isCompared) ...<Widget>[
           const SizedBox(height: 8),
-          FigureComparison(figure: headline),
+          FigureComparison(
+            figure: headline,
+            showExplanation: explain(headline),
+          ),
         ],
         for (final figure in others) ...<Widget>[
           const SizedBox(height: 12),

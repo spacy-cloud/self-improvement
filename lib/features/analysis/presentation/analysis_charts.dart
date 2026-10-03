@@ -114,7 +114,7 @@ class AnalysisBarChart extends StatelessWidget {
           final visible = chartLabelIndexes(
             count: count,
             plotWidth: constraints.maxWidth,
-            sample: count <= 7 ? 'Heute' : '28.09.',
+            sample: count <= 7 ? 'Mo' : '28.09.',
             textScaler: MediaQuery.textScalerOf(context),
           );
           return BarChart(
@@ -261,7 +261,7 @@ class AnalysisLineChart extends StatelessWidget {
           final visible = chartLabelIndexes(
             count: count,
             plotWidth: plotWidth,
-            sample: count <= 7 ? 'Heute' : '28.09.',
+            sample: count <= 7 ? 'Mo' : '28.09.',
             textScaler: MediaQuery.textScalerOf(context),
           );
           return Padding(
@@ -372,21 +372,31 @@ FlTitlesData _titles(
 
 /// The axis positions that get a label, counted from today backwards so that
 /// `Heute` is always shown, spaced so that labels never overlap at the current
-/// text scale.
+/// text scale. The spacing follows the widest label that can occur: the
+/// semi-bold `Heute` or the longer of the two day texts ([sample]).
 Set<int> chartLabelIndexes({
   required int count,
   required double plotWidth,
   required String sample,
   required TextScaler textScaler,
 }) {
-  final painter = TextPainter(
-    text: TextSpan(text: sample, style: AppTextStyles.captionDefault),
-    textDirection: TextDirection.ltr,
-    textScaler: textScaler,
-    maxLines: 1,
-  )..layout();
-  final labelWidth = painter.width + 10;
-  painter.dispose();
+  double widthOf(String text, FontWeight? weight) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: AppTextStyles.captionDefault.copyWith(fontWeight: weight),
+      ),
+      textDirection: TextDirection.ltr,
+      textScaler: textScaler,
+      maxLines: 1,
+    )..layout();
+    final width = painter.width;
+    painter.dispose();
+    return width;
+  }
+
+  final labelWidth =
+      math.max(widthOf('Heute', FontWeight.w600), widthOf(sample, null)) + 10;
   final perDay = count <= 1 ? plotWidth : plotWidth / count;
   final step = math.max(1, (labelWidth / perDay).ceil());
   return <int>{for (var i = count - 1; i >= 0; i -= step) i};

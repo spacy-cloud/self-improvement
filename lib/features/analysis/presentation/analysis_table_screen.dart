@@ -5,6 +5,7 @@ import 'package:self_improvement/core/analysis/domain/analysis_report.dart';
 import 'package:self_improvement/core/analysis/domain/analysis_table.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/features/analysis/presentation/analysis_table_views.dart';
+import 'package:self_improvement/features/analysis/presentation/analysis_widgets.dart';
 
 /// "Analyse als Tabelle" (Figma 4056:421): the accessible alternative to the
 /// cards and charts. It shows the same figures with the same formulas as rows
@@ -94,9 +95,18 @@ class _TableContent extends StatelessWidget {
             child: Text(table.periodTable.caption, style: secondary),
           ),
         ),
+        if (report.comparisonNote != null) ...<Widget>[
+          const SizedBox(height: 8),
+          AnalysisNote(text: report.comparisonNote!),
+        ],
         const SizedBox(height: 12),
         if (table.periodTable.rows.isNotEmpty)
-          AppCard(child: AnalysisFigureTableView(table: table.periodTable)),
+          AppCard(
+            child: AnalysisFigureTableView(
+              table: table.periodTable,
+              hiddenReason: report.comparisonBaseProblem,
+            ),
+          ),
         if (table.weekTable != null) ...<Widget>[
           const SizedBox(height: 16),
           Padding(
@@ -108,7 +118,12 @@ class _TableContent extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          AppCard(child: AnalysisFigureTableView(table: table.weekTable!)),
+          AppCard(
+            child: AnalysisFigureTableView(
+              table: table.weekTable!,
+              hiddenReason: report.comparisonBaseProblem,
+            ),
+          ),
         ],
         if (table.dayTable.headers.isNotEmpty) ...<Widget>[
           const SizedBox(height: 16),

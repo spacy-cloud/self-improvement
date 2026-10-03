@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:self_improvement/core/analysis/domain/analysis_figures.dart';
+import 'package:self_improvement/core/analysis/domain/period_comparison.dart';
 import 'package:self_improvement/core/analysis/domain/workout_week.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/features/analysis/presentation/analysis_visuals.dart';
@@ -14,9 +15,15 @@ import 'package:self_improvement/features/analysis/presentation/analysis_widgets
 /// text. Without a weekly target there is no ring. The whole card is one block
 /// for screen readers (the label of the engine).
 class AnalysisWeekCard extends StatelessWidget {
-  const AnalysisWeekCard({required this.week, super.key});
+  const AnalysisWeekCard({required this.week, this.hiddenReason, super.key});
 
   final WorkoutWeekCard week;
+
+  /// A reason of a missing comparison that the screen already says in the
+  /// same words above the cards (an unknown usage start); the card then does
+  /// not repeat it. A week has its own comparison base, so every other reason
+  /// is spelled out here.
+  final NoComparisonReason? hiddenReason;
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +45,9 @@ class AnalysisWeekCard extends StatelessWidget {
           const SizedBox(height: 10),
           _WeekFigure(
             figure: figure,
-            explain: identical(figure, week.countFigure),
+            explain:
+                identical(figure, week.countFigure) &&
+                figure.comparison?.reason != hiddenReason,
           ),
         ],
         const SizedBox(height: 8),

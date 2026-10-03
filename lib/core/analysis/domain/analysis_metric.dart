@@ -46,6 +46,13 @@ enum AnalysisMetric {
     AnalysisMetric.tasks || AnalysisMetric.habits => ModuleId.tasks,
   };
 
+  /// The modules that have analysis metrics (body, nutrition, focus, tasks).
+  /// Gamification has none: with only that module on there is nothing to
+  /// analyse.
+  static final Set<ModuleId> analysedModules = Set.unmodifiable(<ModuleId>{
+    for (final metric in values) ?metric.module,
+  });
+
   /// German title of the card.
   String get title => switch (this) {
     AnalysisMetric.dailyGoals => 'Tagesziele',

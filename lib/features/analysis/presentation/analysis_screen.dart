@@ -5,6 +5,7 @@ import 'package:self_improvement/core/analysis/application/analysis_providers.da
 import 'package:self_improvement/core/analysis/domain/analysis_metric.dart';
 import 'package:self_improvement/core/analysis/domain/analysis_period.dart';
 import 'package:self_improvement/core/analysis/domain/analysis_report.dart';
+import 'package:self_improvement/core/analysis/domain/period_comparison.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/features/analysis/presentation/analysis_chart_section.dart';
 import 'package:self_improvement/features/analysis/presentation/analysis_goals_card.dart';
@@ -47,7 +48,7 @@ class AnalysisScreen extends ConsumerWidget {
       );
     } else if (report == null) {
       body = _WithSelector(length: length, child: const _Loading());
-    } else if (report.noModuleActive) {
+    } else if (!report.hasAnalysedModule) {
       body = const _NoModules();
     } else {
       body = _Loaded(
@@ -122,18 +123,20 @@ class _Loading extends StatelessWidget {
   }
 }
 
-/// All modules are off: nothing can be analysed. The state says so and offers
-/// the way to the module manager.
+/// No module with analysis data is on (all modules off, or only the progress
+/// module): nothing can be analysed. The state says so and offers the way to
+/// the module manager.
 class _NoModules extends StatelessWidget {
   const _NoModules();
 
   @override
   Widget build(BuildContext context) {
     return EmptyState(
-      title: 'Keine Module aktiv',
+      title: 'Kein Modul für die Analyse aktiv',
       message:
-          'Aktiviere mindestens ein Modul, damit hier deine Auswertung '
-          'erscheint. Bereits erfasste Daten bleiben erhalten.',
+          'Aktiviere ein Modul (Körper, Ernährung, Fokus oder Aufgaben), '
+          'damit hier deine Auswertung erscheint. Bereits erfasste Daten '
+          'bleiben erhalten.',
       actionLabel: 'Module verwalten',
       onAction: () => context.push(analysisModulesRoute),
       icon: AppIcon.modules,
@@ -162,7 +165,10 @@ class _Loaded extends StatelessWidget {
     final cards = <AnalysisMetric, Widget>{
       for (final card in report.cards)
         if (card.metric != AnalysisMetric.dailyGoals)
-          card.metric: AnalysisMetricCard(card: card),
+          card.metric: AnalysisMetricCard(
+            card: card,
+            hiddenReason: report.comparisonBaseProblem,
+          ),
     };
     final grid = <Widget>[
       for (final metric in analysisGridOrder)
@@ -174,10 +180,9 @@ class _Loaded extends StatelessWidget {
       content = EmptyState(
         title: 'Noch keine Daten',
         message:
-            'In ${length.currentTitle.toLowerCase()} wurde noch nichts '
-            'erfasst. Sobald du Einträge hast, siehst du hier deine '
-            'Auswertung und den Vergleich mit den vorherigen '
-            '${length.days} Tagen.',
+            'In den letzten ${length.days} Tagen wurde noch nichts erfasst. '
+            'Sobald du Einträge hast, siehst du hier deine Auswertung und '
+            'den Vergleich mit den vorherigen ${length.days} Tagen.',
         icon: AppIcon.sprout,
       );
     } else {
@@ -191,13 +196,21 @@ class _Loaded extends StatelessWidget {
               daysWithGoals: report.current.goals.daysWithGoals,
               goalDays: report.goalDays,
               today: report.period.today,
+              hiddenReason: report.comparisonBaseProblem,
             ),
             const SizedBox(height: 12),
           ],
           if (grid.isNotEmpty) AdaptiveGrid(minCellWidth: 150, children: grid),
           if (report.workoutWeek != null) ...<Widget>[
             const SizedBox(height: 12),
-            AnalysisWeekCard(week: report.workoutWeek!),
+            AnalysisWeekCard(
+              week: report.workoutWeek!,
+              hiddenReason:
+                  report.comparisonBaseProblem ==
+                      NoComparisonReason.noUsageStart
+                  ? NoComparisonReason.noUsageStart
+                  : null,
+            ),
           ],
           const SizedBox(height: 16),
           AnalysisChartSection(report: report),
@@ -210,7 +223,7 @@ class _Loaded extends StatelessWidget {
       children: <Widget>[
         _PeriodSelector(length: length),
         const SizedBox(height: 8),
-        _PeriodHeader(report: report),
+        _PeriodHeader(report: report, showTableLink: report.hasAnyData),
         const SizedBox(height: 8),
         if (stale)
           Padding(
@@ -232,9 +245,12 @@ class _Loaded extends StatelessWidget {
 /// inklusive heute`), the link to the table, the comparison base with its dates
 /// and, when comparisons are not possible yet, when they will be.
 class _PeriodHeader extends StatelessWidget {
-  const _PeriodHeader({required this.report});
+  const _PeriodHeader({required this.report, required this.showTableLink});
 
   final AnalysisReport report;
+
+  /// The table only makes sense when there is something to read in it.
+  final bool showTableLink;
 
   @override
   Widget build(BuildContext context) {
@@ -248,15 +264,19 @@ class _PeriodHeader extends StatelessWidget {
       excludeSemantics: true,
       child: Text(report.periodText, style: secondary),
     );
-    final link = AnalysisLinkAction(
-      label: 'Als Tabelle',
-      semanticLabel: 'Analyse als Tabelle öffnen',
-      onPressed: () => AnalysisTableScreen.open(context),
-    );
+    final link = showTableLink
+        ? AnalysisLinkAction(
+            label: 'Als Tabelle',
+            semanticLabel: 'Analyse als Tabelle öffnen',
+            onPressed: () => AnalysisTableScreen.open(context),
+          )
+        : null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        if (useStackedLayout(context))
+        if (link == null)
+          period
+        else if (useStackedLayout(context))
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[period, link],

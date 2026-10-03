@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:self_improvement/core/analysis/domain/analysis_cards.dart';
 import 'package:self_improvement/core/analysis/domain/analysis_texts.dart';
 import 'package:self_improvement/core/analysis/domain/goal_days.dart';
+import 'package:self_improvement/core/analysis/domain/period_comparison.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/features/analysis/presentation/analysis_visuals.dart';
 import 'package:self_improvement/features/analysis/presentation/analysis_widgets.dart';
@@ -25,6 +26,7 @@ class AnalysisGoalsCard extends StatelessWidget {
     required this.daysWithGoals,
     required this.goalDays,
     required this.today,
+    this.hiddenReason,
     super.key,
   });
 
@@ -41,6 +43,10 @@ class AnalysisGoalsCard extends StatelessWidget {
   final List<GoalDay> goalDays;
 
   final LocalDate today;
+
+  /// A reason of a missing comparison that the screen already explains once
+  /// (the previous period lies before the usage start).
+  final NoComparisonReason? hiddenReason;
 
   /// The strip is drawn for one week only: longer periods are listed day by
   /// day in the table.
@@ -111,7 +117,8 @@ class AnalysisGoalsCard extends StatelessWidget {
                     ],
                   ),
                   if (!complete.hasComparison &&
-                      complete.explanation != null) ...<Widget>[
+                      complete.explanation != null &&
+                      complete.comparison?.reason != hiddenReason) ...<Widget>[
                     const SizedBox(height: 4),
                     Text(complete.explanation!, style: secondary),
                   ],
