@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:self_improvement/core/design/components/app_icon_tile.dart';
 import 'package:self_improvement/core/design/components/app_switch.dart';
+import 'package:self_improvement/core/design/components/round_checkbox.dart';
 import 'package:self_improvement/core/design/icons/app_icons.dart';
 import 'package:self_improvement/core/design/internal/ink_surface.dart';
 import 'package:self_improvement/core/design/tokens/app_colors.dart';
@@ -8,7 +9,7 @@ import 'package:self_improvement/core/design/tokens/app_sizes.dart';
 import 'package:self_improvement/core/design/tokens/app_text_styles.dart';
 import 'package:self_improvement/core/design/tokens/app_tokens.dart';
 
-enum _TileTrailing { custom, chevron, toggle, value }
+enum _TileTrailing { custom, chevron, toggle, check, value }
 
 /// List row (Figma "ListRow"): icon tile, title, optional subtitle and a
 /// trailing element. The whole row is tappable and at least 56 high; texts
@@ -74,6 +75,27 @@ class EntryListTile extends StatelessWidget {
        destructive = false,
        showChevron = false;
 
+  /// Row with a trailing round checkbox for multi-select lists (for example
+  /// the measurement conditions): tapping anywhere changes the choice; screen
+  /// readers get one checkable row.
+  const EntryListTile.check({
+    required this.title,
+    required bool value,
+    required this.onToggle,
+    super.key,
+    this.subtitle,
+    this.icon,
+    this.accent = AppAccent.primary,
+    this.leading,
+    this.semanticLabel,
+  }) : _trailing = _TileTrailing.check,
+       toggleValue = value,
+       trailing = null,
+       onTap = null,
+       valueText = null,
+       destructive = false,
+       showChevron = false;
+
   /// Row with a trailing value text; [showChevron] adds a chevron when the row
   /// opens a screen.
   const EntryListTile.value({
@@ -121,10 +143,10 @@ class EntryListTile extends StatelessWidget {
   /// Title in the error colour (for example "Alle Daten zurücksetzen").
   final bool destructive;
 
-  /// Value of the toggle variant.
+  /// Value of the toggle and check variants.
   final bool toggleValue;
 
-  /// Change callback of the toggle variant.
+  /// Change callback of the toggle and check variants.
   final ValueChanged<bool>? onToggle;
 
   /// Value text of the value variant.
@@ -153,7 +175,8 @@ class EntryListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.tokens.colors;
     final isToggle = _trailing == _TileTrailing.toggle;
-    final VoidCallback? tap = isToggle
+    final isCheck = _trailing == _TileTrailing.check;
+    final VoidCallback? tap = isToggle || isCheck
         ? (onToggle == null ? null : () => onToggle!(!toggleValue))
         : onTap;
 
@@ -169,6 +192,15 @@ class EntryListTile extends StatelessWidget {
           child: AppSwitch(
             value: toggleValue,
             onChanged: onToggle,
+            semanticLabel: title,
+          ),
+        ),
+      ),
+      _TileTrailing.check => ExcludeSemantics(
+        child: IgnorePointer(
+          child: RoundCheckbox(
+            value: toggleValue,
+            onChanged: onToggle == null ? null : (_) {},
             semanticLabel: title,
           ),
         ),
@@ -237,9 +269,10 @@ class EntryListTile extends StatelessWidget {
 
     return Semantics(
       container: true,
-      button: tap != null && !isToggle,
+      button: tap != null && !isToggle && !isCheck,
       toggled: isToggle ? toggleValue : null,
-      enabled: isToggle ? onToggle != null : null,
+      checked: isCheck ? toggleValue : null,
+      enabled: isToggle || isCheck ? onToggle != null : null,
       label: _label,
       onTap: tap,
       excludeSemantics: true,

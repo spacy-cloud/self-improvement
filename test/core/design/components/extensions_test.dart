@@ -1,3 +1,5 @@
+import 'dart:ui' show CheckedState;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/core/design/design.dart';
@@ -77,6 +79,58 @@ void main() {
       expect(find.text('ignored'), findsNothing);
       await tester.tap(find.byIcon(Icons.add_rounded));
       expect(plus, 1);
+    });
+  });
+
+  group('EntryListTile.check', () {
+    testSemantics('the whole row toggles and reads as one checkable row', (
+      tester,
+    ) async {
+      final changes = <bool>[];
+      var value = false;
+      await pumpDesign(
+        tester,
+        StatefulBuilder(
+          builder: (context, setState) => EntryListTile.check(
+            title: 'Vor dem Klo',
+            subtitle: 'Noch nicht auf Toilette gewesen',
+            icon: Icons.wc_rounded,
+            value: value,
+            onToggle: (next) {
+              changes.add(next);
+              setState(() => value = next);
+            },
+          ),
+        ),
+      );
+      final row = tester.getSemantics(find.bySemanticsLabel(RegExp('Vor dem')));
+      expect(row.flagsCollection.isChecked, CheckedState.isFalse);
+      expect(row.rect.height, greaterThanOrEqualTo(48));
+
+      await tester.tap(find.text('Vor dem Klo'));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(changes, [true]);
+      expect(
+        tester
+            .getSemantics(find.bySemanticsLabel(RegExp('Vor dem')))
+            .flagsCollection
+            .isChecked,
+        CheckedState.isTrue,
+      );
+    });
+
+    testWidgets('without a callback the row is disabled', (tester) async {
+      await pumpDesign(
+        tester,
+        const EntryListTile.check(
+          title: 'Nach dem Essen',
+          value: false,
+          onToggle: null,
+        ),
+      );
+      await tester.tap(find.text('Nach dem Essen'));
+      await tester.pump();
+      expect(tester.takeException(), isNull);
     });
   });
 }
