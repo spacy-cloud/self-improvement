@@ -54,6 +54,15 @@ jobs:
           path: build/load-test-results.json
           retention-days: 14
           if-no-files-found: warn
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: demo-backup
+          # Synthetic demo data (90 days, all modules) for manual tests: import it
+          # in the app under Profil, Einstellungen, Daten.
+          path: build/demo-backup/demo-daten-90-tage.json
+          retention-days: 14
+          if-no-files-found: warn
 
   android-debug-apk:
     name: Android debug APK
@@ -80,6 +89,16 @@ jobs:
         with:
           name: debug-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 14
+          if-no-files-found: error
+      - name: Build release APK (signed with the debug key; for manual performance checks only, not a store build)
+        run: flutter build apk --release
+      - name: Show release APK details
+        run: ls -l build/app/outputs/flutter-apk/ && sha256sum build/app/outputs/flutter-apk/app-release.apk
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 14
           if-no-files-found: error
 
