@@ -7,7 +7,7 @@ Dokumentiert tatsächlich ausgeführte Prüfungen mit Umgebung und Ergebnis. Nic
 | Aspekt | Wert |
 |---|---|
 | Datum der Läufe | 2026-10-03 |
-| Code-Stand | Commit `873f9ff` auf dem Integrationsbranch `feature/BS-51-android-v1` (Stand nach Prüfzyklus 2); spätere Commits ändern nur Dateien unter `docs/` und `README.md` |
+| Code-Stand | Commit `93ee81f` auf dem Integrationsbranch `feature/BS-51-android-v1` (Stand nach Prüfzyklus 3); spätere Commits ändern nur Dateien unter `docs/` und `README.md` |
 | Toolchain | Flutter 3.47.6 (stable, Framework-Revision `5fc346839b`), Dart 3.13.5, DevTools 2.60.0 (Ausgabe von `flutter --version`; siehe [implementation-decisions.md](implementation-decisions.md)) |
 | Host | Linux x86_64 |
 | Host-Tests | `flutter test` mit echter In-Memory-SQLite-Datenbank (Drift), fester Uhr `FakeClock` (Zone Europa/Berlin, 2026-10-03), Fakes für Erinnerungs-Plattform, Teilen und Dateiauswahl, simulierter Textskala und Tastatur; nur synthetische Daten |
@@ -22,15 +22,15 @@ Befehl, ausgeführt nach `flutter pub get` und `dart run build_runner build`:
 flutter test --no-pub
 ```
 
-Ergebnis: **6472 Tests bestanden, 0 übersprungen, 0 fehlgeschlagen**, Exit-Code 0, Laufzeit laut Reporter 2:44 Minuten (Lauf mit `--reporter json`, damit sich die Tests je Verzeichnis zählen lassen). Sie verteilen sich auf 277 Testdateien; eine weitere Datei (`test/features/focus/presentation/focus_visual_test.dart`) registriert nur mit der Umgebungsvariable `FOCUS_UI_PNG=1` einen Test.
+Ergebnis: **6485 Tests bestanden, 0 übersprungen, 0 fehlgeschlagen**, Exit-Code 0, Laufzeit laut Reporter 2:42 Minuten (Lauf mit `--reporter json`, damit sich die Tests je Verzeichnis zählen lassen). Sie verteilen sich auf 277 Testdateien; eine weitere Datei (`test/features/focus/presentation/focus_visual_test.dart`) registriert nur mit der Umgebungsvariable `FOCUS_UI_PNG=1` einen Test.
 
 ### Ergebnis je Bereich
 
-Die Zeilen stammen aus dem Gesamtlauf und sind nach dem Verzeichnis der Testdatei aufgeteilt; jedes Verzeichnis lässt sich einzeln mit `flutter test --no-pub <Verzeichnis>` wiederholen. Die Summe der Zeilen ist 6472 und stimmt mit dem Gesamtlauf überein.
+Die Zeilen stammen aus dem Gesamtlauf und sind nach dem Verzeichnis der Testdatei aufgeteilt; jedes Verzeichnis lässt sich einzeln mit `flutter test --no-pub <Verzeichnis>` wiederholen. Die Summe der Zeilen ist 6485 und stimmt mit dem Gesamtlauf überein.
 
 | Bereich | Verzeichnis | Tests |
 |---|---|---:|
-| App (Start, Router, Shell, Fehlerbehandlung, Verdrahtung) | `test/app` | 450 |
+| App (Start, Router, Shell, Fehlerbehandlung, Verdrahtung) | `test/app` | 459 |
 | Analyse-Engine | `test/core/analysis` | 280 |
 | Backup (Format, Validierung, Import, Export, Zurücksetzen) | `test/core/backup` | 717 |
 | Bootstrap | `test/core/bootstrap` | 8 |
@@ -50,10 +50,10 @@ Die Zeilen stammen aus dem Gesamtlauf und sind nach dem Verzeichnis der Testdate
 | Analyse (Oberfläche) | `test/features/analysis` | 123 |
 | Körper (Gewicht und Schritte) | `test/features/body` | 239 |
 | Dashboard | `test/features/dashboard` | 139 |
-| Fokus und Workouts | `test/features/focus` | 653 |
+| Fokus und Workouts | `test/features/focus` | 656 |
 | Gamification | `test/features/gamification` | 173 |
 | Modulverwaltung | `test/features/modules` | 42 |
-| Ernährung (Wasser und Mahlzeiten) | `test/features/nutrition` | 611 |
+| Ernährung (Wasser und Mahlzeiten) | `test/features/nutrition` | 612 |
 | Onboarding | `test/features/onboarding` | 97 |
 | Profil und Ziele | `test/features/profile` | 209 |
 | Erinnerungen (Oberfläche) | `test/features/reminders` | 94 |
@@ -64,7 +64,7 @@ Die Zeilen stammen aus dem Gesamtlauf und sind nach dem Verzeichnis der Testdate
 | Gemeinsame Hilfen (Datum, Zahlen) | `test/shared` | 24 |
 | Test-Hilfen | `test/support` | 2 |
 | Demo-Backup-Erzeuger | `test/tool` | 1 |
-| **Summe** | | **6472** |
+| **Summe** | | **6485** |
 
 Die Tests je Abnahmefall (AT01 bis AT36) zählt `dart run tool/at_coverage.dart`; die Auswertung steht in Abschnitt 3 der Anforderungsmatrix.
 
