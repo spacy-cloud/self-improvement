@@ -17,9 +17,11 @@ import 'package:self_improvement/core/notifications/platform/reminder_platform.d
 import 'package:self_improvement/core/providers/core_providers.dart';
 
 /// The platform adapter. The default is the real
-/// `flutter_local_notifications` adapter; tests override it with
-/// `FakeReminderPlatform`. The app shell calls `initialize()` on it once at
-/// start, before the first frame.
+/// `flutter_local_notifications` adapter; every test that builds the engine
+/// overrides it with `FakeReminderPlatform` (the real one cannot reach a native
+/// side on the host and would only report platform failures). The app shell
+/// calls `initialize()` on it once at start, before the first frame, so a tap
+/// on a notification is delivered.
 final reminderPlatformProvider = Provider<ReminderPlatform>((ref) {
   final platform = FlutterLocalNotificationsReminderPlatform();
   ref.onDispose(platform.dispose);
@@ -39,9 +41,13 @@ final deviceZoneTrackerProvider = Provider<DeviceZoneTracker>(
 
 /// INJECTED: whether today's water goal is already reached. The default is
 /// "never", so reminders are not suppressed until the app wires the real day
-/// status (override with a function that answers from committed data). When it
-/// returns true, today's remaining water reminders are cancelled and tomorrow's
-/// stay.
+/// status. When the function returns true, today's remaining water reminders
+/// are cancelled and tomorrow's stay.
+///
+/// Override it with a function that answers from committed data and reads the
+/// current state lazily (`ref.read` inside the closure). The provider value
+/// must stay the same object: a function that is rebuilt on every change would
+/// rebuild the whole engine.
 final waterGoalReachedTodayProvider = Provider<Future<bool> Function()>(
   (ref) =>
       () async => false,
