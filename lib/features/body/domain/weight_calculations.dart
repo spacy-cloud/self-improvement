@@ -47,6 +47,17 @@ int? deltaToPrevious(Iterable<WeightSample> samples, String id) {
   return sorted[index].grams - sorted[index - 1].grams;
 }
 
+/// The change of every measurement compared with its chronologically
+/// previous one, keyed by id. The first measurement has no entry (no
+/// predecessor, "Noch kein Vergleich").
+Map<String, int> deltasToPrevious(Iterable<WeightSample> samples) {
+  final sorted = chronological(samples);
+  return {
+    for (var i = 1; i < sorted.length; i++)
+      sorted[i].id: sorted[i].grams - sorted[i - 1].grams,
+  };
+}
+
 /// Change of a (new or edited) measurement of [grams] taken at
 /// [occurredAtUtc] compared with the latest measurement taken strictly before
 /// it; [excludeId] leaves the measurement being edited out. Null without an

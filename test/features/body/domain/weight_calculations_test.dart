@@ -116,6 +116,20 @@ void main() {
       );
     });
 
+    test('all deltas at once equal the single delta of each entry', () {
+      final samples = [
+        sample('c', '2026-10-03', 7, 71500),
+        sample('a', '2026-10-01', 7, 72000),
+        sample('b', '2026-10-02', 7, 71800),
+      ];
+      final all = deltasToPrevious(samples);
+      expect(all, {'b': -200, 'c': -300});
+      for (final id in ['a', 'b', 'c']) {
+        expect(all[id], deltaToPrevious(samples, id));
+      }
+      expect(deltasToPrevious(const []), isEmpty);
+    });
+
     test('a single measurement has no comparison', () {
       expect(
         deltaToPrevious([sample('a', '2026-10-03', 7, 71500)], 'a'),

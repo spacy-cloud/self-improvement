@@ -98,4 +98,41 @@ void main() {
       expect(weightPeriodSpoken(7), '7 Tage');
     });
   });
+
+  group('chart text alternative (AT08)', () {
+    final today = LocalDate(2026, 10, 3);
+
+    test('no point says so and invents no value', () {
+      expect(
+        weightChartSummary(const [], 7, today),
+        'In den letzten 7 Tagen gibt es keine Messung.',
+      );
+    });
+
+    test('one point names the day and the value only', () {
+      expect(
+        weightChartSummary(
+          [WeightDayPoint(date: LocalDate(2026, 10, 3), grams: 71500)],
+          7,
+          today,
+        ),
+        'Eine Messung am Sa., 3. Okt.: 71,5 kg.',
+      );
+    });
+
+    test('several points give count, first, last and the neutral change', () {
+      expect(
+        weightChartSummary(
+          [
+            WeightDayPoint(date: LocalDate(2026, 9, 28), grams: 72700),
+            WeightDayPoint(date: LocalDate(2026, 10, 1), grams: 72000),
+            WeightDayPoint(date: LocalDate(2026, 10, 3), grams: 71500),
+          ],
+          7,
+          today,
+        ),
+        '3 Messtage in 7 Tagen. Zuerst 72,7 kg, zuletzt 71,5 kg (\u22121,2 kg).',
+      );
+    });
+  });
 }

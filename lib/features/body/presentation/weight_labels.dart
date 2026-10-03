@@ -4,6 +4,8 @@ library;
 
 import 'package:self_improvement/features/body/domain/weight_calculations.dart';
 import 'package:self_improvement/features/body/domain/weight_entry.dart';
+import 'package:self_improvement/shared/german_date.dart';
+import 'package:self_improvement/shared/local_date.dart';
 import 'package:self_improvement/shared/number_format.dart';
 
 /// The condition texts of a measurement in a fixed order. "nüchtern" is only a
@@ -68,3 +70,26 @@ String weightPeriodSpoken(int days) => switch (days) {
   90 => '3 Monate, 90 Tage',
   _ => '$days Tage',
 };
+
+/// One sentence that tells what the chart shows (the text alternative of the
+/// line chart): the number of measured days and the first and last value.
+String weightChartSummary(
+  List<WeightDayPoint> points,
+  int periodDays,
+  LocalDate today,
+) {
+  if (points.isEmpty) {
+    return 'In den letzten $periodDays Tagen gibt es keine Messung.';
+  }
+  final last = points.last;
+  if (points.length == 1) {
+    return 'Eine Messung am '
+        '${formatDateShort(last.date, contextYear: today.year)}: '
+        '${formatKilograms(last.grams)} kg.';
+  }
+  final first = points.first;
+  return '${points.length} Messtage in $periodDays Tagen. '
+      'Zuerst ${formatKilograms(first.grams)} kg, '
+      'zuletzt ${formatKilograms(last.grams)} kg '
+      '(${formatSignedKilograms(last.grams - first.grams)} kg).';
+}
