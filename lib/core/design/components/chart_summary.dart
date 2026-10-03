@@ -4,6 +4,7 @@ import 'package:self_improvement/core/design/icons/app_icons.dart';
 import 'package:self_improvement/core/design/internal/ink_surface.dart';
 import 'package:self_improvement/core/design/internal/text_scale.dart';
 import 'package:self_improvement/core/design/motion/app_motion.dart';
+import 'package:self_improvement/core/design/tokens/app_colors.dart';
 import 'package:self_improvement/core/design/tokens/app_radii.dart';
 import 'package:self_improvement/core/design/tokens/app_sizes.dart';
 import 'package:self_improvement/core/design/tokens/app_text_styles.dart';
@@ -40,6 +41,7 @@ class ChartSummary extends StatefulWidget {
     this.initiallyExpanded = false,
     this.showTableLabel = 'Als Tabelle anzeigen',
     this.hideTableLabel = 'Tabelle ausblenden',
+    this.headerTrailing,
   });
 
   /// Title of the chart.
@@ -67,12 +69,44 @@ class ChartSummary extends StatefulWidget {
   /// Label of the toggle while the table is shown.
   final String hideTableLabel;
 
+  /// Interactive control right of the title, for example a `PeriodSelector`.
+  /// It stays in the accessibility tree; on large text it moves below the
+  /// title.
+  final Widget? headerTrailing;
+
   @override
   State<ChartSummary> createState() => _ChartSummaryState();
 }
 
 class _ChartSummaryState extends State<ChartSummary> {
   late bool _expanded = widget.initiallyExpanded;
+
+  Widget _header(BuildContext context, AppColors colors) {
+    final title = Semantics(
+      container: true,
+      header: true,
+      child: Text(
+        widget.title,
+        style: AppTextStyles.titleCard.copyWith(color: colors.textPrimary),
+      ),
+    );
+    final trailing = widget.headerTrailing;
+    if (trailing == null) {
+      return title;
+    }
+    // Title left and control right while both fit in one line; otherwise the
+    // control moves below the title (large text, narrow screens).
+    return Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 8,
+      runSpacing: 8,
+      children: <Widget>[
+        title,
+        IntrinsicWidth(child: trailing),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -90,16 +124,7 @@ class _ChartSummaryState extends State<ChartSummary> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Semantics(
-            container: true,
-            header: true,
-            child: Text(
-              widget.title,
-              style: AppTextStyles.titleCard.copyWith(
-                color: colors.textPrimary,
-              ),
-            ),
-          ),
+          _header(context, colors),
           if (widget.chart != null) ...<Widget>[
             const SizedBox(height: 12),
             ExcludeSemantics(child: widget.chart),

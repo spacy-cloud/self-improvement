@@ -133,4 +133,76 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   });
+
+  group('ChartSummary headerTrailing', () {
+    testSemantics('the control next to the title stays operable and spoken', (
+      tester,
+    ) async {
+      var selected = 7;
+      // The real font keeps the title narrow (the test font is very wide).
+      await tester.runAsync(loadInterFont);
+      await pumpDesign(
+        tester,
+        StatefulBuilder(
+          builder: (context, setState) => ChartSummary(
+            title: 'Verlauf',
+            summary: 'Gewicht sinkt von 72,7 auf 71,5 kg.',
+            columns: const ['Gewicht'],
+            rows: const [
+              ChartSummaryRow(label: 'Mo., 14. Sep.', values: ['71,5 kg']),
+            ],
+            chart: const SizedBox(height: 40),
+            headerTrailing: PeriodSelector<int>(
+              options: const [
+                PeriodOption(value: 7, label: '7 T', semanticLabel: '7 Tage'),
+                PeriodOption(
+                  value: 30,
+                  label: '30 T',
+                  semanticLabel: '30 Tage',
+                ),
+                PeriodOption(value: 90, label: '3 M', semanticLabel: '90 Tage'),
+              ],
+              selected: selected,
+              onChanged: (days) => setState(() => selected = days),
+            ),
+          ),
+        ),
+      );
+      expect(find.text('Verlauf'), findsOneWidget);
+      final title = tester.getTopLeft(find.text('Verlauf'));
+      final selector = tester.getTopLeft(find.byType(PeriodSelector<int>));
+      expect(
+        selector.dx,
+        greaterThan(title.dx + 100),
+        reason: 'fits in one line at normal text: control on the right',
+      );
+      await tester.tap(find.text('30 T'));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(selected, 30);
+      expect(find.bySemanticsLabel('30 Tage'), findsOneWidget);
+    });
+
+    testWidgets('on large text the control moves below the title', (
+      tester,
+    ) async {
+      await pumpDesign(
+        tester,
+        ChartSummary(
+          title: 'Verlauf',
+          summary: 'x',
+          rows: const [],
+          headerTrailing: PeriodSelector.days(
+            selectedDays: 7,
+            onChanged: (_) {},
+          ),
+        ),
+        width: 320,
+        textScale: 2,
+      );
+      expect(tester.takeException(), isNull);
+      final title = tester.getTopLeft(find.text('Verlauf'));
+      final selector = tester.getTopLeft(find.byType(PeriodSelector<int>));
+      expect(selector.dy, greaterThan(title.dy));
+    });
+  });
 }
