@@ -51,7 +51,6 @@ RouteBase _guard(SelfImprovementModule module, RouteBase route) {
     pageBuilder: builder == null
         ? null
         : (context, state) => appPageFor(
-            context,
             state,
             ModuleRouteGate(
               module: module,

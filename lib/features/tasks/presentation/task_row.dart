@@ -77,6 +77,7 @@ class TaskRow extends ConsumerWidget {
       icon: Icon(Icons.more_vert_rounded, color: colors.textSecondary),
       color: colors.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      popUpAnimationStyle: AppMotion.surfaceStyleOf(context),
       onSelected: (action) => _onAction(context, container, action),
       itemBuilder: (context) => <PopupMenuEntry<_TaskMenuAction>>[
         _entry(_TaskMenuAction.edit, 'Bearbeiten', colors.textPrimary),
