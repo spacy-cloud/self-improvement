@@ -281,6 +281,18 @@ void main() {
       expect(find.text('#Schule'), findsOneWidget);
     });
 
+    testWidgets('the Enter key on an empty tag field adds nothing and shows '
+        'no hint', (tester) async {
+      final env = await createTasksUiEnv(tester);
+      await openForm(tester, env);
+
+      await tester.tap(tagField);
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pump();
+
+      expect(find.text('Bitte gib ein Tag ein.'), findsNothing);
+    });
+
     testWidgets('tags of other tasks are offered and added with one tap', (
       tester,
     ) async {

@@ -254,6 +254,55 @@ void main() {
     });
   });
 
+  group('narrowing and large text', () {
+    testWidgets('the search button resets an active narrowing and hides the '
+        'panel', (tester) async {
+      final handle = tester.ensureSemantics();
+      final env = await createTasksUiEnv(tester);
+      await env.addTask(tester, 'Dringend', priority: TaskPriority.high);
+      await env.addTask(tester, 'Normal');
+      await pumpTasks(tester, env);
+      await tester.tap(find.bySemanticsLabel('Suche und Filter einblenden'));
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.enterText(find.byType(TextField), 'dring');
+      await pumpData(tester);
+      expect(titlesInOrder(tester), ['Dringend']);
+
+      await tester.tap(find.bySemanticsLabel('Suche und Filter zurücksetzen'));
+      await pumpData(tester);
+
+      expect(titlesInOrder(tester), hasLength(2));
+      expect(find.byType(TextField), findsNothing);
+      expect(
+        find.bySemanticsLabel('Suche und Filter einblenden'),
+        findsOneWidget,
+      );
+      handle.dispose();
+    });
+
+    testWidgets('with large text the row controls sit above the title and '
+        'still work (AT33)', (tester) async {
+      final env = await createTasksUiEnv(tester);
+      await env.addTask(tester, 'Steuer machen');
+      await pumpApp(
+        tester,
+        const HabitsTabScreen(showTasks: true),
+        container: env.container,
+        size: const Size(320, 640),
+        textScale: 2.0,
+      );
+      await pumpData(tester);
+
+      final checkbox = tester.getTopLeft(find.byType(RoundCheckbox));
+      final title = tester.getTopLeft(find.text('Steuer machen'));
+      expect(title.dy, greaterThan(checkbox.dy + 40), reason: 'title below');
+      expect(find.byTooltip('Weitere Aktionen: Steuer machen'), findsOneWidget);
+      await tester.tap(find.byType(RoundCheckbox));
+      await waitForFeedback(tester, env);
+      expect(env.feedback.last!.message, 'Aufgabe erledigt');
+    });
+  });
+
   group('completion', () {
     testWidgets(
       'completes with undo, reopens and completes again without piling up XP (AT13, T01, G01)',

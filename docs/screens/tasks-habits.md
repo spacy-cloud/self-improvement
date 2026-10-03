@@ -71,14 +71,14 @@ Oberfläche des Moduls `tasks` für [BS-65](https://spacy-cloud.atlassian.net/br
 
 ## 6. Tests
 
-Befehle: `flutter test test/features/tasks` (804 Tests: 470 Engine, 334 UI), `flutter test` (gesamt), `dart run tool/at_coverage.dart`.
+Befehle: `flutter test test/features/tasks` (808 Tests: 470 Engine, 338 UI), `flutter test` (gesamt), `dart run tool/at_coverage.dart`.
 
 | Datei in `test/features/tasks/` | Inhalt | Akzeptanz |
 |---|---|---|
 | `domain/habit_day_test.dart`, `domain/task_tag_suggestions_test.dart` | Tagesmodell, Wochenleiste, Vorschläge | T02 |
-| `presentation/habits_tab_test.dart` (21) | Fortschritt, Abhaken und Undo, Doppeltipp, Fehler mit Retry, Leer- und Fehlerzustand, Wochenleiste, Nachtragen, Archiv ab morgen, Tageswechsel, Umschalter und Deep Link | AT12, AT21, AT23, AT24, AT25, AT27 |
-| `presentation/tasks_list_test.dart` (18) | Reihenfolge, Überfällig als Text, Segmente, Suche, Prioritätsfilter, Erledigen ohne XP-Anhäufung, Menü, Löschen mit exaktem Undo, Fehlerfälle | AT12, AT13, AT25, AT27, T01, G01 |
-| `presentation/task_form_test.dart` (23) | Speichern, Fälligkeit, Tag-Regeln, Validierung, Sperre, Retry, Verwerfen, Bearbeiten, Konflikt, Tastatur und 200 % | AT12, AT27, AT33, T01, C05 |
+| `presentation/habits_tab_test.dart` (22) | Fortschritt, Abhaken und Undo, Doppeltipp, Fehler mit Retry, Leer- und Fehlerzustand, Wochenleiste, Nachtragen, Archiv ab morgen, Tageswechsel, Umschalter und Deep Link, große Schrift | AT12, AT21, AT23, AT24, AT25, AT27, AT33 |
+| `presentation/tasks_list_test.dart` (20) | Reihenfolge, Überfällig als Text, Segmente, Suche, Prioritätsfilter, Erledigen ohne XP-Anhäufung, Menü, Löschen mit exaktem Undo, Fehlerfälle, große Schrift | AT12, AT13, AT25, AT27, AT33, T01, G01 |
+| `presentation/task_form_test.dart` (24) | Speichern, Fälligkeit, Tag-Regeln, Validierung, Sperre, Retry, Verwerfen, Bearbeiten, Konflikt, Tastatur und 200 % | AT12, AT27, AT33, T01, C05 |
 | `presentation/habit_form_test.dart` (18) | Symbole, nur täglich, Erinnerung, Validierung, Retry, Verwerfen, Bearbeiten, Löschen mit Undo | AT12, AT27, AT33, T02, C08 |
 | `presentation/habit_detail_test.dart` (14) | Serie und Quote, Nachtragen und Undo, gesperrte Tage, Liste, Archivieren, beendete Gewohnheit | AT12, AT21, AT23, AT24, AT27, T02, G01, G02, C08 |
 | `presentation/tasks_dashboard_card_test.dart` (13) | drei Aufgaben, Erledigen in einem Tipp, Undo, Fehler, leer, Tageswechsel | AT12, AT13, AT25, AT27, AT33, T01 |

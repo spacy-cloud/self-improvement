@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show Size;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/core/design/design.dart' hide HabitIcon;
@@ -458,6 +459,29 @@ void main() {
     await pumpData(tester);
     expect(locationOf(router), '/habits');
     expect(find.text('Deine Habits'), findsOneWidget);
+  });
+
+  testWidgets('with large text the view switch and the habit rows stack '
+      '(AT33)', (tester) async {
+    final env = await envWithHabits(tester, titles: ['Meditation']);
+    await pumpApp(
+      tester,
+      const HabitsTabScreen(),
+      container: env.container,
+      size: const Size(320, 900),
+      textScale: 2.0,
+    );
+    await pumpData(tester);
+
+    final tasks = tester.getTopLeft(find.text('Aufgaben'));
+    final habits = tester.getTopLeft(find.text('Gewohnheiten'));
+    expect(habits.dy, greaterThan(tasks.dy + 30), reason: 'segments stacked');
+    final checkbox = tester.getTopLeft(find.byType(RoundCheckbox));
+    final title = tester.getTopLeft(find.text('Meditation'));
+    expect(title.dy, greaterThan(checkbox.dy + 20), reason: 'title below');
+    await tester.tap(find.byType(RoundCheckbox));
+    await tester.pumpUntil(() => env.feedback.events.isNotEmpty);
+    expect(env.feedback.last!.message, 'Abgehakt');
   });
 
   testWidgets('the deep link tab=tasks opens the task list', (tester) async {

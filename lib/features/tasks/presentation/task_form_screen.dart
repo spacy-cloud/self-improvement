@@ -313,7 +313,10 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
               textInputAction: TextInputAction.done,
               errorText: state.fieldErrors[TaskFields.tags],
               onChanged: (_) => _controller.clearTagError(),
-              onSubmitted: (_) => _addTag(),
+              // "Fertig" on an empty field just closes the keyboard.
+              onSubmitted: (value) => value.trim().isEmpty
+                  ? FocusScope.of(context).unfocus()
+                  : _addTag(),
             ),
             const SizedBox(height: 8),
             Align(
