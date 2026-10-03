@@ -11,10 +11,10 @@ final class NutritionModule extends SelfImprovementModule {
   ModuleId get id => ModuleId.nutrition;
 
   @override
-  String get title => 'Ernährung';
+  String get title => 'Wasser & Ernährung';
 
   @override
-  String get description => 'Wasser und Mahlzeiten';
+  String get description => 'Trinkmenge und Mahlzeiten';
 
   @override
   IconData get icon => Icons.water_drop_outlined;
