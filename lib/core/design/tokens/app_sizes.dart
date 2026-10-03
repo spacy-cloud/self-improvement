@@ -50,6 +50,11 @@ abstract final class AppSizes {
   /// Minimum height of a snack bar.
   static const double snackBarMinHeight = 56;
 
+  /// Height of the area that `AppScaffold` reserves for a pinned primary action
+  /// (8 top padding, 56 button, 16 bottom padding). Pass it as `bottomOffset`
+  /// to the snack bar helpers so that the bar floats above the button.
+  static const double pinnedActionArea = 80;
+
   /// Navigation pill width (shrinks on narrow screens, never below [touchMin]).
   static const double navPillWidth = 64;
 
