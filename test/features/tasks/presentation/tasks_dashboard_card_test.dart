@@ -68,20 +68,22 @@ void main() {
       if (find.text(title).evaluate().isNotEmpty) title,
   ];
 
-  testWidgets('lists up to three applicable open tasks in the defined order '
-      'and counts the rest (T01)', (tester) async {
-    final env = await envWithFiveTasks(tester);
-    await pumpCard(tester, env);
+  testWidgets(
+    'lists up to three applicable open tasks in the defined order and counts the rest (T01)',
+    (tester) async {
+      final env = await envWithFiveTasks(tester);
+      await pumpCard(tester, env);
 
-    expect(find.text('Aufgaben'), findsOneWidget);
-    expect(find.text('5 Aufgaben für heute'), findsOneWidget);
-    // High priority first, then normal by due day (a task without a date is
-    // last), the low priority task comes after: only three fit.
-    expect(titles(tester), ['A überfällig hoch', 'B heute', 'D heute spät']);
-    expect(find.text('und 2 weitere'), findsOneWidget);
-    expect(find.text('Später'), findsNothing, reason: 'a future task');
-    expect(find.byType(RoundCheckbox), findsNWidgets(3));
-  });
+      expect(find.text('Aufgaben'), findsOneWidget);
+      expect(find.text('5 Aufgaben für heute'), findsOneWidget);
+      // High priority first, then normal by due day (a task without a date is
+      // last), the low priority task comes after: only three fit.
+      expect(titles(tester), ['A überfällig hoch', 'B heute', 'D heute spät']);
+      expect(find.text('und 2 weitere'), findsOneWidget);
+      expect(find.text('Später'), findsNothing, reason: 'a future task');
+      expect(find.byType(RoundCheckbox), findsNWidgets(3));
+    },
+  );
 
   testWidgets('an overdue task says so in words (T01)', (tester) async {
     final handle = tester.ensureSemantics();
@@ -99,26 +101,28 @@ void main() {
     handle.dispose();
   });
 
-  testWidgets('completes a task with ONE tap and without opening it (AT13, '
-      'T01)', (tester) async {
-    final env = await envWithFiveTasks(tester);
-    final router = await pumpCard(tester, env);
+  testWidgets(
+    'completes a task with ONE tap and without opening it (AT13, T01)',
+    (tester) async {
+      final env = await envWithFiveTasks(tester);
+      final router = await pumpCard(tester, env);
 
-    await tester.tap(find.byType(RoundCheckbox).first);
-    await waitForFeedback(tester, env);
+      await tester.tap(find.byType(RoundCheckbox).first);
+      await waitForFeedback(tester, env);
 
-    expect(env.feedback.last!.message, 'Aufgabe erledigt');
-    expect(env.feedback.last!.undo, isNotNull);
-    expect(locationOf(router), '/', reason: 'the detail was not opened');
-    final done = (await env.allTasks(tester))
-        .firstWhere((task) => task.title == 'A überfällig hoch');
-    expect(done.isCompleted, isTrue);
-    expect(await tester.runAsync(env.harness.totalXp), 10);
-    expect(find.text('A überfällig hoch'), findsNothing);
-    expect(titles(tester), ['B heute', 'C ohne Datum', 'D heute spät']);
-    expect(find.text('4 Aufgaben für heute'), findsOneWidget);
-    expect(find.text('und 1 weitere'), findsOneWidget);
-  });
+      expect(env.feedback.last!.message, 'Aufgabe erledigt');
+      expect(env.feedback.last!.undo, isNotNull);
+      expect(locationOf(router), '/', reason: 'the detail was not opened');
+      final done = (await env.allTasks(tester))
+          .firstWhere((task) => task.title == 'A überfällig hoch');
+      expect(done.isCompleted, isTrue);
+      expect(await tester.runAsync(env.harness.totalXp), 10);
+      expect(find.text('A überfällig hoch'), findsNothing);
+      expect(titles(tester), ['B heute', 'C ohne Datum', 'D heute spät']);
+      expect(find.text('4 Aufgaben für heute'), findsOneWidget);
+      expect(find.text('und 1 weitere'), findsOneWidget);
+    },
+  );
 
   testWidgets('the undo of the card brings the task back (AT13)', (
     tester,
@@ -153,26 +157,28 @@ void main() {
     expect(await tester.runAsync(env.harness.totalXp), 10);
   });
 
-  testWidgets('a failed completion keeps the task on the card; the retry '
-      'reuses the command id (AT27, AT12)', (tester) async {
-    final env = await envWithFiveTasks(tester);
-    await pumpCard(tester, env);
-    env.tasks.failNext = 1;
+  testWidgets(
+    'a failed completion keeps the task on the card; the retry reuses the command id (AT27, AT12)',
+    (tester) async {
+      final env = await envWithFiveTasks(tester);
+      await pumpCard(tester, env);
+      env.tasks.failNext = 1;
 
-    await tester.tap(find.byType(RoundCheckbox).first);
-    await waitForFeedback(tester, env);
-    final error = env.feedback.last!;
-    expect(error.kind, 'error');
-    expect(find.text('A überfällig hoch'), findsOneWidget);
-    expect(await tester.runAsync(env.harness.totalXp), 0);
+      await tester.tap(find.byType(RoundCheckbox).first);
+      await waitForFeedback(tester, env);
+      final error = env.feedback.last!;
+      expect(error.kind, 'error');
+      expect(find.text('A überfällig hoch'), findsOneWidget);
+      expect(await tester.runAsync(env.harness.totalXp), 0);
 
-    error.onRetry!();
-    await waitForFeedback(tester, env, 2);
+      error.onRetry!();
+      await waitForFeedback(tester, env, 2);
 
-    expect(env.tasks.commandIds[0], env.tasks.commandIds[1]);
-    expect(find.text('A überfällig hoch'), findsNothing);
-    expect(await tester.runAsync(env.harness.totalXp), 10);
-  });
+      expect(env.tasks.commandIds[0], env.tasks.commandIds[1]);
+      expect(find.text('A überfällig hoch'), findsNothing);
+      expect(await tester.runAsync(env.harness.totalXp), 10);
+    },
+  );
 
   testWidgets('without a task for today it says so and offers to add one', (
     tester,
@@ -192,20 +198,22 @@ void main() {
     expect(find.text('Neue Aufgabe'), findsOneWidget);
   });
 
-  testWidgets('a task due later moves onto the card when its day comes '
-      '(AT25)', (tester) async {
-    final env = await createTasksUiEnv(tester);
-    await env.addTask(tester, 'Morgen dran', dueDate: today.addDays(1));
-    await pumpCard(tester, env);
-    expect(find.text('Morgen dran'), findsNothing);
+  testWidgets(
+    'a task due later moves onto the card when its day comes (AT25)',
+    (tester) async {
+      final env = await createTasksUiEnv(tester);
+      await env.addTask(tester, 'Morgen dran', dueDate: today.addDays(1));
+      await pumpCard(tester, env);
+      expect(find.text('Morgen dran'), findsNothing);
 
-    env.moveTo(today.addDays(1));
-    await pumpData(tester);
+      env.moveTo(today.addDays(1));
+      await pumpData(tester);
 
-    expect(find.text('Morgen dran'), findsOneWidget);
-    expect(find.text('Heute fällig'), findsOneWidget);
-    expect(find.text('1 Aufgabe für heute'), findsOneWidget);
-  });
+      expect(find.text('Morgen dran'), findsOneWidget);
+      expect(find.text('Heute fällig'), findsOneWidget);
+      expect(find.text('1 Aufgabe für heute'), findsOneWidget);
+    },
+  );
 
   testWidgets('the header and the rest line open the task list', (
     tester,

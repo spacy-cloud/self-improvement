@@ -180,7 +180,7 @@ class _HabitFormState extends ConsumerState<_HabitForm> {
     final discard = await showConfirmationSheet(
       context,
       title: 'Änderungen verwerfen?',
-      message: 'Deine Eingaben sind noch nicht gespeichert.',
+      message: 'Deine Eingaben in diesem Formular gehen verloren.',
       confirmLabel: 'Verwerfen',
       cancelLabel: 'Weiter bearbeiten',
     );

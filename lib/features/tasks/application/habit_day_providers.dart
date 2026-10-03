@@ -4,11 +4,15 @@ import 'package:self_improvement/features/tasks/application/habit_providers.dart
 import 'package:self_improvement/features/tasks/domain/habit_day.dart';
 import 'package:self_improvement/shared/local_date.dart';
 
-/// The day of the week strip the user picked; null follows today (so after
-/// midnight the list moves on to the new day by itself).
+/// The day of the week strip the user picked; null follows today. The choice
+/// is dropped when the day changes, so the app never opens on yesterday's list
+/// after midnight.
 class SelectedHabitDayController extends Notifier<LocalDate?> {
   @override
-  LocalDate? build() => null;
+  LocalDate? build() {
+    ref.watch(todayProvider);
+    return null;
+  }
 
   /// Picks [date]; null (or today) goes back to following today.
   void select(LocalDate? date) => state = date;

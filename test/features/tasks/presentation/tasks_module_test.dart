@@ -20,16 +20,18 @@ void main() {
     expect(module.description, 'Aufgaben und tägliche Gewohnheiten');
   });
 
-  test('contributes the full width dashboard card "tasks" at its default '
-      'place', () {
-    final card = module.dashboardCards.single;
-    expect(card.cardId, 'tasks');
-    expect(SchemaKeys.dashboardCards, contains(card.cardId));
-    expect(SchemaKeys.dashboardCardModule[card.cardId], ModuleId.tasks.key);
-    expect(card.fullWidth, isTrue);
-    expect(card.title, 'Aufgaben');
-    expect(card.defaultRank, SchemaKeys.defaultCardOrder.indexOf('tasks'));
-  });
+  test(
+    'contributes the full width dashboard card "tasks" at its default place',
+    () {
+      final card = module.dashboardCards.single;
+      expect(card.cardId, 'tasks');
+      expect(SchemaKeys.dashboardCards, contains(card.cardId));
+      expect(SchemaKeys.dashboardCardModule[card.cardId], ModuleId.tasks.key);
+      expect(card.fullWidth, isTrue);
+      expect(card.title, 'Aufgaben');
+      expect(card.defaultRank, SchemaKeys.defaultCardOrder.indexOf('tasks'));
+    },
+  );
 
   test('contributes the plus menu entries task (5) and habit (6)', () {
     final byId = {for (final action in module.quickActions) action.id: action};
@@ -42,8 +44,7 @@ void main() {
     expect(byId['habit']!.plusOrder, 6);
   });
 
-  test('registers static paths before the parametric ones and leaves '
-      '/habits to the shell', () {
+  test('registers static paths before the parametric ones and leaves /habits to the shell', () {
     final paths = [
       for (final route in module.routes)
         if (route is GoRoute) route.path,
@@ -54,14 +55,16 @@ void main() {
     expect(detail.routes.whereType<GoRoute>().single.path, 'edit');
   });
 
-  testWidgets('/tasks/new opens the new task form, not the edit form of a '
-      'task called "new"', (tester) async {
-    final env = await createTasksUiEnv(tester);
-    await pumpTasksRouter(tester, env, initialLocation: '/tasks/new');
+  testWidgets(
+    '/tasks/new opens the new task form, not the edit form of a task called "new"',
+    (tester) async {
+      final env = await createTasksUiEnv(tester);
+      await pumpTasksRouter(tester, env, initialLocation: '/tasks/new');
 
-    expect(find.text('Neue Aufgabe'), findsOneWidget);
-    expect(find.text('Aufgabe bearbeiten'), findsNothing);
-  });
+      expect(find.text('Neue Aufgabe'), findsOneWidget);
+      expect(find.text('Aufgabe bearbeiten'), findsNothing);
+    },
+  );
 
   testWidgets('/habits/new opens the new habit form, not a habit detail', (
     tester,

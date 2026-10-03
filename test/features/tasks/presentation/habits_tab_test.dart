@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/core/design/design.dart' hide HabitIcon;
 import 'package:self_improvement/features/tasks/application/habit_providers.dart';
 import 'package:self_improvement/features/tasks/domain/habit_icon.dart';
+import 'package:self_improvement/features/tasks/presentation/habits_day_view.dart';
 import 'package:self_improvement/features/tasks/presentation/habits_tab_screen.dart';
 import 'package:self_improvement/shared/local_date.dart';
 
@@ -74,72 +75,76 @@ void main() {
     expect(boxes, [true, false, false]);
   });
 
-  testWidgets('one tap checks a habit, offers undo and undo restores it '
-      '(AT21, T02, G01)', (tester) async {
-    final env = await envWithHabits(tester, titles: ['Lesen']);
-    await pumpTab(tester, env);
+  testWidgets(
+    'one tap checks a habit, offers undo and undo restores it (AT21, T02, G01)',
+    (tester) async {
+      final env = await envWithHabits(tester, titles: ['Lesen']);
+      await pumpTab(tester, env);
 
-    await tester.tap(find.byType(RoundCheckbox));
-    await tester.pumpUntil(() => env.feedback.events.isNotEmpty);
-    await pumpData(tester);
+      await tester.tap(find.byType(RoundCheckbox));
+      await tester.pumpUntil(() => env.feedback.events.isNotEmpty);
+      await pumpData(tester);
 
-    final saved = env.feedback.last!;
-    expect(saved.kind, 'saved');
-    expect(saved.message, 'Abgehakt');
-    expect(saved.undo, isNotNull);
-    final id = (await env.allHabits(tester)).single.id;
-    expect(
-      await tester.runAsync(() => env.habits.findCheck(id, today)),
-      isNotNull,
-    );
-    expect(find.text('1 von 1 erledigt', findRichText: true), findsOneWidget);
-    expect(find.text('Alles geschafft!'), findsOneWidget);
-    expect(await tester.runAsync(env.harness.totalXp), 5);
+      final saved = env.feedback.last!;
+      expect(saved.kind, 'saved');
+      expect(saved.message, 'Abgehakt');
+      expect(saved.undo, isNotNull);
+      final id = (await env.allHabits(tester)).single.id;
+      expect(
+        await tester.runAsync(() => env.habits.findCheck(id, today)),
+        isNotNull,
+      );
+      expect(find.text('1 von 1 erledigt', findRichText: true), findsOneWidget);
+      expect(find.text('Alles geschafft!'), findsOneWidget);
+      expect(await tester.runAsync(env.harness.totalXp), 5);
 
-    final result = await tester.runAsync(saved.undo!.perform);
-    expect(result, isNotNull);
-    await pumpData(tester);
-    expect(
-      await tester.runAsync(() => env.habits.findCheck(id, today)),
-      isNull,
-    );
-    expect(find.text('0 von 1 erledigt', findRichText: true), findsOneWidget);
-    expect(find.text('Alles geschafft!'), findsNothing);
-    expect(await tester.runAsync(env.harness.totalXp), 0);
-  });
+      final result = await tester.runAsync(saved.undo!.perform);
+      expect(result, isNotNull);
+      await pumpData(tester);
+      expect(
+        await tester.runAsync(() => env.habits.findCheck(id, today)),
+        isNull,
+      );
+      expect(find.text('0 von 1 erledigt', findRichText: true), findsOneWidget);
+      expect(find.text('Alles geschafft!'), findsNothing);
+      expect(await tester.runAsync(env.harness.totalXp), 0);
+    },
+  );
 
-  testWidgets('removing a check sets the desired state and can be undone '
-      '(AT21)', (tester) async {
-    final env = await envWithHabits(tester, titles: ['Lesen']);
-    final id = (await env.allHabits(tester)).single.id;
-    await env.checkHabit(tester, id, today);
-    await pumpTab(tester, env);
-    expect(
-      tester.widget<RoundCheckbox>(find.byType(RoundCheckbox)).value,
-      isTrue,
-    );
+  testWidgets(
+    'removing a check sets the desired state and can be undone (AT21)',
+    (tester) async {
+      final env = await envWithHabits(tester, titles: ['Lesen']);
+      final id = (await env.allHabits(tester)).single.id;
+      await env.checkHabit(tester, id, today);
+      await pumpTab(tester, env);
+      expect(
+        tester.widget<RoundCheckbox>(find.byType(RoundCheckbox)).value,
+        isTrue,
+      );
 
-    await tester.tap(find.byType(RoundCheckbox));
-    await tester.pumpUntil(() => env.feedback.events.isNotEmpty);
-    await pumpData(tester);
+      await tester.tap(find.byType(RoundCheckbox));
+      await tester.pumpUntil(() => env.feedback.events.isNotEmpty);
+      await pumpData(tester);
 
-    expect(env.feedback.last!.message, 'Haken entfernt');
-    expect(
-      await tester.runAsync(() => env.habits.findCheck(id, today)),
-      isNull,
-    );
-    expect(
-      tester.widget<RoundCheckbox>(find.byType(RoundCheckbox)).value,
-      isFalse,
-    );
+      expect(env.feedback.last!.message, 'Haken entfernt');
+      expect(
+        await tester.runAsync(() => env.habits.findCheck(id, today)),
+        isNull,
+      );
+      expect(
+        tester.widget<RoundCheckbox>(find.byType(RoundCheckbox)).value,
+        isFalse,
+      );
 
-    await tester.runAsync(env.feedback.last!.undo!.perform);
-    await pumpData(tester);
-    expect(
-      await tester.runAsync(() => env.habits.findCheck(id, today)),
-      isNotNull,
-    );
-  });
+      await tester.runAsync(env.feedback.last!.undo!.perform);
+      await pumpData(tester);
+      expect(
+        await tester.runAsync(() => env.habits.findCheck(id, today)),
+        isNotNull,
+      );
+    },
+  );
 
   testWidgets('a double tap runs one command with one id (AT12, C05)', (
     tester,
@@ -167,35 +172,37 @@ void main() {
     );
   });
 
-  testWidgets('a failed check keeps the day open; the retry reuses the command '
-      'id and checks once (AT27, AT12)', (tester) async {
-    final env = await envWithHabits(tester, titles: ['Lesen']);
-    await pumpTab(tester, env);
-    env.habits.failNext = 1;
+  testWidgets(
+    'a failed check keeps the day open; the retry reuses the command id and checks once (AT27, AT12)',
+    (tester) async {
+      final env = await envWithHabits(tester, titles: ['Lesen']);
+      await pumpTab(tester, env);
+      env.habits.failNext = 1;
 
-    await tester.tap(find.byType(RoundCheckbox));
-    await tester.pumpUntil(() => env.feedback.events.isNotEmpty);
-    await pumpData(tester);
+      await tester.tap(find.byType(RoundCheckbox));
+      await tester.pumpUntil(() => env.feedback.events.isNotEmpty);
+      await pumpData(tester);
 
-    final error = env.feedback.last!;
-    expect(error.kind, 'error');
-    expect(error.message, contains('Speichern fehlgeschlagen'));
-    expect(error.onRetry, isNotNull);
-    expect(
-      tester.widget<RoundCheckbox>(find.byType(RoundCheckbox)).value,
-      isFalse,
-    );
-    expect(await tester.runAsync(env.harness.totalXp), 0);
+      final error = env.feedback.last!;
+      expect(error.kind, 'error');
+      expect(error.message, contains('Speichern fehlgeschlagen'));
+      expect(error.onRetry, isNotNull);
+      expect(
+        tester.widget<RoundCheckbox>(find.byType(RoundCheckbox)).value,
+        isFalse,
+      );
+      expect(await tester.runAsync(env.harness.totalXp), 0);
 
-    error.onRetry!();
-    await tester.pumpUntil(() => env.feedback.events.length == 2);
-    await pumpData(tester);
+      error.onRetry!();
+      await tester.pumpUntil(() => env.feedback.events.length == 2);
+      await pumpData(tester);
 
-    expect(env.habits.commandIds, hasLength(2));
-    expect(env.habits.commandIds[0], env.habits.commandIds[1]);
-    expect(env.feedback.last!.message, 'Abgehakt');
-    expect(await tester.runAsync(env.harness.totalXp), 5);
-  });
+      expect(env.habits.commandIds, hasLength(2));
+      expect(env.habits.commandIds[0], env.habits.commandIds[1]);
+      expect(env.feedback.last!.message, 'Abgehakt');
+      expect(await tester.runAsync(env.harness.totalXp), 5);
+    },
+  );
 
   testWidgets('without habits the empty state offers the first one', (
     tester,
@@ -222,7 +229,8 @@ void main() {
     await pumpTab(tester, env);
 
     expect(find.text('Keine aktive Gewohnheit'), findsOneWidget);
-    expect(find.text('Lesen'), findsNothing);
+    expect(find.byType(HabitRow), findsNothing);
+    expect(find.text('Archiviert seit 04.10.2026'), findsOneWidget);
   });
 
   testWidgets('a load error shows the error state and retry loads again', (
@@ -320,6 +328,25 @@ void main() {
     handle.dispose();
   });
 
+  testWidgets('a picked past day is dropped when the day changes (AT25)', (
+    tester,
+  ) async {
+    final handle = tester.ensureSemantics();
+    final env = await envWithHabits(tester, titles: ['Lesen']);
+    await pumpTab(tester, env);
+    await tester.tap(find.bySemanticsLabel('Fr., 02.10.: 0 von 1 erledigt'));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Zurück zu heute'), findsOneWidget);
+
+    env.moveTo(today.addDays(1));
+    await pumpData(tester);
+
+    expect(find.text('Zurück zu heute'), findsNothing);
+    expect(find.text('Deine Habits'), findsOneWidget);
+    expect(find.text('Heute'), findsOneWidget);
+    handle.dispose();
+  });
+
   testWidgets('a day before the habit existed shows nothing to correct', (
     tester,
   ) async {
@@ -336,45 +363,82 @@ void main() {
     handle.dispose();
   });
 
-  testWidgets('archiving shows the hint today and the habit is gone tomorrow '
-      '(AT21, AT24)', (tester) async {
-    final env = await envWithHabits(tester, titles: ['Lesen']);
-    final id = (await env.allHabits(tester)).single.id;
-    await tester.runAsync(
-      () => env.habits.archive(commandId: env.harness.ids.newId(), id: id),
-    );
-    await pumpTab(tester, env);
-    expect(find.text('Ab morgen archiviert'), findsOneWidget);
-    expect(find.text('Lesen'), findsOneWidget);
+  testWidgets(
+    'archiving shows the hint today and the habit is gone tomorrow (AT21, AT24)',
+    (tester) async {
+      final env = await envWithHabits(tester, titles: ['Lesen']);
+      final id = (await env.allHabits(tester)).single.id;
+      await tester.runAsync(
+        () => env.habits.archive(commandId: env.harness.ids.newId(), id: id),
+      );
+      await pumpTab(tester, env);
+      expect(find.text('Ab morgen archiviert'), findsOneWidget);
+      expect(find.text('Lesen'), findsOneWidget);
 
-    env.moveTo(today.addDays(1));
-    await pumpData(tester);
-    expect(find.text('Lesen'), findsNothing);
-    expect(find.text('Keine aktive Gewohnheit'), findsOneWidget);
-  });
+      env.moveTo(today.addDays(1));
+      await pumpData(tester);
+      expect(find.byType(HabitRow), findsNothing);
+      expect(find.text('Keine aktive Gewohnheit'), findsOneWidget);
+    },
+  );
 
-  testWidgets('a new day shows the habits unchecked without a restart '
-      '(AT25, C08)', (tester) async {
-    final env = await envWithHabits(tester, titles: ['Lesen', 'Dehnen']);
-    final habits = (await env.allHabits(tester));
-    await env.checkHabit(tester, habits.first.id, today);
-    await env.checkHabit(tester, habits.last.id, today);
-    await pumpTab(tester, env);
-    expect(find.text('2 von 2 erledigt', findRichText: true), findsOneWidget);
+  testWidgets(
+    'an ended habit moves to "Archiviert" and keeps its history reachable (T02, AT21)',
+    (tester) async {
+      final env = await envWithHabits(tester, titles: ['Lesen', 'Dehnen']);
+      final habits = await env.allHabits(tester);
+      await env.checkHabit(tester, habits.first.id, today);
+      await tester.runAsync(
+        () => env.habits.archive(
+          commandId: env.harness.ids.newId(),
+          id: habits.first.id,
+        ),
+      );
+      final router = await pumpTasksRouter(tester, env);
+      // Archived from tomorrow: today it still applies and nothing is archived.
+      expect(find.text('Archiviert'), findsNothing);
+      expect(find.text('Ab morgen archiviert'), findsOneWidget);
 
-    env.moveTo(today.addDays(1));
-    await pumpData(tester);
+      env.moveTo(today.addDays(1));
+      await pumpData(tester);
+      expect(find.text('Archiviert'), findsOneWidget);
+      expect(find.text('Archiviert seit 04.10.2026'), findsOneWidget);
+      expect(find.text('Ab morgen archiviert'), findsNothing);
+      expect(find.text('1 von 1 erledigt', findRichText: true), findsNothing);
+      expect(find.text('0 von 1 erledigt', findRichText: true), findsOneWidget);
 
-    expect(find.text('0 von 2 erledigt', findRichText: true), findsOneWidget);
-    expect(
-      tester
-          .widgetList<RoundCheckbox>(find.byType(RoundCheckbox))
-          .map((box) => box.value),
-      [false, false],
-    );
-    expect(find.text('Noch keine Serie'), findsNothing);
-    expect(find.text('1 Tag in Folge'), findsNWidgets(2));
-  });
+      await tester.tap(find.text('Archiviert seit 04.10.2026'));
+      await tester.pumpAndSettle();
+      expect(find.text('Letzte 30 Tage'), findsOneWidget);
+      expect(find.text('Löschen'), findsOneWidget);
+      expect(router.canPop(), isTrue);
+    },
+  );
+
+  testWidgets(
+    'a new day shows the habits unchecked without a restart (AT25, C08)',
+    (tester) async {
+      final env = await envWithHabits(tester, titles: ['Lesen', 'Dehnen']);
+      final habits = (await env.allHabits(tester));
+      await env.checkHabit(tester, habits.first.id, today);
+      await env.checkHabit(tester, habits.last.id, today);
+      await pumpTab(tester, env);
+      expect(find.text('2 von 2 erledigt', findRichText: true), findsOneWidget);
+
+      env.moveTo(today.addDays(1));
+      await pumpData(tester);
+
+      expect(find.text('0 von 2 erledigt', findRichText: true), findsOneWidget);
+      expect(
+        tester
+            .widgetList<RoundCheckbox>(find.byType(RoundCheckbox))
+            .map((box) => box.value),
+        [false, false],
+      );
+      expect(find.text('Noch keine Serie'), findsNothing);
+      expect(find.text('1 Tag in Folge'), findsNWidgets(2));
+    },
+  );
 
   testWidgets('the segments switch the view and write it to the route', (
     tester,

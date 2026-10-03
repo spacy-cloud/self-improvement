@@ -89,6 +89,7 @@ class _DayContent extends ConsumerWidget {
                 HabitRow(item: item, date: day.date),
             ],
           ),
+        if (day.isToday) const _ArchivedHabits(),
       ],
     );
   }
@@ -127,6 +128,45 @@ class _DayContent extends ConsumerWidget {
       accent: AppAccent.habits,
       actionLabel: 'Gewohnheit anlegen',
       onAction: () => context.push(HabitRoutes.create),
+    );
+  }
+}
+
+/// The habits that have ended (archived and no longer applying): their history
+/// stays readable, and they can still be deleted. They are never reactivated.
+class _ArchivedHabits extends ConsumerWidget {
+  const _ArchivedHabits();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final archived = ref.watch(habitsOverviewProvider).value?.archived;
+    if (archived == null || archived.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        const SizedBox(height: 16),
+        const AppSectionHeader(title: 'Archiviert'),
+        const SizedBox(height: 8),
+        AppListGroup(
+          children: <Widget>[
+            for (final item in archived)
+              EntryListTile.chevron(
+                title: item.habit.title,
+                subtitle:
+                    'Archiviert seit ${formatGermanDate(item.habit.archivedFrom!)}',
+                icon: habitVisual(item.habit.icon).glyph,
+                accent: habitVisual(item.habit.icon).accent,
+                semanticLabel:
+                    '${item.habit.title}, archiviert seit '
+                    '${formatGermanDate(item.habit.archivedFrom!)}, öffnet den '
+                    'Verlauf',
+                onTap: () => context.push(HabitRoutes.detail(item.habit.id)),
+              ),
+          ],
+        ),
+      ],
     );
   }
 }

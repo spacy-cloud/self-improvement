@@ -47,64 +47,66 @@ void main() {
   }
 
   group('list and order', () {
-    testWidgets('shows open tasks in the defined order with due text and tags '
-        '(T01)', (tester) async {
-      final env = await createTasksUiEnv(tester);
-      await env.addTask(
-        tester,
-        'A niedrig ohne Datum',
-        priority: TaskPriority.low,
-      );
-      await env.addTask(
-        tester,
-        'B hoch spät',
-        priority: TaskPriority.high,
-        dueDate: LocalDate(2026, 10, 20),
-      );
-      await env.addTask(
-        tester,
-        'C hoch früh',
-        priority: TaskPriority.high,
-        dueDate: LocalDate(2026, 10, 5),
-        tags: ['Schule', 'Büro'],
-      );
-      await env.addTask(
-        tester,
-        'D normal überfällig',
-        dueDate: LocalDate(2026, 10, 1),
-      );
-      await env.addTask(tester, 'E normal ohne Datum');
-      await env.addTask(
-        tester,
-        'F normal morgen',
-        dueDate: LocalDate(2026, 10, 4),
-      );
-      await env.addTask(
-        tester,
-        'G normal heute',
-        dueDate: LocalDate(2026, 10, 3),
-      );
-      await pumpTasks(tester, env);
+    testWidgets(
+      'shows open tasks in the defined order with due text and tags (T01)',
+      (tester) async {
+        final env = await createTasksUiEnv(tester);
+        await env.addTask(
+          tester,
+          'A niedrig ohne Datum',
+          priority: TaskPriority.low,
+        );
+        await env.addTask(
+          tester,
+          'B hoch spät',
+          priority: TaskPriority.high,
+          dueDate: LocalDate(2026, 10, 20),
+        );
+        await env.addTask(
+          tester,
+          'C hoch früh',
+          priority: TaskPriority.high,
+          dueDate: LocalDate(2026, 10, 5),
+          tags: ['Schule', 'Büro'],
+        );
+        await env.addTask(
+          tester,
+          'D normal überfällig',
+          dueDate: LocalDate(2026, 10, 1),
+        );
+        await env.addTask(tester, 'E normal ohne Datum');
+        await env.addTask(
+          tester,
+          'F normal morgen',
+          dueDate: LocalDate(2026, 10, 4),
+        );
+        await env.addTask(
+          tester,
+          'G normal heute',
+          dueDate: LocalDate(2026, 10, 3),
+        );
+        await pumpTasks(tester, env);
 
-      expect(titlesInOrder(tester), [
-        'C hoch früh',
-        'B hoch spät',
-        'D normal überfällig',
-        'G normal heute',
-        'F normal morgen',
-        'E normal ohne Datum',
-        'A niedrig ohne Datum',
-      ]);
-      expect(find.text('Überfällig seit 01.10.2026'), findsOneWidget);
-      expect(find.text('Heute fällig'), findsOneWidget);
-      expect(find.text('Morgen fällig'), findsOneWidget);
-      expect(find.text('Fällig am 20.10.2026'), findsOneWidget);
-      expect(find.text('#Schule'), findsOneWidget);
-      expect(find.text('#Büro'), findsOneWidget);
-      expect(find.text('Hoch'), findsNWidgets(2));
-      expect(find.text('Niedrig'), findsOneWidget);
-      expect(find.text('Normal'), findsNWidgets(4));
-    });
+        expect(titlesInOrder(tester), [
+          'C hoch früh',
+          'B hoch spät',
+          'D normal überfällig',
+          'G normal heute',
+          'F normal morgen',
+          'E normal ohne Datum',
+          'A niedrig ohne Datum',
+        ]);
+        expect(find.text('Überfällig seit 01.10.2026'), findsOneWidget);
+        expect(find.text('Heute fällig'), findsOneWidget);
+        expect(find.text('Morgen fällig'), findsOneWidget);
+        expect(find.text('Fällig am 20.10.2026'), findsOneWidget);
+        expect(find.text('#Schule'), findsOneWidget);
+        expect(find.text('#Büro'), findsOneWidget);
+        expect(find.text('Hoch'), findsNWidgets(2));
+        expect(find.text('Niedrig'), findsOneWidget);
+        expect(find.text('Normal'), findsNWidgets(4));
+      },
+    );
 
     testWidgets('an overdue task is marked by text, not only by colour', (
       tester,
@@ -253,66 +255,70 @@ void main() {
   });
 
   group('completion', () {
-    testWidgets('completes with undo, reopens and completes again without '
-        'piling up XP (AT13, T01, G01)', (tester) async {
-      final env = await createTasksUiEnv(tester);
-      final id = await env.addTask(tester, 'Steuer machen');
-      await pumpTasks(tester, env);
+    testWidgets(
+      'completes with undo, reopens and completes again without piling up XP (AT13, T01, G01)',
+      (tester) async {
+        final env = await createTasksUiEnv(tester);
+        final id = await env.addTask(tester, 'Steuer machen');
+        await pumpTasks(tester, env);
 
-      await tester.tap(find.byType(RoundCheckbox));
-      await waitForFeedback(tester, env);
-      expect(env.feedback.last!.message, 'Aufgabe erledigt');
-      expect(env.feedback.last!.undo, isNotNull);
-      var task = (await env.readTask(tester, id))!;
-      expect(task.isCompleted, isTrue);
-      expect(task.completionEligibility, isTrue);
-      expect(await tester.runAsync(env.harness.totalXp), 10);
-      // The open list no longer shows it.
-      expect(titlesInOrder(tester), isEmpty);
-      expect(find.text('Alles erledigt'), findsOneWidget);
+        await tester.tap(find.byType(RoundCheckbox));
+        await waitForFeedback(tester, env);
+        expect(env.feedback.last!.message, 'Aufgabe erledigt');
+        expect(env.feedback.last!.undo, isNotNull);
+        var task = (await env.readTask(tester, id))!;
+        expect(task.isCompleted, isTrue);
+        expect(task.completionEligibility, isTrue);
+        expect(await tester.runAsync(env.harness.totalXp), 10);
+        // The open list no longer shows it.
+        expect(titlesInOrder(tester), isEmpty);
+        expect(find.text('Alles erledigt'), findsOneWidget);
 
-      await tester.tap(find.text('Erledigt'));
-      await pumpData(tester);
-      expect(titlesInOrder(tester), ['Steuer machen']);
+        await tester.tap(find.text('Erledigt'));
+        await pumpData(tester);
+        expect(titlesInOrder(tester), ['Steuer machen']);
 
-      await tester.tap(find.byType(RoundCheckbox));
-      await waitForFeedback(tester, env, 2);
-      expect(env.feedback.last!.message, 'Aufgabe wieder geöffnet');
-      task = (await env.readTask(tester, id))!;
-      expect(task.isOpen, isTrue);
-      expect(task.completedAtUtc, isNull);
-      expect(task.completionEligibility, isNull);
-      expect(await tester.runAsync(env.harness.totalXp), 0);
+        await tester.tap(find.byType(RoundCheckbox));
+        await waitForFeedback(tester, env, 2);
+        expect(env.feedback.last!.message, 'Aufgabe wieder geöffnet');
+        task = (await env.readTask(tester, id))!;
+        expect(task.isOpen, isTrue);
+        expect(task.completedAtUtc, isNull);
+        expect(task.completionEligibility, isNull);
+        expect(await tester.runAsync(env.harness.totalXp), 0);
 
-      await tester.tap(find.text('Offen'));
-      await pumpData(tester);
-      await tester.tap(find.byType(RoundCheckbox));
-      await waitForFeedback(tester, env, 3);
-      expect(await tester.runAsync(env.harness.totalXp), 10);
-      task = (await env.readTask(tester, id))!;
-      expect(task.isCompleted, isTrue);
-    });
+        await tester.tap(find.text('Offen'));
+        await pumpData(tester);
+        await tester.tap(find.byType(RoundCheckbox));
+        await waitForFeedback(tester, env, 3);
+        expect(await tester.runAsync(env.harness.totalXp), 10);
+        task = (await env.readTask(tester, id))!;
+        expect(task.isCompleted, isTrue);
+      },
+    );
 
-    testWidgets('undo of a completion restores the exact open state (AT13, '
-        'C05)', (tester) async {
-      final env = await createTasksUiEnv(tester);
-      final id = await env.addTask(tester, 'Steuer machen');
-      await pumpTasks(tester, env);
-      await tester.tap(find.byType(RoundCheckbox));
-      await waitForFeedback(tester, env);
+    testWidgets(
+      'undo of a completion restores the exact open state (AT13, C05)',
+      (tester) async {
+        final env = await createTasksUiEnv(tester);
+        final id = await env.addTask(tester, 'Steuer machen');
+        await pumpTasks(tester, env);
+        await tester.tap(find.byType(RoundCheckbox));
+        await waitForFeedback(tester, env);
 
-      final result = await tester.runAsync(env.feedback.last!.undo!.perform);
-      expect(result, isNotNull);
-      await pumpData(tester);
+        final result = await tester.runAsync(env.feedback.last!.undo!.perform);
+        expect(result, isNotNull);
+        await pumpData(tester);
 
-      final task = (await env.readTask(tester, id))!;
-      expect(task.isOpen, isTrue);
-      expect(task.completedAtUtc, isNull);
-      expect(task.completedLocalDate, isNull);
-      expect(task.completionEligibility, isNull);
-      expect(await tester.runAsync(env.harness.totalXp), 0);
-      expect(titlesInOrder(tester), ['Steuer machen']);
-    });
+        final task = (await env.readTask(tester, id))!;
+        expect(task.isOpen, isTrue);
+        expect(task.completedAtUtc, isNull);
+        expect(task.completedLocalDate, isNull);
+        expect(task.completionEligibility, isNull);
+        expect(await tester.runAsync(env.harness.totalXp), 0);
+        expect(titlesInOrder(tester), ['Steuer machen']);
+      },
+    );
 
     testWidgets('a double tap completes once with one command (AT12, C05)', (
       tester,
@@ -335,30 +341,32 @@ void main() {
       expect(await tester.runAsync(env.harness.totalXp), 10);
     });
 
-    testWidgets('a failed completion changes nothing; the retry reuses the '
-        'command id (AT27, AT12)', (tester) async {
-      final env = await createTasksUiEnv(tester);
-      final id = await env.addTask(tester, 'Steuer machen');
-      await pumpTasks(tester, env);
-      env.tasks.failNext = 1;
+    testWidgets(
+      'a failed completion changes nothing; the retry reuses the command id (AT27, AT12)',
+      (tester) async {
+        final env = await createTasksUiEnv(tester);
+        final id = await env.addTask(tester, 'Steuer machen');
+        await pumpTasks(tester, env);
+        env.tasks.failNext = 1;
 
-      await tester.tap(find.byType(RoundCheckbox));
-      await waitForFeedback(tester, env);
-      final error = env.feedback.last!;
-      expect(error.kind, 'error');
-      expect(error.onRetry, isNotNull);
-      expect((await env.readTask(tester, id))!.isOpen, isTrue);
-      expect(await tester.runAsync(env.harness.totalXp), 0);
-      expect(titlesInOrder(tester), ['Steuer machen']);
+        await tester.tap(find.byType(RoundCheckbox));
+        await waitForFeedback(tester, env);
+        final error = env.feedback.last!;
+        expect(error.kind, 'error');
+        expect(error.onRetry, isNotNull);
+        expect((await env.readTask(tester, id))!.isOpen, isTrue);
+        expect(await tester.runAsync(env.harness.totalXp), 0);
+        expect(titlesInOrder(tester), ['Steuer machen']);
 
-      error.onRetry!();
-      await waitForFeedback(tester, env, 2);
+        error.onRetry!();
+        await waitForFeedback(tester, env, 2);
 
-      expect(env.tasks.commandIds, hasLength(2));
-      expect(env.tasks.commandIds[0], env.tasks.commandIds[1]);
-      expect(env.feedback.last!.message, 'Aufgabe erledigt');
-      expect(await tester.runAsync(env.harness.totalXp), 10);
-    });
+        expect(env.tasks.commandIds, hasLength(2));
+        expect(env.tasks.commandIds[0], env.tasks.commandIds[1]);
+        expect(env.feedback.last!.message, 'Aufgabe erledigt');
+        expect(await tester.runAsync(env.harness.totalXp), 10);
+      },
+    );
   });
 
   group('menu', () {
@@ -391,8 +399,7 @@ void main() {
     });
 
     testWidgets(
-      'delete asks first: cancel keeps the task, confirm deletes with '
-      'an exact undo (T01, C05)',
+      'delete asks first: cancel keeps the task, confirm deletes with an exact undo (T01, C05)',
       (tester) async {
         final env = await createTasksUiEnv(tester);
         final id = await env.addTask(
@@ -494,27 +501,29 @@ void main() {
       expect(find.text('Neue Aufgabe'), findsOneWidget);
     });
 
-    testWidgets('Erledigt without completed tasks says so, Offen with all done '
-        'celebrates', (tester) async {
-      final env = await createTasksUiEnv(tester);
-      final id = await env.addTask(tester, 'Steuer machen');
-      await pumpTasks(tester, env);
+    testWidgets(
+      'Erledigt without completed tasks says so, Offen with all done celebrates',
+      (tester) async {
+        final env = await createTasksUiEnv(tester);
+        final id = await env.addTask(tester, 'Steuer machen');
+        await pumpTasks(tester, env);
 
-      await tester.tap(find.text('Erledigt'));
-      await pumpData(tester);
-      expect(find.text('Noch nichts erledigt'), findsOneWidget);
+        await tester.tap(find.text('Erledigt'));
+        await pumpData(tester);
+        expect(find.text('Noch nichts erledigt'), findsOneWidget);
 
-      await tester.runAsync(
-        () => env.tasks.setCompleted(
-          commandId: env.harness.ids.newId(),
-          id: id,
-          completed: true,
-        ),
-      );
-      await tester.tap(find.text('Offen'));
-      await pumpData(tester);
-      expect(find.text('Alles erledigt'), findsOneWidget);
-    });
+        await tester.runAsync(
+          () => env.tasks.setCompleted(
+            commandId: env.harness.ids.newId(),
+            id: id,
+            completed: true,
+          ),
+        );
+        await tester.tap(find.text('Offen'));
+        await pumpData(tester);
+        expect(find.text('Alles erledigt'), findsOneWidget);
+      },
+    );
 
     testWidgets('a load error shows the error state and retry loads again', (
       tester,
@@ -557,20 +566,22 @@ void main() {
       expect(router.canPop(), isTrue);
     });
 
-    testWidgets('a day change moves a due task from "morgen" to "heute" '
-        '(AT25)', (tester) async {
-      final env = await createTasksUiEnv(tester);
-      await env.addTask(tester, 'Steuer machen', dueDate: today.addDays(1));
-      await pumpTasks(tester, env);
-      expect(find.text('Morgen fällig'), findsOneWidget);
+    testWidgets(
+      'a day change moves a due task from "morgen" to "heute" (AT25)',
+      (tester) async {
+        final env = await createTasksUiEnv(tester);
+        await env.addTask(tester, 'Steuer machen', dueDate: today.addDays(1));
+        await pumpTasks(tester, env);
+        expect(find.text('Morgen fällig'), findsOneWidget);
 
-      env.moveTo(today.addDays(1));
-      await pumpData(tester);
-      expect(find.text('Heute fällig'), findsOneWidget);
+        env.moveTo(today.addDays(1));
+        await pumpData(tester);
+        expect(find.text('Heute fällig'), findsOneWidget);
 
-      env.moveTo(today.addDays(2));
-      await pumpData(tester);
-      expect(find.text('Überfällig seit 04.10.2026'), findsOneWidget);
-    });
+        env.moveTo(today.addDays(2));
+        await pumpData(tester);
+        expect(find.text('Überfällig seit 04.10.2026'), findsOneWidget);
+      },
+    );
   });
 }

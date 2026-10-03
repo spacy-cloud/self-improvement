@@ -296,47 +296,59 @@ void main() {
       handle.dispose();
     });
 
-    testWidgets('the day progress is announced as one text with its '
-        'percentage', (tester) async {
-      final handle = tester.ensureSemantics();
-      final env = await createTasksUiEnv(tester);
-      await _seedHabits(tester, env);
-      await pumpApp(tester, const HabitsTabScreen(), container: env.container);
-      await pumpData(tester);
-      await tester.pump(const Duration(milliseconds: 300));
+    testWidgets(
+      'the day progress is announced as one text with its percentage',
+      (tester) async {
+        final handle = tester.ensureSemantics();
+        final env = await createTasksUiEnv(tester);
+        await _seedHabits(tester, env);
+        await pumpApp(
+          tester,
+          const HabitsTabScreen(),
+          container: env.container,
+        );
+        await pumpData(tester);
+        await tester.pump(const Duration(milliseconds: 300));
 
-      expect(
-        find.bySemanticsLabel(RegExp(r'Heute\s+1 von 3 erledigt')),
-        findsOneWidget,
-      );
-      expect(
-        tester.getSemantics(find.bySemanticsLabel('Fortschritt')),
-        isSemantics(value: '33 %'),
-      );
-      handle.dispose();
-    });
+        expect(
+          find.bySemanticsLabel(RegExp(r'Heute\s+1 von 3 erledigt')),
+          findsOneWidget,
+        );
+        expect(
+          tester.getSemantics(find.bySemanticsLabel('Fortschritt')),
+          isSemantics(value: '33 %'),
+        );
+        handle.dispose();
+      },
+    );
 
-    testWidgets('the view switch is a mutually exclusive group with the '
-        'selected state', (tester) async {
-      final handle = tester.ensureSemantics();
-      final env = await createTasksUiEnv(tester);
-      await _seedHabits(tester, env);
-      await _seedTasks(tester, env);
-      await pumpApp(tester, const HabitsTabScreen(), container: env.container);
-      await pumpData(tester);
+    testWidgets(
+      'the view switch is a mutually exclusive group with the selected state',
+      (tester) async {
+        final handle = tester.ensureSemantics();
+        final env = await createTasksUiEnv(tester);
+        await _seedHabits(tester, env);
+        await _seedTasks(tester, env);
+        await pumpApp(
+          tester,
+          const HabitsTabScreen(),
+          container: env.container,
+        );
+        await pumpData(tester);
 
-      expect(
-        tester.getSemantics(find.bySemanticsLabel('Aufgaben, 3 offen')),
-        isSemantics(isSelected: false, isInMutuallyExclusiveGroup: true),
-      );
-      expect(
-        tester.getSemantics(
-          find.bySemanticsLabel('Gewohnheiten, 1 von 3 erledigt'),
-        ),
-        isSemantics(isSelected: true, isInMutuallyExclusiveGroup: true),
-      );
-      handle.dispose();
-    });
+        expect(
+          tester.getSemantics(find.bySemanticsLabel('Aufgaben, 3 offen')),
+          isSemantics(isSelected: false, isInMutuallyExclusiveGroup: true),
+        );
+        expect(
+          tester.getSemantics(
+            find.bySemanticsLabel('Gewohnheiten, 1 von 3 erledigt'),
+          ),
+          isSemantics(isSelected: true, isInMutuallyExclusiveGroup: true),
+        );
+        handle.dispose();
+      },
+    );
 
     testWidgets('a form error is read together with its field', (tester) async {
       final handle = tester.ensureSemantics();

@@ -153,9 +153,12 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
   }
 
   Future<void> _delete(BuildContext context, Habit habit) async {
+    // The router is read before the awaits: once the habit is deleted, this
+    // screen is replaced by the not-found state before the call returns.
+    final router = GoRouter.of(context);
     final deleted = await confirmAndDeleteHabit(context, habit);
-    if (deleted && context.mounted) {
-      context.go(HabitRoutes.tab);
+    if (deleted) {
+      router.go(HabitRoutes.tab);
     }
   }
 }
@@ -361,7 +364,7 @@ class _HistoryCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           if (asList)
-            _HistoryList(detail: detail, accent: accent)
+            _HistoryList(detail: detail)
           else
             _HistoryGrid(detail: detail, accent: accent),
           const SizedBox(height: 8),
@@ -640,10 +643,9 @@ class _DayCell extends ConsumerWidget {
 /// The same 30 days as a list, newest first: date, state in words, and the
 /// checkbox for a day that may be changed. The text alternative of the grid.
 class _HistoryList extends StatelessWidget {
-  const _HistoryList({required this.detail, required this.accent});
+  const _HistoryList({required this.detail});
 
   final HabitDetail detail;
-  final AppAccent accent;
 
   @override
   Widget build(BuildContext context) {

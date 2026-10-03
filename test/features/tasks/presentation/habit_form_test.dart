@@ -59,34 +59,36 @@ void main() {
   }
 
   group('create', () {
-    testWidgets('saves a daily habit with the default symbol and no reminder '
-        '(T02)', (tester) async {
-      final env = await createTasksUiEnv(tester);
-      final router = await openForm(tester, env);
-      expect(find.text('Neue Gewohnheit'), findsOneWidget);
-      expect(
-        find.text('Neue Gewohnheiten zählen ab heute für deinen Tagesring.'),
-        findsOneWidget,
-      );
-      await tester.enterText(nameField, '  10 Min. lesen ');
+    testWidgets(
+      'saves a daily habit with the default symbol and no reminder (T02)',
+      (tester) async {
+        final env = await createTasksUiEnv(tester);
+        final router = await openForm(tester, env);
+        expect(find.text('Neue Gewohnheit'), findsOneWidget);
+        expect(
+          find.text('Neue Gewohnheiten zählen ab heute für deinen Tagesring.'),
+          findsOneWidget,
+        );
+        await tester.enterText(nameField, '  10 Min. lesen ');
 
-      await save(tester);
-      await waitForFeedback(tester, env);
+        await save(tester);
+        await waitForFeedback(tester, env);
 
-      final habit = (await env.allHabits(tester)).single;
-      expect(habit.title, '10 Min. lesen');
-      expect(habit.icon, HabitIcon.book);
-      expect(habit.reminderTime, isNull);
-      expect(habit.startedOn, today);
-      expect(habit.archivedFrom, isNull);
-      expect(env.feedback.last!.kind, 'saved');
-      expect(env.feedback.last!.message, 'Gewohnheit gespeichert');
-      expect(find.text('Neue Gewohnheit'), findsNothing);
-      expect(router.canPop(), isFalse);
+        final habit = (await env.allHabits(tester)).single;
+        expect(habit.title, '10 Min. lesen');
+        expect(habit.icon, HabitIcon.book);
+        expect(habit.reminderTime, isNull);
+        expect(habit.startedOn, today);
+        expect(habit.archivedFrom, isNull);
+        expect(env.feedback.last!.kind, 'saved');
+        expect(env.feedback.last!.message, 'Gewohnheit gespeichert');
+        expect(find.text('Neue Gewohnheit'), findsNothing);
+        expect(router.canPop(), isFalse);
 
-      await tester.runAsync(env.feedback.last!.undo!.perform);
-      expect(await env.allHabits(tester), isEmpty);
-    });
+        await tester.runAsync(env.feedback.last!.undo!.perform);
+        expect(await env.allHabits(tester), isEmpty);
+      },
+    );
 
     testWidgets('every symbol can be chosen and is stored with its key', (
       tester,
@@ -115,60 +117,66 @@ void main() {
       handle.dispose();
     });
 
-    testWidgets('the selected symbol is marked by a check and the selected '
-        'state, not by colour alone', (tester) async {
-      final handle = tester.ensureSemantics();
-      final env = await createTasksUiEnv(tester);
-      await openForm(tester, env);
+    testWidgets(
+      'the selected symbol is marked by a check and the selected state, not by colour alone',
+      (tester) async {
+        final handle = tester.ensureSemantics();
+        final env = await createTasksUiEnv(tester);
+        await openForm(tester, env);
 
-      SemanticsNode node(String label) =>
-          tester.getSemantics(find.bySemanticsLabel(label));
-      expect(node('Symbol: Buch'), isSemantics(isSelected: true));
-      expect(node('Symbol: Mond'), isSemantics(isSelected: false));
-      final tilesWithCheck = find.descendant(
-        of: find.bySemanticsLabel('Symbol: Buch'),
-        matching: find.byIcon(Icons.check_rounded),
-      );
-      expect(tilesWithCheck, findsOneWidget);
+        SemanticsNode node(String label) =>
+            tester.getSemantics(find.bySemanticsLabel(label));
+        expect(node('Symbol: Buch'), isSemantics(isSelected: true));
+        expect(node('Symbol: Mond'), isSemantics(isSelected: false));
+        final tilesWithCheck = find.descendant(
+          of: find.bySemanticsLabel('Symbol: Buch'),
+          matching: find.byIcon(Icons.check_rounded),
+        );
+        expect(tilesWithCheck, findsOneWidget);
 
-      await tester.tap(find.bySemanticsLabel('Symbol: Flamme'));
-      await tester.pump();
-      expect(node('Symbol: Flamme'), isSemantics(isSelected: true));
-      expect(node('Symbol: Buch'), isSemantics(isSelected: false));
-      handle.dispose();
-    });
+        await tester.tap(find.bySemanticsLabel('Symbol: Flamme'));
+        await tester.pump();
+        expect(node('Symbol: Flamme'), isSemantics(isSelected: true));
+        expect(node('Symbol: Buch'), isSemantics(isSelected: false));
+        handle.dispose();
+      },
+    );
 
-    testWidgets('V1 habits are daily: no weekday and no time-of-day choice '
-        '(T02)', (tester) async {
-      final env = await createTasksUiEnv(tester);
-      await openForm(tester, env);
+    testWidgets(
+      'V1 habits are daily: no weekday and no time-of-day choice (T02)',
+      (tester) async {
+        final env = await createTasksUiEnv(tester);
+        await openForm(tester, env);
 
-      expect(find.text('Täglich'), findsOneWidget);
-      expect(find.text('Bestimmte Tage'), findsNothing);
-      expect(find.text('Morgens'), findsNothing);
-      expect(find.text('Mittags & abends'), findsNothing);
-    });
+        expect(find.text('Täglich'), findsOneWidget);
+        expect(find.text('Bestimmte Tage'), findsNothing);
+        expect(find.text('Morgens'), findsNothing);
+        expect(find.text('Mittags & abends'), findsNothing);
+      },
+    );
 
-    testWidgets('the reminder is off by default and saves its time when '
-        'switched on (C08)', (tester) async {
-      final env = await createTasksUiEnv(tester);
-      await openForm(tester, env);
-      expect(find.text('Aus'), findsOneWidget);
-      expect(find.text('Uhrzeit'), findsNothing);
-      await tester.enterText(nameField, 'Lesen');
+    testWidgets(
+      'the reminder is off by default and saves its time when switched on (C08)',
+      (tester) async {
+        final env = await createTasksUiEnv(tester);
+        await openForm(tester, env);
+        expect(find.text('Aus'), findsOneWidget);
+        expect(find.text('Uhrzeit'), findsNothing);
+        await tester.enterText(nameField, 'Lesen');
 
-      await tester.tap(find.text('Tägliche Erinnerung'));
-      await tester.pump(const Duration(milliseconds: 300));
-      expect(find.text('Täglich um 20:00 Uhr'), findsOneWidget);
-      expect(find.text('Uhrzeit'), findsOneWidget);
+        await tester.tap(find.text('Tägliche Erinnerung'));
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(find.text('Täglich um 20:00 Uhr'), findsOneWidget);
+        expect(find.text('Uhrzeit'), findsOneWidget);
 
-      await save(tester);
-      await waitForFeedback(tester, env);
-      expect(
-        (await env.allHabits(tester)).single.reminderTime,
-        const LocalTime(20, 0),
-      );
-    });
+        await save(tester);
+        await waitForFeedback(tester, env);
+        expect(
+          (await env.allHabits(tester)).single.reminderTime,
+          const LocalTime(20, 0),
+        );
+      },
+    );
 
     testWidgets('switching the reminder off again saves no reminder', (
       tester,
@@ -186,21 +194,23 @@ void main() {
       expect((await env.allHabits(tester)).single.reminderTime, isNull);
     });
 
-    testWidgets('the time row opens the time picker; cancelling keeps the '
-        'time', (tester) async {
-      final env = await createTasksUiEnv(tester);
-      await openForm(tester, env);
-      await tester.tap(find.text('Tägliche Erinnerung'));
-      await tester.pump(const Duration(milliseconds: 300));
+    testWidgets(
+      'the time row opens the time picker; cancelling keeps the time',
+      (tester) async {
+        final env = await createTasksUiEnv(tester);
+        await openForm(tester, env);
+        await tester.tap(find.text('Tägliche Erinnerung'));
+        await tester.pump(const Duration(milliseconds: 300));
 
-      await tester.tap(find.text('Uhrzeit'));
-      await tester.pumpAndSettle();
-      expect(find.text('Uhrzeit der Erinnerung'), findsOneWidget);
-      await tester.tap(find.text('Abbrechen'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('Uhrzeit'));
+        await tester.pumpAndSettle();
+        expect(find.text('Uhrzeit der Erinnerung'), findsOneWidget);
+        await tester.tap(find.text('Abbrechen'));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Täglich um 20:00 Uhr'), findsOneWidget);
-    });
+        expect(find.text('Täglich um 20:00 Uhr'), findsOneWidget);
+      },
+    );
 
     testWidgets('an empty name shows the hint and saves nothing (C05)', (
       tester,
@@ -256,56 +266,60 @@ void main() {
       expect(await env.allHabits(tester), hasLength(1));
     });
 
-    testWidgets('a failed save keeps the input; the retry reuses the command '
-        'id and saves once (AT27, AT12)', (tester) async {
-      final env = await createTasksUiEnv(tester);
-      await openForm(tester, env);
-      await tester.enterText(nameField, 'Lesen');
-      await tester.tap(find.bySemanticsLabel('Symbol: Mond'));
-      env.habits.failNext = 1;
+    testWidgets(
+      'a failed save keeps the input; the retry reuses the command id and saves once (AT27, AT12)',
+      (tester) async {
+        final env = await createTasksUiEnv(tester);
+        await openForm(tester, env);
+        await tester.enterText(nameField, 'Lesen');
+        await tester.tap(find.bySemanticsLabel('Symbol: Mond'));
+        env.habits.failNext = 1;
 
-      await save(tester);
-      await waitForFeedback(tester, env);
+        await save(tester);
+        await waitForFeedback(tester, env);
 
-      final error = env.feedback.last!;
-      expect(error.kind, 'error');
-      expect(error.onRetry, isNotNull);
-      expect(tester.widget<TextField>(nameField).controller!.text, 'Lesen');
-      expect(find.text('Neue Gewohnheit'), findsOneWidget);
-      expect(await env.allHabits(tester), isEmpty);
+        final error = env.feedback.last!;
+        expect(error.kind, 'error');
+        expect(error.onRetry, isNotNull);
+        expect(tester.widget<TextField>(nameField).controller!.text, 'Lesen');
+        expect(find.text('Neue Gewohnheit'), findsOneWidget);
+        expect(await env.allHabits(tester), isEmpty);
 
-      error.onRetry!();
-      await waitForFeedback(tester, env, 2);
+        error.onRetry!();
+        await waitForFeedback(tester, env, 2);
 
-      expect(env.habits.commandIds[0], env.habits.commandIds[1]);
-      final habit = (await env.allHabits(tester)).single;
-      expect(habit.icon, HabitIcon.moon);
-    });
+        expect(env.habits.commandIds[0], env.habits.commandIds[1]);
+        final habit = (await env.allHabits(tester)).single;
+        expect(habit.icon, HabitIcon.moon);
+      },
+    );
   });
 
   group('leaving', () {
-    testWidgets('a changed form asks first; Verwerfen leaves, Weiter '
-        'bearbeiten stays', (tester) async {
-      final env = await createTasksUiEnv(tester);
-      final router = await openForm(tester, env);
-      await tester.enterText(nameField, 'Halb fertig');
-      await tester.pump();
+    testWidgets(
+      'a changed form asks first; Verwerfen leaves, Weiter bearbeiten stays',
+      (tester) async {
+        final env = await createTasksUiEnv(tester);
+        final router = await openForm(tester, env);
+        await tester.enterText(nameField, 'Halb fertig');
+        await tester.pump();
 
-      await tester.binding.handlePopRoute();
-      await tester.pumpAndSettle();
-      expect(find.text('Änderungen verwerfen?'), findsOneWidget);
-      await tester.tap(find.text('Weiter bearbeiten'));
-      await tester.pumpAndSettle();
-      expect(find.text('Neue Gewohnheit'), findsOneWidget);
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(find.text('Änderungen verwerfen?'), findsOneWidget);
+        await tester.tap(find.text('Weiter bearbeiten'));
+        await tester.pumpAndSettle();
+        expect(find.text('Neue Gewohnheit'), findsOneWidget);
 
-      await tester.binding.handlePopRoute();
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Verwerfen'));
-      await tester.pumpAndSettle();
-      expect(find.text('Neue Gewohnheit'), findsNothing);
-      expect(router.canPop(), isFalse);
-      expect(await env.allHabits(tester), isEmpty);
-    });
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Verwerfen'));
+        await tester.pumpAndSettle();
+        expect(find.text('Neue Gewohnheit'), findsNothing);
+        expect(router.canPop(), isFalse);
+        expect(await env.allHabits(tester), isEmpty);
+      },
+    );
 
     testWidgets('choosing another symbol counts as a change', (tester) async {
       final handle = tester.ensureSemantics();
@@ -378,48 +392,54 @@ void main() {
       expect((await env.readHabit(tester, id))!.title, 'Lesen');
     });
 
-    testWidgets('delete asks first and goes back to the habits; undo restores '
-        'the same habit with its history (T02, C05)', (tester) async {
-      final env = await createTasksUiEnv(tester);
-      final id = await env.addHabit(tester, 'Lesen');
-      await env.checkHabit(tester, id, today);
-      final router = await openForm(tester, env, location: '/habits/$id/edit');
-      await tester.enterText(nameField, 'Geändert');
-      await tester.pump();
+    testWidgets(
+      'delete asks first and goes back to the habits; undo restores the same habit with its history (T02, C05)',
+      (tester) async {
+        final env = await createTasksUiEnv(tester);
+        final id = await env.addHabit(tester, 'Lesen');
+        await env.checkHabit(tester, id, today);
+        final router = await openForm(
+          tester,
+          env,
+          location: '/habits/$id/edit',
+        );
+        await tester.enterText(nameField, 'Geändert');
+        await tester.pump();
 
-      await tester.ensureVisible(find.text('Gewohnheit löschen'));
-      await tester.tap(find.text('Gewohnheit löschen'));
-      await tester.pumpAndSettle();
-      expect(find.text('Gewohnheit löschen?'), findsOneWidget);
-      await tester.tap(find.text('Abbrechen'));
-      await tester.pumpAndSettle();
-      expect(await env.readHabit(tester, id), isNotNull);
+        await tester.ensureVisible(find.text('Gewohnheit löschen'));
+        await tester.tap(find.text('Gewohnheit löschen'));
+        await tester.pumpAndSettle();
+        expect(find.text('Gewohnheit löschen?'), findsOneWidget);
+        await tester.tap(find.text('Abbrechen'));
+        await tester.pumpAndSettle();
+        expect(await env.readHabit(tester, id), isNotNull);
 
-      await tester.ensureVisible(find.text('Gewohnheit löschen'));
-      await tester.tap(find.text('Gewohnheit löschen'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Löschen'));
-      await tester.pumpAndSettle();
-      await waitForFeedback(tester, env);
+        await tester.ensureVisible(find.text('Gewohnheit löschen'));
+        await tester.tap(find.text('Gewohnheit löschen'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Löschen'));
+        await tester.pumpAndSettle();
+        await waitForFeedback(tester, env);
 
-      expect(env.feedback.last!.message, 'Gewohnheit gelöscht');
-      expect(await env.readHabit(tester, id), isNull);
-      expect(find.text('Änderungen verwerfen?'), findsNothing);
-      expect(locationOf(router), '/habits');
-      expect(find.text('Deine Habits'), findsOneWidget);
-      expect(await tester.runAsync(env.harness.totalXp), 0);
+        expect(env.feedback.last!.message, 'Gewohnheit gelöscht');
+        expect(await env.readHabit(tester, id), isNull);
+        expect(find.text('Änderungen verwerfen?'), findsNothing);
+        expect(locationOf(router), '/habits');
+        expect(find.text('Deine Habits'), findsOneWidget);
+        expect(await tester.runAsync(env.harness.totalXp), 0);
 
-      await tester.runAsync(env.feedback.last!.undo!.perform);
-      await pumpData(tester);
-      final restored = (await env.readHabit(tester, id))!;
-      expect(restored.title, 'Lesen');
-      expect(
-        await tester.runAsync(() => env.habits.findCheck(id, today)),
-        isNotNull,
-      );
-      expect(await tester.runAsync(env.harness.totalXp), 5);
-      expect(find.text('Lesen'), findsOneWidget);
-    });
+        await tester.runAsync(env.feedback.last!.undo!.perform);
+        await pumpData(tester);
+        final restored = (await env.readHabit(tester, id))!;
+        expect(restored.title, 'Lesen');
+        expect(
+          await tester.runAsync(() => env.habits.findCheck(id, today)),
+          isNotNull,
+        );
+        expect(await tester.runAsync(env.harness.totalXp), 5);
+        expect(find.text('Lesen'), findsOneWidget);
+      },
+    );
 
     testWidgets('an unknown habit shows the not found state', (tester) async {
       final env = await createTasksUiEnv(tester);

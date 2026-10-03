@@ -203,7 +203,7 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
     final discard = await showConfirmationSheet(
       context,
       title: 'Änderungen verwerfen?',
-      message: 'Deine Eingaben sind noch nicht gespeichert.',
+      message: 'Deine Eingaben in diesem Formular gehen verloren.',
       confirmLabel: 'Verwerfen',
       cancelLabel: 'Weiter bearbeiten',
     );
