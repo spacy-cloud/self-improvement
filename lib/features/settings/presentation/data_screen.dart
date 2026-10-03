@@ -127,7 +127,7 @@ class _DataScreenState extends ConsumerState<DataScreen> {
             feedback.showSaved(
               entryCount == 0
                   ? 'Sicherung erstellt und weitergegeben.'
-                  : 'Sicherung mit ${entriesText(entryCount)} erstellt und '
+                  : 'Sicherung mit ${entriesDativeText(entryCount)} erstellt und '
                         'weitergegeben.',
             );
           case BackupShareStatus.dismissed:

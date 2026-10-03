@@ -1,5 +1,5 @@
+import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter/material.dart';
@@ -12,6 +12,7 @@ import 'package:self_improvement/core/backup/backup_exporter.dart';
 import 'package:self_improvement/core/backup/backup_format.dart';
 import 'package:self_improvement/core/backup/backup_providers.dart';
 import 'package:self_improvement/core/backup/import_validation_report.dart';
+import 'package:self_improvement/core/backup/platform/backup_file_gateway.dart';
 import 'package:self_improvement/core/backup/platform/backup_file_picker.dart';
 import 'package:self_improvement/core/backup/snapshot_consistency_checker.dart';
 import 'package:self_improvement/core/backup/testing/in_memory_backup_adapters.dart';
@@ -35,6 +36,7 @@ class DataEnv {
     required this.container,
     required this.feedback,
     required this.gateway,
+    required this.recording,
     required this.picker,
     required this.canceller,
     required this.listener,
@@ -45,6 +47,7 @@ class DataEnv {
   final ProviderContainer container;
   final RecordingFeedbackService feedback;
   final InMemoryBackupFileGateway gateway;
+  final RecordingGateway recording;
   final FakeBackupFilePicker picker;
   final RecordingNotificationCanceller canceller;
   final RecordingBackupListener listener;
@@ -74,8 +77,61 @@ final class RejectingSnapshotChecker implements SnapshotConsistencyChecker {
   ];
 }
 
+/// Wraps the in-memory gateway: keeps the bytes of every written file (the
+/// gateway deletes them after sharing) and can hold a write back until the
+/// test lets it go.
+final class RecordingGateway implements BackupFileGateway {
+  RecordingGateway(this.inner);
+
+  final InMemoryBackupFileGateway inner;
+
+  /// Content of every file that was written, in order.
+  final List<Uint8List> written = [];
+
+  /// While set, a write waits for it.
+  Completer<void>? writeGate;
+
+  @override
+  Future<String> writeTemporaryExport({
+    required String fileName,
+    required Uint8List bytes,
+  }) async {
+    written.add(bytes);
+    final gate = writeGate;
+    if (gate != null) {
+      await gate.future;
+    }
+    return inner.writeTemporaryExport(fileName: fileName, bytes: bytes);
+  }
+
+  @override
+  Future<BackupShareStatus> shareExport(String path) => inner.shareExport(path);
+
+  @override
+  Future<void> deleteTemporaryExports({
+    bool includePlatformShareCopies = false,
+  }) => inner.deleteTemporaryExports(
+    includePlatformShareCopies: includePlatformShareCopies,
+  );
+}
+
+/// A file picker that stays open until the test completes [gate].
+final class GatedPicker implements BackupFilePicker {
+  final Completer<PickedBackupFile?> gate = Completer<PickedBackupFile?>();
+  int calls = 0;
+
+  @override
+  Future<PickedBackupFile?> pickBackupFile({
+    int maxBytes = BackupFormat.maxFileBytes,
+  }) {
+    calls++;
+    return gate.future;
+  }
+}
+
 Future<DataEnv> createDataEnv(
   WidgetTester tester, {
+  BackupFilePicker? pickerOverride,
   bool oldData = true,
   bool realProjection = false,
   List<Override> overrides = const <Override>[],
@@ -97,14 +153,15 @@ Future<DataEnv> createDataEnv(
   }
   final feedback = RecordingFeedbackService(ids: harness.ids);
   final gateway = InMemoryBackupFileGateway();
+  final recording = RecordingGateway(gateway);
   final picker = FakeBackupFilePicker();
   final canceller = RecordingNotificationCanceller();
   final listener = RecordingBackupListener();
   final container = harness.createContainer(
     overrides: [
       feedbackServiceProvider.overrideWithValue(feedback),
-      backupFileGatewayProvider.overrideWithValue(gateway),
-      backupFilePickerProvider.overrideWithValue(picker),
+      backupFileGatewayProvider.overrideWithValue(recording),
+      backupFilePickerProvider.overrideWithValue(pickerOverride ?? picker),
       notificationCancellerProvider.overrideWithValue(canceller),
       backupListenerProvider.overrideWithValue(listener),
       ...overrides,
@@ -115,6 +172,7 @@ Future<DataEnv> createDataEnv(
     container: container,
     feedback: feedback,
     gateway: gateway,
+    recording: recording,
     picker: picker,
     canceller: canceller,
     listener: listener,
@@ -209,8 +267,8 @@ Future<void> tapText(WidgetTester tester, String text) async {
 }
 
 /// Lets real async work (database, fakes) finish and the animations end.
-Future<void> settle(WidgetTester tester) async {
-  for (var i = 0; i < 3; i++) {
+Future<void> settle(WidgetTester tester, {int rounds = 5}) async {
+  for (var i = 0; i < rounds; i++) {
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 20)),
     );

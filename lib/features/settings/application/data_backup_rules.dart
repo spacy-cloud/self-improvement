@@ -52,6 +52,10 @@ int userEntryCount(Map<BackupTable, int> counts) =>
 String entriesText(int count) =>
     count == 1 ? '1 Eintrag' : '${formatThousands(count)} Einträge';
 
+/// `1 Eintrag`, `186 Einträgen` for "mit ... erstellt" (dative).
+String entriesDativeText(int count) =>
+    count == 1 ? '1 Eintrag' : '${formatThousands(count)} Einträgen';
+
 /// One line of the per-area list of an import preview.
 @immutable
 final class AreaCount {
