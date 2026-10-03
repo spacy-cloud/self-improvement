@@ -5,17 +5,22 @@ import 'package:self_improvement/core/design/design.dart';
 import 'flow_context.dart';
 import 'flow_steps.dart';
 
-/// The sentence of the reset sheet that names what is deleted, including the
-/// number of entries ("Dein Profil, 2 Einträge, deine Ziele und Einstellungen
-/// ...").
-String _resetSheetSentence() {
-  final finder = find.textContaining('Dein Profil');
-  expect(
-    finder,
-    findsOneWidget,
-    reason: 'the reset sheet names what is deleted',
+/// The sentence of the reset sheet that names what is deleted ("Dein Profil,
+/// 2 Einträge, deine Ziele und Einstellungen ..."), or null while the sheet is
+/// not on screen.
+String? _resetSheetSentence() {
+  final elements = find.textContaining('Dein Profil').evaluate();
+  return elements.length == 1 ? (elements.single.widget as Text).data : null;
+}
+
+/// The sentence once the sheet has counted the entries: the count is read a
+/// moment after the sheet opens, before that the sentence has no number.
+Future<String> _countedResetSentence(FlowContext ctx) async {
+  await ctx.pumpUntil(
+    () => (_resetSheetSentence() ?? '').contains('Eintr'),
+    reason: 'the reset sheet should name the number of entries it deletes',
   );
-  return (finder.evaluate().single.widget as Text).data!;
+  return _resetSheetSentence()!;
 }
 
 /// F6 (AT32): with data and a running focus session in the app, cancelling the
@@ -46,15 +51,14 @@ Future<void> resetFlow(FlowContext ctx) async {
   ctx.log('F6: cancel the reset, nothing changes');
   await ctx.tapText('Zurücksetzen …');
   await ctx.waitForText('Wirklich alles zurücksetzen?');
-  final before = _resetSheetSentence();
-  expect(before, contains('Eintr'), reason: 'the data is counted: $before');
+  final before = await _countedResetSentence(ctx);
   await ctx.tapText('Abbrechen');
   await ctx.waitGone(find.text('Wirklich alles zurücksetzen?'));
   await ctx.waitForText('Zurücksetzen …');
   await ctx.tapText('Zurücksetzen …');
   await ctx.waitForText('Wirklich alles zurücksetzen?');
   expect(
-    _resetSheetSentence(),
+    await _countedResetSentence(ctx),
     before,
     reason: 'cancelling the reset must not change any data',
   );
@@ -85,6 +89,9 @@ Future<void> resetFlow(FlowContext ctx) async {
     plusEntry('focus'),
     reason: 'the focus entry of the plus menu',
   );
+  // Give the menu time to read the sessions: "Fokus" is also what it shows
+  // before the answer is there.
+  await ctx.settle();
   expect(
     find.descendant(of: plusEntry('focus'), matching: find.text('Fokus')),
     findsOneWidget,

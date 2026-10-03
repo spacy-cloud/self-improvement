@@ -93,12 +93,13 @@ Future<void> focusSessionFlow(FlowContext ctx) async {
     plusEntry('focus'),
     reason: 'the focus entry of the plus menu',
   );
-  expect(
+  // The menu asks the database whether a session is open; until the answer is
+  // there the entry still reads "Fokus".
+  await ctx.waitFor(
     find.descendant(
       of: plusEntry('focus'),
       matching: find.text('Fokus fortsetzen'),
     ),
-    findsOneWidget,
     reason: 'an open session turns "Fokus" into "Fokus fortsetzen"',
   );
   await ctx.tap(plusEntry('focus'), reason: 'the focus entry of the plus menu');
@@ -140,6 +141,9 @@ Future<void> focusSessionFlow(FlowContext ctx) async {
     plusEntry('focus'),
     reason: 'the focus entry of the plus menu',
   );
+  // Give the menu time to read the sessions: "Fokus" is also what it shows
+  // before the answer is there.
+  await ctx.settle();
   expect(
     find.descendant(of: plusEntry('focus'), matching: find.text('Fokus')),
     findsOneWidget,
