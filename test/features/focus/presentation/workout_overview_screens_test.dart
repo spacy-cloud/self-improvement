@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -384,6 +386,41 @@ void main() {
         ),
         findsOneWidget,
       );
+    });
+
+    testWidgets('loading shows nothing yet, no empty state', (tester) async {
+      final never = StreamController<List<WorkoutEntry>>();
+      addTearDown(never.close);
+      final ui = await createFocusUi(
+        tester,
+        overrides: [
+          workoutEntriesPageProvider.overrideWith((ref, limit) => never.stream),
+        ],
+      );
+      await pumpFocusApp(tester, ui, initialLocation: '/workouts/all');
+      expect(find.byType(EntryListTile), findsNothing);
+      expect(find.text('Noch kein Training'), findsNothing);
+    });
+
+    testWidgets('an error offers a retry that reads again', (tester) async {
+      var attempts = 0;
+      final ui = await createFocusUi(
+        tester,
+        overrides: [
+          workoutEntriesPageProvider.overrideWith((ref, limit) {
+            attempts++;
+            return attempts == 1
+                ? Stream<List<WorkoutEntry>>.error(StateError('x'))
+                : Stream<List<WorkoutEntry>>.value(const []);
+          }),
+        ],
+      );
+      await pumpFocusApp(tester, ui, initialLocation: '/workouts/all');
+      expect(find.text('Daten konnten nicht geladen werden'), findsOneWidget);
+      await tester.tap(find.text('Erneut versuchen'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(find.text('Noch kein Training'), findsOneWidget);
     });
 
     testWidgets('a row opens the workout for editing', (tester) async {

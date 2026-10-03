@@ -63,6 +63,20 @@ class InlineMessage extends StatelessWidget {
   }
 }
 
+/// Whether the primary action of a form moves from the pinned bar into the end
+/// of the scrolling content: only when the keyboard is open and leaves less
+/// room than about 300 logical pixels per unit of text scale. Pinned and
+/// inline are the same button; this only keeps the fields from being squeezed
+/// into a sliver on small screens with large text.
+bool formActionIsInline(BuildContext context) {
+  final media = MediaQuery.of(context);
+  if (media.viewInsets.bottom <= 0) {
+    return false;
+  }
+  final scale = media.textScaler.scale(14) / 14;
+  return media.size.height - media.viewInsets.bottom < 300 * scale;
+}
+
 /// The neutral loading text of a screen (no endless spinner).
 class ScreenLoading extends StatelessWidget {
   const ScreenLoading({super.key});

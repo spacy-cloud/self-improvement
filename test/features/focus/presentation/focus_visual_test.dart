@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/features/focus/domain/focus_category.dart';
 import 'package:self_improvement/features/focus/domain/muscle_group.dart';
 import 'package:self_improvement/features/focus/domain/training_category.dart';
@@ -16,7 +17,10 @@ import '../support/focus_ui_kit.dart';
 ///
 ///     FOCUS_UI_PNG=1 flutter test test/features/focus/presentation/focus_visual_test.dart
 void main() {
-  final enabled = Platform.environment.containsKey('FOCUS_UI_PNG');
+  // Without the variable no test is registered (nothing is skipped or run).
+  if (!Platform.environment.containsKey('FOCUS_UI_PNG')) {
+    return;
+  }
   const dir = 'build/focus_ui';
 
   Future<FocusUi> seeded(WidgetTester tester) async {
@@ -57,12 +61,20 @@ void main() {
     );
     await tester.settleDb();
     await savePng(tester, '$dir/$name-320-x2.png');
+    await pumpFocusApp(
+      tester,
+      ui,
+      initialLocation: location,
+      theme: AppThemeVariant.dark,
+    );
+    await tester.settleDb();
+    await savePng(tester, '$dir/$name-dark.png');
   }
 
   testWidgets('start screen', (tester) async {
     final ui = await seeded(tester);
     await shots(tester, ui, 'start', '/focus');
-  }, skip: !enabled);
+  });
 
   testWidgets('running, paused and awaiting', (tester) async {
     final ui = await createFocusUi(tester, nowIso: '2026-10-03T08:00:00Z');
@@ -81,14 +93,14 @@ void main() {
     ui.advance(1500);
     await restoreFocus(tester, ui);
     await shots(tester, ui, 'awaiting', '/focus/session');
-  }, skip: !enabled);
+  });
 
   testWidgets('history and detail', (tester) async {
     final ui = await seeded(tester);
     await shots(tester, ui, 'history', '/focus/history');
     final id = await tester.completeFocus(ui, seconds: 600);
     await shots(tester, ui, 'detail', '/focus/history/$id');
-  }, skip: !enabled);
+  });
 
   testWidgets('workouts', (tester) async {
     final ui = await createFocusUi(tester, nowIso: '2026-10-03T15:00:00Z');
@@ -125,5 +137,5 @@ void main() {
     await shots(tester, ui, 'workout-overview', '/workouts');
     await shots(tester, ui, 'workout-all', '/workouts/all');
     await shots(tester, ui, 'workout-new', '/workouts/new');
-  }, skip: !enabled);
+  });
 }

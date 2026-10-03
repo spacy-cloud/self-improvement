@@ -261,6 +261,13 @@ class _WorkoutFormState extends ConsumerState<_WorkoutForm> {
     final canSubmit = !state.submitting && (!_isEdit || state.dirty);
     final errors = state.fieldErrors;
 
+    final inlineAction = formActionIsInline(context);
+    final saveButton = PrimaryButton(
+      label: _isEdit ? 'Änderungen speichern' : 'Training speichern',
+      onPressed: canSubmit ? () => unawaited(_submit()) : null,
+      loading: state.submitting,
+    );
+
     return PopScope(
       canPop: !state.dirty,
       onPopInvokedWithResult: (didPop, result) {
@@ -271,11 +278,7 @@ class _WorkoutFormState extends ConsumerState<_WorkoutForm> {
       child: AppScaffold.subpage(
         title: _isEdit ? 'Training bearbeiten' : 'Workout eintragen',
         onBack: () => backOrHome(context),
-        primaryAction: PrimaryButton(
-          label: _isEdit ? 'Änderungen speichern' : 'Training speichern',
-          onPressed: canSubmit ? () => unawaited(_submit()) : null,
-          loading: state.submitting,
-        ),
+        primaryAction: inlineAction ? null : saveButton,
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -349,6 +352,7 @@ class _WorkoutFormState extends ConsumerState<_WorkoutForm> {
                 ),
               ),
             ],
+            if (inlineAction) ...[const SizedBox(height: 16), saveButton],
           ],
         ),
       ),

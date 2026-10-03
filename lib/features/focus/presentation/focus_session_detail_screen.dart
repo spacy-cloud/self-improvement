@@ -226,6 +226,12 @@ class _DetailFormState extends ConsumerState<_DetailForm> {
       listenable: _note,
       builder: (context, _) {
         final dirty = _dirty;
+        final inlineAction = formActionIsInline(context);
+        final saveButton = PrimaryButton(
+          label: 'Änderungen speichern',
+          loading: busy,
+          onPressed: dirty && !busy ? () => unawaited(_save()) : null,
+        );
         return PopScope(
           canPop: !dirty,
           onPopInvokedWithResult: (didPop, result) {
@@ -236,11 +242,7 @@ class _DetailFormState extends ConsumerState<_DetailForm> {
           child: AppScaffold.subpage(
             title: 'Sitzung bearbeiten',
             onBack: () => backOrHome(context),
-            primaryAction: PrimaryButton(
-              label: 'Änderungen speichern',
-              loading: busy,
-              onPressed: dirty && !busy ? () => unawaited(_save()) : null,
-            ),
+            primaryAction: inlineAction ? null : saveButton,
             body: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -309,6 +311,7 @@ class _DetailFormState extends ConsumerState<_DetailForm> {
                     color: colors.textSecondary,
                   ),
                 ),
+                if (inlineAction) ...[const SizedBox(height: 16), saveButton],
               ],
             ),
           ),

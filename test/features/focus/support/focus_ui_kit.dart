@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:self_improvement/core/commands/projection_synchronizer.dart';
 import 'package:self_improvement/core/database/app_database.dart';
+import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/core/feedback/feedback_service.dart';
 import 'package:self_improvement/core/providers/core_providers.dart';
 import 'package:self_improvement/core/testing/data_harness.dart';
@@ -375,6 +376,7 @@ Future<GoRouter> pumpFocusApp(
   double textScale = 1.0,
   EdgeInsets viewInsets = EdgeInsets.zero,
   bool reducedMotion = false,
+  AppThemeVariant theme = AppThemeVariant.light,
 }) async {
   final router = await pumpRouterApp(
     tester,
@@ -385,6 +387,7 @@ Future<GoRouter> pumpFocusApp(
     textScale: textScale,
     viewInsets: viewInsets,
     reducedMotion: reducedMotion,
+    theme: theme,
   );
   await tester.settleDb();
   return router;
