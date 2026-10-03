@@ -390,9 +390,7 @@ class _StepsField extends StatelessWidget {
             keyboardType: TextInputType.number,
             textInputAction: TextInputAction.done,
             inputFormatters: [_ThousandsInputFormatter()],
-            decoration: InputDecoration(
-              isCollapsed: true,
-              border: InputBorder.none,
+            decoration: bareInputDecoration(
               contentPadding: const EdgeInsets.symmetric(vertical: 10),
               hintText: hint,
               hintStyle: style.copyWith(color: colors.textTertiary),
