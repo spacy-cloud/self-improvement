@@ -4,9 +4,16 @@ import 'package:self_improvement/core/notifications/platform/device_time_zone.da
 
 class _Source implements DeviceTimeZoneSource {
   String? zone;
+  Object? failure;
 
   @override
-  Future<String?> currentZoneId() async => zone;
+  Future<String?> currentZoneId() async {
+    final error = failure;
+    if (error != null) {
+      throw error;
+    }
+    return zone;
+  }
 }
 
 void main() {
@@ -48,6 +55,14 @@ void main() {
     source.zone = 'Europe/Berlin';
     await tracker.refresh();
     source.zone = null;
+    expect(await tracker.refresh(), isFalse);
+    expect(tracker.zoneId, 'Europe/Berlin');
+  });
+
+  test('a source that throws keeps the last known zone', () async {
+    source.zone = 'Europe/Berlin';
+    await tracker.refresh();
+    source.failure = StateError('platform');
     expect(await tracker.refresh(), isFalse);
     expect(tracker.zoneId, 'Europe/Berlin');
   });

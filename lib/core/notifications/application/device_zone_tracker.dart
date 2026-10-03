@@ -33,7 +33,12 @@ final class DeviceZoneTracker {
   /// known one (the first successful read after the `UTC` placeholder counts).
   /// Never throws.
   Future<bool> refresh() async {
-    final id = await _source.currentZoneId();
+    final String? id;
+    try {
+      id = await _source.currentZoneId();
+    } catch (_) {
+      return false; // keep the last known zone
+    }
     if (id == null || id == _zoneId) {
       return false;
     }
