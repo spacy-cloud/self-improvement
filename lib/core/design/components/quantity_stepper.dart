@@ -22,6 +22,7 @@ class QuantityStepper extends StatelessWidget {
     this.valueSemanticLabel,
     this.valueStyle,
     this.expand = false,
+    this.valueWidget,
   });
 
   /// Formatted value, for example "71,5".
@@ -52,23 +53,30 @@ class QuantityStepper extends StatelessWidget {
   /// buttons.
   final bool expand;
 
+  /// Replaces the read-only value text, for example by an editable field. Its
+  /// own semantics apply: [valueText], [unit], [valueSemanticLabel] and
+  /// [valueStyle] are ignored for display when this is set.
+  final Widget? valueWidget;
+
   @override
   Widget build(BuildContext context) {
     final colors = context.tokens.colors;
     final text = unit == null ? valueText : '$valueText $unit';
-    final value = Semantics(
-      container: true,
-      liveRegion: true,
-      label: valueSemanticLabel ?? text,
-      excludeSemantics: true,
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: (valueStyle ?? AppTextStyles.displayL).copyWith(
-          color: colors.textPrimary,
-        ),
-      ),
-    );
+    final value =
+        valueWidget ??
+        Semantics(
+          container: true,
+          liveRegion: true,
+          label: valueSemanticLabel ?? text,
+          excludeSemantics: true,
+          child: Text(
+            text,
+            textAlign: TextAlign.center,
+            style: (valueStyle ?? AppTextStyles.displayL).copyWith(
+              color: colors.textPrimary,
+            ),
+          ),
+        );
     return Row(
       mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,

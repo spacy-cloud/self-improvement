@@ -20,6 +20,8 @@ class AppCard extends StatelessWidget {
     this.semanticLabel,
     this.radius = AppRadii.card,
     this.showShadow = true,
+    this.borderColor,
+    this.borderWidth = 1,
   });
 
   /// Card content.
@@ -43,6 +45,13 @@ class AppCard extends StatelessWidget {
 
   /// Whether the card casts its soft shadow.
   final bool showShadow;
+
+  /// Overrides the decorative border colour, for example `tokens.colors.error`
+  /// of a card that holds an invalid value (together with a text message).
+  final Color? borderColor;
+
+  /// Border width; 2 together with [borderColor] marks an error state.
+  final double borderWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +78,10 @@ class AppCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colors.surface,
         borderRadius: borderRadius,
-        border: Border.all(color: colors.borderDecorative),
+        border: Border.all(
+          color: borderColor ?? colors.borderDecorative,
+          width: borderWidth,
+        ),
         boxShadow: showShadow ? AppShadows.card(colors.shadow) : null,
       ),
       child: ClipRRect(borderRadius: borderRadius, child: content),
