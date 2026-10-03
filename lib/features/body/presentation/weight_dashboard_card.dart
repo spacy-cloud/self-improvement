@@ -8,6 +8,7 @@ import 'package:self_improvement/features/body/domain/weight_overview.dart';
 import 'package:self_improvement/features/body/presentation/weight_chart.dart';
 import 'package:self_improvement/features/body/presentation/weight_labels.dart';
 import 'package:self_improvement/features/body/presentation/weight_routes.dart';
+import 'package:self_improvement/shared/german_date.dart';
 import 'package:self_improvement/shared/local_date.dart';
 import 'package:self_improvement/shared/number_format.dart';
 
@@ -61,7 +62,15 @@ class _FilledCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.tokens.colors;
     final week = model.weekDeltaGrams;
-    final value = formatKilograms(model.current!.weightGrams);
+    final current = model.current!;
+    final value = formatKilograms(current.weightGrams);
+    // The last measurement may be older than the seven days of the curve: then
+    // there is no curve and no week comparison, only the honest date.
+    final stale = model.points.isEmpty;
+    final lastDate = formatDateShort(
+      current.localDate,
+      contextYear: today.year,
+    );
     final weekText = week == null
         ? 'Noch kein Wochenvergleich'
         : '${weightDeltaText(week).replaceAll('  ', ' ')} in 7 Tagen';
@@ -72,22 +81,30 @@ class _FilledCard extends StatelessWidget {
       icon: AppIcon.weight.data,
       accent: AppAccent.weight,
       onTap: () => context.push(WeightRoutes.overview),
-      semanticLabel:
-          'Gewicht, $value Kilogramm, '
-          '${week == null ? 'noch kein Wochenvergleich' : '${weightDeltaSpoken(week)} in 7 Tagen'}',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          WeightSparkline(points: model.points, today: today),
-          const SizedBox(height: 6),
-          Text(
-            weekText,
-            style: AppTextStyles.captionStrong.copyWith(
-              color: colors.textSecondary,
+      semanticLabel: stale
+          ? 'Gewicht, $value Kilogramm, zuletzt am $lastDate'
+          : 'Gewicht, $value Kilogramm, '
+                '${week == null ? 'noch kein Wochenvergleich' : '${weightDeltaSpoken(week)} in 7 Tagen'}',
+      child: stale
+          ? Text(
+              'Zuletzt $lastDate',
+              style: AppTextStyles.captionStrong.copyWith(
+                color: colors.textSecondary,
+              ),
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                WeightSparkline(points: model.points, today: today),
+                const SizedBox(height: 6),
+                Text(
+                  weekText,
+                  style: AppTextStyles.captionStrong.copyWith(
+                    color: colors.textSecondary,
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 }

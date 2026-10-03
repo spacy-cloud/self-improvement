@@ -243,6 +243,9 @@ class WeightSparkline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (points.isEmpty) {
+      return SizedBox(height: height);
+    }
     final colors = context.tokens.colors;
     final motion = AppMotion.of(context);
     final start = today.addDays(-6);

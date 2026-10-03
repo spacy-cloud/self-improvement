@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:self_improvement/core/design/components/app_icon_button.dart';
 import 'package:self_improvement/core/design/icons/app_icons.dart';
@@ -77,8 +79,8 @@ class AppHeader extends StatelessWidget {
     final titleWidget = Semantics(
       container: true,
       header: true,
-      child: Text(
-        title,
+      child: _HeaderTitle(
+        title: title,
         style: AppTextStyles.titleScreen.copyWith(color: colors.textPrimary),
       ),
     );
@@ -112,6 +114,47 @@ class AppHeader extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// The title text. Titles wrap between words; a single word that is wider than
+/// the line at the current text size (for example "Einstellungen" at 320 px and
+/// 200 %) is set a little smaller instead of breaking in the middle of the
+/// word.
+class _HeaderTitle extends StatelessWidget {
+  const _HeaderTitle({required this.title, required this.style});
+
+  final String title;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) {
+    final scaler = MediaQuery.textScalerOf(context);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        var effective = style;
+        if (constraints.hasBoundedWidth) {
+          var widest = 0.0;
+          for (final word in title.split(RegExp(r'\s+'))) {
+            final painter = TextPainter(
+              text: TextSpan(text: word, style: style),
+              textDirection: TextDirection.ltr,
+              textScaler: scaler,
+              maxLines: 1,
+            )..layout();
+            widest = math.max(widest, painter.width);
+            painter.dispose();
+          }
+          if (widest > constraints.maxWidth && widest > 0) {
+            final ratio = constraints.maxWidth / widest * 0.97;
+            effective = style.copyWith(
+              fontSize: (style.fontSize ?? 24) * ratio,
+            );
+          }
+        }
+        return Text(title, style: effective);
+      },
     );
   }
 }

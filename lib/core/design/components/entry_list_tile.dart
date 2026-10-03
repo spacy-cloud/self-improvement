@@ -4,6 +4,7 @@ import 'package:self_improvement/core/design/components/app_switch.dart';
 import 'package:self_improvement/core/design/components/round_checkbox.dart';
 import 'package:self_improvement/core/design/icons/app_icons.dart';
 import 'package:self_improvement/core/design/internal/ink_surface.dart';
+import 'package:self_improvement/core/design/internal/text_scale.dart';
 import 'package:self_improvement/core/design/tokens/app_colors.dart';
 import 'package:self_improvement/core/design/tokens/app_sizes.dart';
 import 'package:self_improvement/core/design/tokens/app_text_styles.dart';
@@ -230,6 +231,12 @@ class EntryListTile extends StatelessWidget {
       ),
     };
 
+    // At large text sizes a value next to the title has no room: the value
+    // moves below the title instead of overflowing the row.
+    final stackValue =
+        _trailing == _TileTrailing.value &&
+        context.textScaleFactor > AppSizes.stackTextScale;
+
     final content = Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
@@ -258,10 +265,14 @@ class EntryListTile extends StatelessWidget {
                   ),
                 ),
               ],
+              if (stackValue && trailingWidget != null) ...<Widget>[
+                const SizedBox(height: 4),
+                Align(alignment: Alignment.centerLeft, child: trailingWidget),
+              ],
             ],
           ),
         ),
-        if (trailingWidget != null) ...<Widget>[
+        if (trailingWidget != null && !stackValue) ...<Widget>[
           const SizedBox(width: 12),
           Flexible(flex: 0, child: trailingWidget),
         ],
