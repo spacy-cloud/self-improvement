@@ -14,6 +14,7 @@ class PeriodOption<T> {
     required this.value,
     required this.label,
     this.semanticLabel,
+    this.badge,
   });
 
   /// The value reported when the option is chosen.
@@ -22,8 +23,11 @@ class PeriodOption<T> {
   /// Visible text, for example "7 Tage".
   final String label;
 
-  /// Overrides the spoken label (defaults to [label]).
+  /// Overrides the spoken label (defaults to [label] plus [badge]).
   final String? semanticLabel;
+
+  /// Small count next to the label, for example "3 offen" or "3 / 5".
+  final String? badge;
 }
 
 /// Segmented control for a period or a view (for example 7 / 30 / 90 Tage).
@@ -99,6 +103,7 @@ class PeriodSelector<T> extends StatelessWidget {
                   Expanded(
                     child: _Segment(
                       label: options[i].label,
+                      badge: options[i].badge,
                       semanticLabel: options[i].semanticLabel,
                       selected: options[i].value == selected,
                       duration: motion.fast,
@@ -118,6 +123,7 @@ class PeriodSelector<T> extends StatelessWidget {
 class _Segment extends StatelessWidget {
   const _Segment({
     required this.label,
+    required this.badge,
     required this.semanticLabel,
     required this.selected,
     required this.duration,
@@ -125,6 +131,7 @@ class _Segment extends StatelessWidget {
   });
 
   final String label;
+  final String? badge;
   final String? semanticLabel;
   final bool selected;
   final Duration duration;
@@ -139,7 +146,7 @@ class _Segment extends StatelessWidget {
       button: true,
       selected: selected,
       inMutuallyExclusiveGroup: true,
-      label: semanticLabel ?? label,
+      label: semanticLabel ?? (badge == null ? label : '$label, $badge'),
       onTap: onTap,
       excludeSemantics: true,
       child: AnimatedContainer(
@@ -156,18 +163,50 @@ class _Segment extends StatelessWidget {
           child: Center(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
-              child: Text(
-                label,
-                textAlign: TextAlign.center,
-                style:
-                    (selected
-                            ? AppTextStyles.bodyStrong
-                            : AppTextStyles.bodyDefault)
-                        .copyWith(
-                          color: selected
-                              ? colors.textPrimary
-                              : colors.textSecondary,
+              child: Wrap(
+                alignment: WrapAlignment.center,
+                runAlignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 6,
+                runSpacing: 2,
+                children: <Widget>[
+                  Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    style:
+                        (selected
+                                ? AppTextStyles.bodyStrong
+                                : AppTextStyles.bodyDefault)
+                            .copyWith(
+                              color: selected
+                                  ? colors.textPrimary
+                                  : colors.textSecondary,
+                            ),
+                  ),
+                  if (badge != null)
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? colors.primaryTint
+                            : colors.surfaceMuted,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 1,
                         ),
+                        child: Text(
+                          badge!,
+                          style: AppTextStyles.captionStrong.copyWith(
+                            color: selected
+                                ? colors.primaryText
+                                : colors.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
           ),

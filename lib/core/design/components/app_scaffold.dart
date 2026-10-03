@@ -37,6 +37,7 @@ class AppScaffold extends StatelessWidget {
       AppSpacing.s16,
     ),
     this.resizeToAvoidBottomInset = true,
+    this.safeAreaBottom = true,
     this.scrollController,
     this.maxContentWidth = AppSizes.contentMaxWidth,
   });
@@ -60,6 +61,7 @@ class AppScaffold extends StatelessWidget {
       AppSpacing.s16,
     ),
     this.resizeToAvoidBottomInset = true,
+    this.safeAreaBottom = true,
     this.scrollController,
     this.maxContentWidth = AppSizes.contentMaxWidth,
   }) : type = AppHeaderType.subpage;
@@ -99,6 +101,12 @@ class AppScaffold extends StatelessWidget {
 
   /// Whether the body shrinks above the keyboard.
   final bool resizeToAvoidBottomInset;
+
+  /// Whether the body keeps clear of the bottom system inset. It is ignored
+  /// when [bottomNavigationBar] is set (the bar handles the inset itself). Set
+  /// it to `false` when the page is nested in a shell whose navigation bar
+  /// already covers the inset.
+  final bool safeAreaBottom;
 
   /// Controller of the scroll view when [scrollable].
   final ScrollController? scrollController;
@@ -172,7 +180,7 @@ class AppScaffold extends StatelessWidget {
             Expanded(
               child: SafeArea(
                 top: false,
-                bottom: bottomNavigationBar == null,
+                bottom: safeAreaBottom && bottomNavigationBar == null,
                 child: MaxContentWidth(
                   maxWidth: maxContentWidth,
                   child: content,
