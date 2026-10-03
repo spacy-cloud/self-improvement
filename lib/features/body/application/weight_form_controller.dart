@@ -309,14 +309,21 @@ class WeightFormController extends Notifier<WeightFormState> {
               expectedRowVersion: entry.rowVersion,
             );
       _tracker.completed();
-      state = state.copyWith(submitting: false, dirty: false);
+      if (ref.mounted) {
+        state = state.copyWith(submitting: false, dirty: false);
+      }
       return WeightSaved(outcome, wasEdit: entry != null);
     } on ValidationFailure catch (failure) {
-      state = state.copyWith(
-        submitting: false,
-        fieldErrors: failure.fieldErrors,
-      );
+      if (ref.mounted) {
+        state = state.copyWith(
+          submitting: false,
+          fieldErrors: failure.fieldErrors,
+        );
+      }
     } on ConflictFailure catch (failure) {
+      if (!ref.mounted) {
+        return const WeightRejected();
+      }
       state = state.copyWith(
         submitting: false,
         duplicateOfId: failure.kind == ConflictKind.duplicateMeasurement
