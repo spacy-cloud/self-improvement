@@ -604,7 +604,7 @@ class _DurationField extends StatelessWidget {
         children: [
           IntrinsicWidth(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 40),
+              constraints: const BoxConstraints(minWidth: 48),
               child: Semantics(
                 label: 'Dauer in Minuten',
                 textField: true,
@@ -629,7 +629,8 @@ class _DurationField extends StatelessWidget {
                     errorBorder: InputBorder.none,
                     focusedErrorBorder: InputBorder.none,
                     disabledBorder: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
+                    // With the padding the field is at least 48 px high.
+                    contentPadding: EdgeInsets.symmetric(vertical: 10),
                     hintText: '–',
                     hintStyle: style.copyWith(color: colors.textTertiary),
                   ),
