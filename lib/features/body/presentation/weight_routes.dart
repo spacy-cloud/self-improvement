@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
@@ -21,5 +23,17 @@ void leaveWeightScreen(BuildContext context) {
     context.pop();
   } else {
     context.go('/');
+  }
+}
+
+/// The back button of the header: lets the screen veto first (unsaved input
+/// asks "Änderungen verwerfen?"), and goes to the dashboard when the screen
+/// was opened directly and nothing can be popped.
+Future<void> backOrHome(BuildContext context) async {
+  final navigator = Navigator.of(context);
+  final router = GoRouter.of(context);
+  final handled = await navigator.maybePop();
+  if (!handled) {
+    router.go('/');
   }
 }

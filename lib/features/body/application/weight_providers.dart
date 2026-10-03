@@ -62,3 +62,15 @@ final weightOverviewProvider = Provider<AsyncValue<WeightOverview>>((ref) {
     },
   );
 });
+
+/// The dashboard weight card: current value, 7-day curve, week comparison.
+final weightCardProvider = Provider<AsyncValue<WeightCardModel>>((ref) {
+  final entries = ref.watch(weightEntriesProvider);
+  final today = ref.watch(todayProvider);
+  return entries.when(
+    loading: () => const AsyncLoading(),
+    error: AsyncError.new,
+    data: (list) =>
+        AsyncData(buildWeightCard(entriesNewestFirst: list, today: today)),
+  );
+});

@@ -89,3 +89,50 @@ WeightOverview buildWeightOverview({
     ),
   );
 }
+
+/// What the dashboard weight card shows: the current value, the last seven
+/// days as a small curve and the week comparison. Independent of the period
+/// chosen on the weight screen.
+@immutable
+final class WeightCardModel {
+  const WeightCardModel({
+    this.current,
+    this.weekDeltaGrams,
+    this.points = const [],
+  });
+
+  final WeightEntry? current;
+
+  /// Null means "Noch kein Wochenvergleich".
+  final int? weekDeltaGrams;
+
+  /// One point per measured day of the last seven days, ascending.
+  final List<WeightDayPoint> points;
+
+  bool get isEmpty => current == null;
+}
+
+/// Builds the dashboard card model. Pure: same inputs, same output.
+WeightCardModel buildWeightCard({
+  required List<WeightEntry> entriesNewestFirst,
+  required LocalDate today,
+}) {
+  final samples = [
+    for (final entry in entriesNewestFirst)
+      WeightSample(
+        id: entry.id,
+        occurredAtUtc: entry.occurredAtUtc,
+        localDate: entry.localDate,
+        grams: entry.weightGrams,
+      ),
+  ];
+  final currentSample = currentWeight(samples);
+  if (currentSample == null) {
+    return const WeightCardModel();
+  }
+  return WeightCardModel(
+    current: entriesNewestFirst.firstWhere((e) => e.id == currentSample.id),
+    weekDeltaGrams: weekDelta(samples, today),
+    points: dailyPoints(samples, today, 7),
+  );
+}

@@ -225,3 +225,84 @@ class WeightChart extends StatelessWidget {
     return {for (var i = lastIndex; i >= 0; i -= step) i};
   }
 }
+
+/// Tiny curve of the dashboard card: the last seven days without axes. A
+/// single measurement shows only its marker. Decorative: the card carries the
+/// values as text.
+class WeightSparkline extends StatelessWidget {
+  const WeightSparkline({
+    required this.points,
+    required this.today,
+    super.key,
+    this.height = 34,
+  });
+
+  final List<WeightDayPoint> points;
+  final LocalDate today;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.tokens.colors;
+    final motion = AppMotion.of(context);
+    final start = today.addDays(-6);
+    final spots = [
+      for (final point in points)
+        FlSpot(start.daysUntil(point.date).toDouble(), point.grams / 1000),
+    ];
+    final values = [for (final spot in spots) spot.y];
+    final lowest = values.reduce(math.min);
+    final highest = values.reduce(math.max);
+    final margin = math.max(0.3, (highest - lowest) * 0.25);
+    return ExcludeSemantics(
+      child: SizedBox(
+        height: height,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: LineChart(
+            LineChartData(
+              minX: 0,
+              maxX: 6,
+              minY: lowest - margin,
+              maxY: highest + margin,
+              gridData: const FlGridData(show: false),
+              borderData: FlBorderData(show: false),
+              titlesData: const FlTitlesData(show: false),
+              lineTouchData: const LineTouchData(enabled: false),
+              lineBarsData: [
+                LineChartBarData(
+                  spots: spots,
+                  barWidth: 2,
+                  color: colors.primary,
+                  dotData: FlDotData(
+                    checkToShowDot: (spot, bar) => spot == bar.spots.last,
+                    getDotPainter: (spot, percent, bar, index) =>
+                        FlDotCirclePainter(
+                          radius: 3.5,
+                          color: colors.primary,
+                          strokeWidth: 2,
+                          strokeColor: colors.surface,
+                        ),
+                  ),
+                  belowBarData: BarAreaData(
+                    show: spots.length > 1,
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        colors.primary.withValues(alpha: 0.2),
+                        colors.primary.withValues(alpha: 0),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            duration: motion.standard,
+            curve: motion.curve,
+          ),
+        ),
+      ),
+    );
+  }
+}
