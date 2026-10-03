@@ -155,7 +155,14 @@ class _WorkoutFormState extends ConsumerState<_WorkoutForm> {
         if (!mounted) {
           return;
         }
-        final failure = ref.read(workoutFormProvider(_args)).submitFailure;
+        final rejected = ref.read(workoutFormProvider(_args));
+        // The duration is the text field that can be wrong (title and note are
+        // limited by the field itself, the category is a choice): it takes the
+        // focus, so a screen reader reads its label together with the hint.
+        if (rejected.fieldErrors.containsKey(WorkoutFields.duration)) {
+          _durationFocus.requestFocus();
+        }
+        final failure = rejected.submitFailure;
         if (failure == null) {
           return; // The fields show what to correct.
         }

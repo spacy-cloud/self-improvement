@@ -111,6 +111,8 @@ class _MealFormState extends ConsumerState<_MealForm> {
   late final TextEditingController _kcal;
   late final TextEditingController _note;
   final FocusNode _nameFocus = FocusNode();
+  final FocusNode _kcalFocus = FocusNode();
+  final FocusNode _noteFocus = FocusNode();
 
   MealFormArgs get _args => widget.args;
   bool get _isEdit => _args.entry != null;
@@ -130,6 +132,8 @@ class _MealFormState extends ConsumerState<_MealForm> {
     _kcal.dispose();
     _note.dispose();
     _nameFocus.dispose();
+    _kcalFocus.dispose();
+    _noteFocus.dispose();
     super.dispose();
   }
 
@@ -157,7 +161,17 @@ class _MealFormState extends ConsumerState<_MealForm> {
         if (!mounted) {
           return;
         }
-        final failure = ref.read(mealFormProvider(_args)).submitFailure;
+        final rejected = ref.read(mealFormProvider(_args));
+        // The first invalid field takes the focus, so a screen reader reads
+        // its label together with the hint.
+        if (rejected.fieldErrors.containsKey(MealFields.name)) {
+          _nameFocus.requestFocus();
+        } else if (rejected.fieldErrors.containsKey(MealFields.kcal)) {
+          _kcalFocus.requestFocus();
+        } else if (rejected.fieldErrors.containsKey(MealFields.note)) {
+          _noteFocus.requestFocus();
+        }
+        final failure = rejected.submitFailure;
         if (failure == null) {
           return;
         }
@@ -282,6 +296,7 @@ class _MealFormState extends ConsumerState<_MealForm> {
               label: 'Kalorien in kcal',
               requirementLabel: 'optional',
               controller: _kcal,
+              focusNode: _kcalFocus,
               hint: 'Zum Beispiel: 450',
               keyboardType: TextInputType.number,
               textInputAction: TextInputAction.next,
@@ -298,6 +313,7 @@ class _MealFormState extends ConsumerState<_MealForm> {
               label: 'Notiz',
               requirementLabel: 'optional',
               controller: _note,
+              focusNode: _noteFocus,
               hint: 'Zum Beispiel: mit Kokosmilch',
               maxLength: maxNutritionNoteLength,
               minLines: 2,

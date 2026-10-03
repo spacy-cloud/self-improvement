@@ -24,6 +24,13 @@ abstract final class AppMotion {
     final system = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
     return AppMotionData(reduced: explicit || system);
   }
+
+  /// Animation style for the framework's own animated surfaces (modal bottom
+  /// sheets, snack bars): none when motion is reduced, `null` (the framework
+  /// default) otherwise. The framework itself only follows the system flag,
+  /// so the app setting reaches these surfaces through this style.
+  static AnimationStyle? surfaceStyleOf(BuildContext context) =>
+      of(context).reduced ? AnimationStyle.noAnimation : null;
 }
 
 /// Resolved motion settings: durations are zero when [reduced] is true.

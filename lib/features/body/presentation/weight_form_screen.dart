@@ -99,6 +99,7 @@ class _WeightFormState extends ConsumerState<_WeightForm> {
   late final TextEditingController _weight;
   late final TextEditingController _note;
   final FocusNode _weightFocus = FocusNode();
+  final FocusNode _noteFocus = FocusNode();
 
   WeightFormArgs get _args => widget.args;
   bool get _isEdit => _args.entry != null;
@@ -116,6 +117,7 @@ class _WeightFormState extends ConsumerState<_WeightForm> {
     _weight.dispose();
     _note.dispose();
     _weightFocus.dispose();
+    _noteFocus.dispose();
     super.dispose();
   }
 
@@ -139,7 +141,15 @@ class _WeightFormState extends ConsumerState<_WeightForm> {
         if (!mounted) {
           return;
         }
-        final failure = ref.read(weightFormProvider(_args)).submitFailure;
+        final rejected = ref.read(weightFormProvider(_args));
+        // The first invalid field takes the focus, so a screen reader reads
+        // its label together with the hint.
+        if (rejected.fieldErrors.containsKey(WeightFields.weight)) {
+          _weightFocus.requestFocus();
+        } else if (rejected.fieldErrors.containsKey(WeightFields.note)) {
+          _noteFocus.requestFocus();
+        }
+        final failure = rejected.submitFailure;
         if (failure == null) {
           return;
         }
@@ -352,6 +362,7 @@ class _WeightFormState extends ConsumerState<_WeightForm> {
               label: 'Notiz',
               requirementLabel: 'optional',
               controller: _note,
+              focusNode: _noteFocus,
               hint: 'Zum Beispiel: nach dem Training',
               maxLength: maxNoteLength,
               minLines: 2,

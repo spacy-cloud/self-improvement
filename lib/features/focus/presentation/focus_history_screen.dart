@@ -46,7 +46,7 @@ class _FocusHistoryScreenState extends ConsumerState<FocusHistoryScreen> {
       body: entries == null
           ? async.when(
               loading: () => const SizedBox.shrink(),
-              error: (error, stack) => Padding(
+              error: (error, stack) => SingleChildScrollView(
                 padding: const EdgeInsets.all(AppSpacing.s16),
                 child: ErrorState(
                   onRetry: () =>
@@ -56,7 +56,7 @@ class _FocusHistoryScreenState extends ConsumerState<FocusHistoryScreen> {
               data: (_) => const SizedBox.shrink(),
             )
           : entries.isEmpty
-          ? Padding(
+          ? SingleChildScrollView(
               padding: const EdgeInsets.all(AppSpacing.s16),
               child: EmptyState(
                 title: 'Noch keine Sitzung',

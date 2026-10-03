@@ -149,6 +149,7 @@ Future<AppFixture> pumpFullApp(
   List<Override> overrides = const <Override>[],
   Future<AppServices> Function(DataHarness harness)? starter,
   bool waitForReady = true,
+  bool animations = false,
   Future<void> Function(DataHarness harness)? seed,
   void Function(FakeReminderPlatform platform)? preparePlatform,
   DataHarness? reuse,
@@ -180,6 +181,13 @@ Future<AppFixture> pumpFullApp(
     bottom: systemPadding.bottom,
   );
   addTearDown(tester.view.reset);
+  // Like the emulator job (animations switched off) the tests see no page
+  // transitions unless a test asks for them with [animations].
+  if (!animations) {
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+  }
   final app = SelfImprovementApp(
     starter: starter == null
         ? () async => AppServices(

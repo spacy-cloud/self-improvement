@@ -27,14 +27,14 @@ class WeightHistoryScreen extends ConsumerWidget {
       padding: EdgeInsets.zero,
       body: entries.when(
         loading: () => const SizedBox.shrink(),
-        error: (error, stack) => Padding(
+        error: (error, stack) => SingleChildScrollView(
           padding: const EdgeInsets.all(AppSpacing.s16),
           child: ErrorState(
             onRetry: () => ref.invalidate(weightEntriesProvider),
           ),
         ),
         data: (list) => list.isEmpty
-            ? Padding(
+            ? SingleChildScrollView(
                 padding: const EdgeInsets.all(AppSpacing.s16),
                 child: EmptyState(
                   title: 'Noch keine Messung',

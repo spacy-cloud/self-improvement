@@ -224,6 +224,23 @@ void main() {
       });
     }
 
+    testWidgets('a rejected duration takes the focus (Q02)', (tester) async {
+      final ui = await createFocusUi(tester);
+      await openNew(tester, ui);
+      await tester.tap(category('Sport'));
+      await tester.enterText(durationField, '601');
+      await tester.pump();
+      await save(tester);
+      expect(
+        find.text('Bitte gib eine Dauer zwischen 1 und 600 Minuten ein.'),
+        findsOneWidget,
+      );
+      expect(
+        tester.widget<TextField>(durationField).focusNode!.hasFocus,
+        isTrue,
+      );
+    });
+
     testWidgets('only digits can be typed into the duration', (tester) async {
       final ui = await createFocusUi(tester);
       await openNew(tester, ui);

@@ -1,12 +1,15 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:self_improvement/app/router/app_pages.dart';
 import 'package:self_improvement/app/router/app_routes.dart';
 import 'package:self_improvement/app/router/guarded_routes.dart';
 import 'package:self_improvement/app/router/route_guard.dart';
+import 'package:self_improvement/app/screens/module_disabled_tab.dart';
 import 'package:self_improvement/app/screens/not_found_screen.dart';
 import 'package:self_improvement/app/shell/app_shell.dart';
 import 'package:self_improvement/core/modules/module.dart';
+import 'package:self_improvement/core/modules/module_id.dart';
 import 'package:self_improvement/features/analysis/presentation/analysis_screen.dart';
 import 'package:self_improvement/features/dashboard/presentation/home_screen.dart';
 import 'package:self_improvement/features/modules/presentation/modules_screen.dart';
@@ -45,6 +48,25 @@ List<RouteBase> buildAppRoutes({
   required List<SelfImprovementModule> modules,
   AppTabBuilders tabs = const AppTabBuilders(),
 }) {
+  // The Habits tab is a core destination, but its content belongs to the tasks
+  // module: while that module is off it offers to switch it on instead.
+  final tasksModule = modules
+      .where((module) => module.id == ModuleId.tasks)
+      .firstOrNull;
+  Widget habitsTab(GoRouterState state) {
+    final screen = HabitsTabScreen(
+      showTasks: state.uri.queryParameters['tab'] == 'tasks',
+    );
+    return tasksModule == null
+        ? screen
+        : ModuleTabGate(
+            module: tasksModule,
+            tabTitle: 'Habits',
+            activateLabel: 'Aufgaben und Gewohnheiten',
+            child: screen,
+          );
+  }
+
   return <RouteBase>[
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) =>
@@ -71,11 +93,7 @@ List<RouteBase> buildAppRoutes({
           routes: <RouteBase>[
             GoRoute(
               path: AppRoutes.habits,
-              builder:
-                  tabs.habits ??
-                  (context, state) => HabitsTabScreen(
-                    showTasks: state.uri.queryParameters['tab'] == 'tasks',
-                  ),
+              builder: tabs.habits ?? (context, state) => habitsTab(state),
             ),
           ],
         ),
@@ -90,35 +108,35 @@ List<RouteBase> buildAppRoutes({
         ),
       ],
     ),
-    GoRoute(
+    appRoute(
       path: AppRoutes.profileEdit,
       builder: (context, state) => const ProfileEditScreen(),
     ),
-    GoRoute(
+    appRoute(
       path: AppRoutes.goals,
       builder: (context, state) => const GoalsScreen(),
     ),
-    GoRoute(
+    appRoute(
       path: AppRoutes.settings,
       builder: (context, state) => const SettingsScreen(),
     ),
-    GoRoute(
+    appRoute(
       path: AppRoutes.modules,
       builder: (context, state) => const ModulesScreen(),
     ),
-    GoRoute(
+    appRoute(
       path: AppRoutes.data,
       builder: (context, state) => const DataScreen(),
     ),
-    GoRoute(
+    appRoute(
       path: AppRoutes.licenses,
       builder: (context, state) => const LicensesScreen(),
     ),
-    GoRoute(
+    appRoute(
       path: AppRoutes.onboarding,
       builder: (context, state) => const OnboardingScreen(),
     ),
-    GoRoute(
+    appRoute(
       path: AppRoutes.notFound,
       builder: (context, state) => const NotFoundScreen(),
     ),

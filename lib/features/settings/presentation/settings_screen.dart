@@ -124,6 +124,7 @@ class _SettingsContent extends ConsumerWidget {
     final current = AppThemeMode.tryParse(settings.themeModeKey);
     final chosen = await showModalBottomSheet<AppThemeMode>(
       context: context,
+      sheetAnimationStyle: AppMotion.surfaceStyleOf(context),
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,

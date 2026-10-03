@@ -26,6 +26,7 @@ Future<String?> showPlusSheet(
     isScrollControlled: true,
     useRootNavigator: true,
     useSafeArea: true,
+    sheetAnimationStyle: AppMotion.surfaceStyleOf(context),
     backgroundColor: Colors.transparent,
     elevation: 0,
     barrierColor: colors.scrim,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:self_improvement/core/design/internal/ink_surface.dart';
+import 'package:self_improvement/core/design/motion/app_motion.dart';
 import 'package:self_improvement/core/design/tokens/app_radii.dart';
 import 'package:self_improvement/core/design/tokens/app_sizes.dart';
 import 'package:self_improvement/core/design/tokens/app_spacing.dart';
@@ -168,6 +169,7 @@ ScaffoldFeatureController<SnackBar, SnackBarClosedReason> _show(
   void close() =>
       messenger.hideCurrentSnackBar(reason: SnackBarClosedReason.action);
   return (messenger..removeCurrentSnackBar()).showSnackBar(
+    snackBarAnimationStyle: AppMotion.surfaceStyleOf(context),
     SnackBar(
       content: builder(close),
       duration: duration,

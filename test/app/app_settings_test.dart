@@ -54,7 +54,7 @@ void main() {
 
   group('reduced motion (Q03)', () {
     testWidgets('the app setting reaches every screen', (tester) async {
-      final app = await pumpFullApp(tester);
+      final app = await pumpFullApp(tester, animations: true);
       final before = tester.element(find.byType(AppBottomNavBar));
       expect(AppMotion.of(before).reduced, isFalse);
       await app.run(

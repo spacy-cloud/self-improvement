@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:self_improvement/core/design/components/secondary_button.dart';
+import 'package:self_improvement/core/design/motion/app_motion.dart';
 import 'package:self_improvement/core/design/tokens/app_radii.dart';
 import 'package:self_improvement/core/design/tokens/app_sizes.dart';
 import 'package:self_improvement/core/design/tokens/app_text_styles.dart';
@@ -121,7 +122,8 @@ class ConfirmationSheet extends StatelessWidget {
 /// barrier and dragging the sheet away all return `false`.
 ///
 /// The background is inactive while the sheet is open and the focus starts on
-/// "Abbrechen".
+/// "Abbrechen". The sheet is shown on the root navigator, so from a tab it
+/// covers the navigation bar too and the whole screen behind it is inert.
 Future<bool> showConfirmationSheet(
   BuildContext context, {
   required String title,
@@ -133,6 +135,8 @@ Future<bool> showConfirmationSheet(
   final colors = context.tokens.colors;
   final result = await showModalBottomSheet<bool>(
     context: context,
+    useRootNavigator: true,
+    sheetAnimationStyle: AppMotion.surfaceStyleOf(context),
     isScrollControlled: true,
     useSafeArea: true,
     backgroundColor: Colors.transparent,

@@ -134,6 +134,7 @@ Future<FocusEndChoice?> showFocusEndSheet(
   final colors = context.tokens.colors;
   return showModalBottomSheet<FocusEndChoice>(
     context: context,
+    sheetAnimationStyle: AppMotion.surfaceStyleOf(context),
     isScrollControlled: true,
     useSafeArea: true,
     backgroundColor: Colors.transparent,

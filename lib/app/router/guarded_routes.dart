@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:self_improvement/app/router/app_pages.dart';
 import 'package:self_improvement/app/router/navigation.dart';
 import 'package:self_improvement/app/router/route_guard.dart';
 import 'package:self_improvement/app/screens/module_disabled_screen.dart';
@@ -47,12 +48,16 @@ RouteBase _guard(SelfImprovementModule module, RouteBase route) {
     metadata: route.metadata,
     onExit: route.onExit,
     caseSensitive: route.caseSensitive,
-    builder: builder == null
+    pageBuilder: builder == null
         ? null
-        : (context, state) => ModuleRouteGate(
-            module: module,
-            pathParameters: state.pathParameters,
-            builder: (gateContext) => builder(gateContext, state),
+        : (context, state) => appPageFor(
+            context,
+            state,
+            ModuleRouteGate(
+              module: module,
+              pathParameters: state.pathParameters,
+              builder: (gateContext) => builder(gateContext, state),
+            ),
           ),
     routes: <RouteBase>[
       for (final child in route.routes) _guard(module, child),

@@ -146,6 +146,28 @@ void main() {
       expect(await ui.mealsOn(uiToday), isEmpty);
     });
 
+    testWidgets(
+      'a rejected save puts the focus on the first invalid field (Q02)',
+      (tester) async {
+        final ui = await NutritionUi.create(tester);
+        await ui.pumpRoute('/nutrition/new');
+        await _fill(tester, name: '   ', kcal: '450');
+        await _save(tester);
+
+        TextField field(Key key) => tester.widget<TextField>(
+          find.descendant(
+            of: find.byKey(key),
+            matching: find.byType(TextField),
+          ),
+        );
+        expect(field(mealNameFieldKey).focusNode!.hasFocus, isTrue);
+
+        await _fill(tester, name: 'Suppe', kcal: '5001');
+        await _save(tester);
+        expect(field(mealKcalFieldKey).focusNode!.hasFocus, isTrue);
+      },
+    );
+
     for (final (length, valid) in [(80, true), (81, false)]) {
       testWidgets(
         'a name of $length characters is ${valid ? 'saved' : 'rejected'}',

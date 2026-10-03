@@ -231,6 +231,14 @@ void main() {
 
         expect(find.text(message), findsOneWidget);
         expect(find.widgetWithText(TextField, typed), findsOneWidget);
+        expect(
+          tester
+              .widget<TextField>(find.widgetWithText(TextField, typed))
+              .focusNode!
+              .hasFocus,
+          isTrue,
+          reason: 'the invalid field takes the focus (Q02)',
+        );
         expect(await _active(tester, env), isEmpty);
         expect(
           env.feedback.events,

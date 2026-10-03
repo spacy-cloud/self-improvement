@@ -16,6 +16,7 @@ Future<T?> showAppModalSheet<T>(
   final colors = context.tokens.colors;
   return showModalBottomSheet<T>(
     context: context,
+    sheetAnimationStyle: AppMotion.surfaceStyleOf(context),
     isScrollControlled: true,
     useSafeArea: true,
     enableDrag: false,
