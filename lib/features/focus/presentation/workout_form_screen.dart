@@ -239,7 +239,7 @@ class _WorkoutFormState extends ConsumerState<_WorkoutForm> {
       cancelLabel: 'Weiter bearbeiten',
     );
     if (discard && mounted) {
-      context.pop();
+      _leave(GoRouter.of(context), _isEdit ? WorkoutRoutes.overview : '/');
     }
   }
 

@@ -5,13 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:self_improvement/core/commands/command_runner.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/core/errors/app_failure.dart';
 import 'package:self_improvement/core/providers/core_providers.dart';
 import 'package:self_improvement/features/focus/application/focus_providers.dart';
 import 'package:self_improvement/features/focus/application/focus_setup_controller.dart';
-import 'package:self_improvement/features/focus/data/focus_repository.dart';
 import 'package:self_improvement/features/focus/domain/focus_category.dart';
 import 'package:self_improvement/features/focus/domain/focus_history.dart';
 import 'package:self_improvement/features/focus/domain/focus_session.dart';
@@ -19,40 +17,11 @@ import 'package:self_improvement/features/focus/domain/focus_timer.dart';
 import 'package:self_improvement/shared/local_date.dart';
 
 import '../../../support/pump_app.dart';
+import '../support/flaky_repositories.dart';
 import '../support/focus_ui_kit.dart';
 
 /// The start screen "Fokus" (`/focus`): setup, resume instead of a second
 /// session, today's summary and the sessions of today.
-/// A repository whose first [failures] starts fail like a broken disk.
-final class _FlakyFocusRepository extends FocusRepository {
-  _FlakyFocusRepository({
-    required super.database,
-    required super.runner,
-    this.failures = 0,
-  });
-
-  int failures;
-  final List<String> startIds = [];
-
-  @override
-  Future<CommandOutcome> start({
-    required String commandId,
-    required FocusCategory category,
-    required int plannedSeconds,
-  }) {
-    startIds.add(commandId);
-    if (failures > 0) {
-      failures--;
-      throw const StorageFailure();
-    }
-    return super.start(
-      commandId: commandId,
-      category: category,
-      plannedSeconds: plannedSeconds,
-    );
-  }
-}
-
 void main() {
   final minus = find.byIcon(Icons.remove_rounded);
   final plus = find.byIcon(Icons.add_rounded);
@@ -242,18 +211,10 @@ void main() {
       'a failed start keeps the choice, retries with the same command id and '
       'creates one session (AT27, AT12)',
       (tester) async {
-        late _FlakyFocusRepository flaky;
+        late FlakyFocusRepository flaky;
         final ui = await createFocusUi(
           tester,
-          overrides: [
-            focusRepositoryProvider.overrideWith(
-              (ref) => flaky = _FlakyFocusRepository(
-                database: ref.watch(appDatabaseProvider),
-                runner: ref.watch(commandRunnerProvider),
-                failures: 1,
-              ),
-            ),
-          ],
+          overrides: [flakyFocusRepository((r) => flaky = r, startFailures: 1)],
         );
         await pumpFocusApp(tester, ui);
         await tester.tap(chip('Lesen'));

@@ -256,6 +256,38 @@ extension FocusUiTester on WidgetTester {
     ))!;
   }
 
+  /// Inserts [count] completed sessions directly (fast), one per hour going
+  /// back from [newestEnd]; the newest has the id `bulk-0`. For list tests.
+  Future<void> insertCompletedSessions(
+    FocusUi ui,
+    int count, {
+    required DateTime newestEnd,
+  }) async {
+    await runAsync(() async {
+      for (var i = 0; i < count; i++) {
+        final end = newestEnd.subtract(Duration(hours: i));
+        await ui.database
+            .into(ui.database.focusSessions)
+            .insert(
+              FocusSessionsCompanion.insert(
+                id: 'bulk-$i',
+                category: 'learning',
+                plannedSeconds: 1500,
+                accumulatedSeconds: const Value(1500),
+                startedAtUtc: end.subtract(const Duration(minutes: 25)),
+                endedAtUtc: Value(end),
+                completedLocalDate: Value(ui.harness.clock.localDateOf(end)),
+                timezoneId: 'Europe/Berlin',
+                status: 'completed',
+                createdAtUtc: end,
+                updatedAtUtc: end,
+              ),
+            );
+      }
+    });
+    await settleDb();
+  }
+
   /// Rows of the focus sessions table (also discarded and deleted ones).
   Future<List<FocusSessionRow>> focusRows(FocusUi ui) async => (await runAsync(
     () => ui.database.select(ui.database.focusSessions).get(),

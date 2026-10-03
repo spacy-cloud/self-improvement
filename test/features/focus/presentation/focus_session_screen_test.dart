@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:self_improvement/core/commands/command_runner.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/core/errors/app_failure.dart';
 import 'package:self_improvement/core/feedback/feedback_service.dart';
@@ -11,36 +10,11 @@ import 'package:self_improvement/core/providers/core_providers.dart';
 import 'package:self_improvement/core/testing/recording_projection.dart';
 import 'package:self_improvement/features/focus/application/focus_countdown.dart';
 import 'package:self_improvement/features/focus/application/focus_providers.dart';
-import 'package:self_improvement/features/focus/data/focus_repository.dart';
 import 'package:self_improvement/shared/local_date.dart';
 
 import '../../../support/pump_app.dart';
+import '../support/flaky_repositories.dart';
 import '../support/focus_ui_kit.dart';
-
-/// A repository whose first [failures] pauses fail like a broken disk.
-final class _FlakyFocusRepository extends FocusRepository {
-  _FlakyFocusRepository({
-    required super.database,
-    required super.runner,
-    this.failures = 0,
-  });
-
-  int failures;
-  final List<String> pauseIds = [];
-
-  @override
-  Future<CommandOutcome> pause({
-    required String commandId,
-    required String id,
-  }) {
-    pauseIds.add(commandId);
-    if (failures > 0) {
-      failures--;
-      throw const StorageFailure();
-    }
-    return super.pause(commandId: commandId, id: id);
-  }
-}
 
 /// Labels of every live region on the screen (what a screen reader would
 /// announce when it changes).
@@ -218,18 +192,10 @@ void main() {
 
     testWidgets('a failed pause leaves the session running and can be retried '
         '(AT27, AT12)', (tester) async {
-      late _FlakyFocusRepository flaky;
+      late FlakyFocusRepository flaky;
       final ui = await createFocusUi(
         tester,
-        overrides: [
-          focusRepositoryProvider.overrideWith(
-            (ref) => flaky = _FlakyFocusRepository(
-              database: ref.watch(appDatabaseProvider),
-              runner: ref.watch(commandRunnerProvider),
-              failures: 1,
-            ),
-          ),
-        ],
+        overrides: [flakyFocusRepository((r) => flaky = r, pauseFailures: 1)],
       );
       await tester.startFocus(ui);
       await openSession(tester, ui);

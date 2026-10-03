@@ -12,6 +12,7 @@ import 'package:self_improvement/features/focus/application/focus_session_contro
 import 'package:self_improvement/features/focus/domain/focus_formatting.dart';
 import 'package:self_improvement/features/focus/domain/focus_history.dart';
 import 'package:self_improvement/features/focus/domain/focus_session.dart';
+import 'package:self_improvement/features/focus/domain/focus_status.dart';
 import 'package:self_improvement/features/focus/domain/focus_timer.dart';
 import 'package:self_improvement/features/focus/presentation/focus_routes.dart';
 import 'package:self_improvement/features/focus/presentation/focus_widgets.dart';
@@ -40,8 +41,26 @@ class _FocusSessionDetailScreenState
     final async = ref.watch(focusSessionByIdProvider(widget.sessionId));
     _opened ??= async.value;
     final opened = _opened;
-    if (opened != null) {
+    if (opened != null && opened.status == FocusStatus.completed) {
       return _DetailForm(key: ValueKey('focus-${opened.id}'), session: opened);
+    }
+    if (opened != null) {
+      // A session that is not saved yet has no facts to edit; it is handled
+      // on the session screen (save or discard).
+      return AppScaffold.subpage(
+        title: 'Sitzung bearbeiten',
+        onBack: () => backOrHome(context),
+        body: EmptyState(
+          title: 'Sitzung noch nicht abgeschlossen',
+          message:
+              'Speichere oder verwirf die Sitzung, dann kannst du sie hier '
+              'bearbeiten.',
+          actionLabel: 'Zur Sitzung',
+          onAction: () => context.go(FocusRoutes.session),
+          icon: AppIcon.focus,
+          accent: AppAccent.focus,
+        ),
+      );
     }
     return AppScaffold.subpage(
       title: 'Sitzung bearbeiten',
@@ -188,7 +207,7 @@ class _DetailFormState extends ConsumerState<_DetailForm> {
       cancelLabel: 'Weiter bearbeiten',
     );
     if (discard && mounted) {
-      context.pop();
+      _leave(GoRouter.of(context), FocusRoutes.history);
     }
   }
 
