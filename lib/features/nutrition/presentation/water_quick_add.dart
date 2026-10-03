@@ -76,7 +76,11 @@ Future<void> _quickAdd({
 /// on the water screen until it is retried successfully or dismissed. Nothing
 /// was stored, so no amount and no XP changed.
 class WaterQuickAddFailureNotice extends ConsumerWidget {
-  const WaterQuickAddFailureNotice({super.key});
+  const WaterQuickAddFailureNotice({this.compact = false, super.key});
+
+  /// Uses the small pill actions of the dashboard card (they can be measured
+  /// by the card grid) instead of full buttons.
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -85,6 +89,8 @@ class WaterQuickAddFailureNotice extends ConsumerWidget {
     if (failure == null) {
       return const SizedBox.shrink();
     }
+    final retry = state.canRetry ? () => retryWaterQuickAdd(ref) : null;
+    void dismiss() => ref.read(waterQuickAddProvider.notifier).dismissFailure();
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Column(
@@ -92,25 +98,43 @@ class WaterQuickAddFailureNotice extends ConsumerWidget {
         children: [
           NutritionFieldError(text: waterQuickAddFailureMessage(failure)),
           const SizedBox(height: 6),
-          Wrap(
-            spacing: 8,
-            runSpacing: 4,
-            children: [
-              if (state.canRetry)
-                SecondaryButton(
-                  label: 'Erneut versuchen',
-                  icon: AppIcon.retry.data,
-                  expand: false,
-                  onPressed: () => retryWaterQuickAdd(ref),
+          if (compact)
+            Wrap(
+              spacing: 8,
+              children: [
+                if (retry != null)
+                  MetricCardAction(
+                    label: 'Erneut versuchen',
+                    icon: AppIcon.retry.data,
+                    accent: AppAccent.water,
+                    onPressed: retry,
+                  ),
+                MetricCardAction(
+                  label: 'Schließen',
+                  accent: AppAccent.water,
+                  onPressed: dismiss,
                 ),
-              SecondaryButton(
-                label: 'Schließen',
-                expand: false,
-                onPressed: () =>
-                    ref.read(waterQuickAddProvider.notifier).dismissFailure(),
-              ),
-            ],
-          ),
+              ],
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                if (retry != null)
+                  SecondaryButton(
+                    label: 'Erneut versuchen',
+                    icon: AppIcon.retry.data,
+                    expand: false,
+                    onPressed: retry,
+                  ),
+                SecondaryButton(
+                  label: 'Schließen',
+                  expand: false,
+                  onPressed: dismiss,
+                ),
+              ],
+            ),
         ],
       ),
     );

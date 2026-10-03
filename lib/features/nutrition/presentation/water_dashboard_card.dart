@@ -28,8 +28,22 @@ class WaterDashboardCard extends ConsumerWidget {
         icon: AppIcon.water.data,
         accent: AppAccent.water,
       ),
-      error: (error, stack) =>
-          ErrorState(onRetry: () => ref.invalidate(waterTodayProvider)),
+      // Not `ErrorState`: it measures its width with a LayoutBuilder, which the
+      // card grid (equal row heights) cannot measure.
+      error: (error, stack) => MetricCard(
+        title: 'Wasser',
+        value: '–',
+        subtitle: 'Daten konnten nicht geladen werden',
+        icon: AppIcon.water.data,
+        accent: AppAccent.water,
+        semanticLabel: 'Wasser, Daten konnten nicht geladen werden',
+        quickAction: MetricCardAction(
+          label: 'Erneut versuchen',
+          icon: AppIcon.retry.data,
+          accent: AppAccent.water,
+          onPressed: () => ref.invalidate(waterTodayProvider),
+        ),
+      ),
       data: (model) => _Filled(model: model),
     );
   }
@@ -61,7 +75,7 @@ class _Filled extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const WaterQuickAddFailureNotice(),
+          const WaterQuickAddFailureNotice(compact: true),
           Wrap(
             spacing: 8,
             children: [

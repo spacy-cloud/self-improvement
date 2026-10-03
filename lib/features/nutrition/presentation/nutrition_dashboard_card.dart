@@ -24,8 +24,22 @@ class NutritionDashboardCard extends ConsumerWidget {
         icon: AppIcon.meal.data,
         accent: AppAccent.nutrition,
       ),
-      error: (error, stack) =>
-          ErrorState(onRetry: () => ref.invalidate(mealsTodayProvider)),
+      // Not `ErrorState`: it measures its width with a LayoutBuilder, which the
+      // card grid (equal row heights) cannot measure.
+      error: (error, stack) => MetricCard(
+        title: 'Ernährung',
+        value: '–',
+        subtitle: 'Daten konnten nicht geladen werden',
+        icon: AppIcon.meal.data,
+        accent: AppAccent.nutrition,
+        semanticLabel: 'Ernährung, Daten konnten nicht geladen werden',
+        quickAction: MetricCardAction(
+          label: 'Erneut versuchen',
+          icon: AppIcon.retry.data,
+          accent: AppAccent.nutrition,
+          onPressed: () => ref.invalidate(mealsTodayProvider),
+        ),
+      ),
       data: (day) => day.isEmpty
           ? MetricCard(
               title: 'Ernährung',
