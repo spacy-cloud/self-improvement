@@ -103,8 +103,8 @@ void main() {
     test('counts code points like SQLite length(), not UTF-16 units', () {
       expect(BackupValues.characterCount('abc'), 3);
       expect(BackupValues.characterCount('äöüß'), 4);
-      expect(BackupValues.characterCount('😀'), 1);
-      expect(BackupValues.characterCount('a😀b'), 3);
+      expect(BackupValues.characterCount('\u{1F600}'), 1);
+      expect(BackupValues.characterCount('a\u{1F600}b'), 3);
       expect(BackupValues.characterCount(''), 0);
     });
 
@@ -117,7 +117,10 @@ void main() {
       expect(BackupValues.hasInvalidCharacters('\ud800x'), isTrue);
 
       expect(BackupValues.hasInvalidCharacters(''), isFalse);
-      expect(BackupValues.hasInvalidCharacters('Grüße 😀 – ok'), isFalse);
+      expect(
+        BackupValues.hasInvalidCharacters('Grüße \u{1F600} – ok'),
+        isFalse,
+      );
       expect(BackupValues.hasInvalidCharacters('zeile 1\nzeile 2\t'), isFalse);
     });
   });

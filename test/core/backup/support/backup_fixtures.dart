@@ -23,6 +23,13 @@ LocalDate march(int day) => LocalDate(2026, 3, day);
 
 const String berlin = 'Europe/Berlin';
 
+/// A note with everything JSON has to escape or encode: quotes, a backslash,
+/// a newline, a tab, umlauts, typographic quotes and a character outside the
+/// Basic Multilingual Plane (written as an escape: the sources contain no
+/// emoji glyphs).
+const String specialNote =
+    'Glas Wasser \u{1F4A7} „kalt“ "x" \\ äöüß\nzweite Zeile\ttab';
+
 /// Ids of the rich database, by role.
 abstract final class Ids {
   static final String habitReading = uuid(0x401);
@@ -339,9 +346,7 @@ Future<void> populateRichDatabase(AppDatabase db) async {
         occurredAtUtc: at(2, 7, 0, 0, 1),
         localDate: march(2),
         timezoneId: berlin,
-        note: const Value(
-          'Glas Wasser 💧 „kalt“ "x" \\ äöüß\nzweite Zeile\ttab',
-        ),
+        note: const Value(specialNote),
         gamificationEligible: true,
         createdAtUtc: at(2, 7),
         updatedAtUtc: at(2, 7),

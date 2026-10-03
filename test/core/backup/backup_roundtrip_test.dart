@@ -103,10 +103,7 @@ void main() {
         final entry = await (target.select(
           target.waterEntries,
         )..where((w) => w.id.equals(uuid(0x121)))).getSingle();
-        expect(
-          entry.note,
-          'Glas Wasser 💧 „kalt“ "x" \\ äöüß\nzweite Zeile\ttab',
-        );
+        expect(entry.note, specialNote);
       },
     );
 

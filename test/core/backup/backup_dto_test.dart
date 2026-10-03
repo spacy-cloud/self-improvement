@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:self_improvement/core/backup/backup_document.dart';
 import 'package:self_improvement/core/backup/backup_format.dart';
 import 'package:self_improvement/core/backup/dto/body_nutrition_dtos.dart';
 import 'package:self_improvement/core/backup/dto/core_dtos.dart';
@@ -403,6 +404,65 @@ void main() {
           .exportedAt(start.add(const Duration(minutes: 5)))
           .toJson();
       expect(FocusSessionDto.fromJson(json).status, 'paused');
+    });
+  });
+
+  group('BackupDocument.fromJson', () {
+    test('round trips a real export, key order included', () {
+      final document = BackupDocument.fromJson(jsonCopy(backup));
+      final json = document.toJson();
+      expect(json, equals(backup));
+      expect(json.keys.toList(), backup.keys.toList());
+      expect(
+        (json['data']! as Map<String, Object?>).keys.toList(),
+        (backup['data']! as Map<String, Object?>).keys.toList(),
+      );
+      expect(document.exportedAtUtc, DateTime.utc(2026, 10, 3, 8));
+      expect(document.appVersion, '1.0.0');
+    });
+
+    test('lists every record-level problem of the whole file', () {
+      final root = jsonCopy(backup);
+      final data = root['data']! as Map<String, Object?>;
+      ((data['weight_entries']! as List<Object?>)[1]!
+              as Map<String, Object?>)['weight_grams'] =
+          5;
+      ((data['water_entries']! as List<Object?>)[0]!
+              as Map<String, Object?>)['amount_ml'] =
+          1;
+      final problems = problemsOf(() => BackupDocument.fromJson(root));
+      expect(problems.map((p) => p.location), [
+        'weight_entries[1]',
+        'water_entries[0]',
+      ]);
+    });
+
+    test('rejects a wrong format marker and a wrong version', () {
+      expect(
+        problemsOf(
+          () => BackupDocument.fromJson(jsonCopy(backup)..['format'] = 'x'),
+        ).single.field,
+        'format',
+      );
+      expect(
+        problemsOf(
+          () =>
+              BackupDocument.fromJson(jsonCopy(backup)..['schemaVersion'] = 2),
+        ).single.field,
+        'schemaVersion',
+      );
+    });
+
+    test('the record limit is checked before the records are read', () {
+      final root = jsonCopy(backup);
+      final rules =
+          (root['data']! as Map<String, Object?>)['reminder_rules']!
+              as List<Object?>;
+      for (var i = 0; i < BackupFormat.maxRecords; i++) {
+        rules.add(<String, Object?>{});
+      }
+      final problems = problemsOf(() => BackupDocument.fromJson(root));
+      expect(problems.single.location, 'data');
     });
   });
 

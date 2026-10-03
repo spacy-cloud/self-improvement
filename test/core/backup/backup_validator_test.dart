@@ -100,7 +100,7 @@ FieldRule noteRule(BackupTable table) => FieldRule(
   table,
   'note',
   invalid: [longText, 'x' * 501, 5],
-  valid: ['x' * 500, '', null, '😀' * 500, 'Zeile 1\nZeile 2'],
+  valid: ['x' * 500, '', null, '\u{1F600}' * 500, 'Zeile 1\nZeile 2'],
 );
 
 final List<FieldRule> fieldRules = [
@@ -109,7 +109,7 @@ final List<FieldRule> fieldRules = [
     BackupTable.profile,
     'display_name',
     invalid: ['', 'x' * 41, 7, 'a\u0000b', '\ud800'],
-    valid: ['A', 'x' * 40, '😀' * 40, null],
+    valid: ['A', 'x' * 40, '\u{1F600}' * 40, null],
   ),
   FieldRule(
     BackupTable.profile,
@@ -373,7 +373,7 @@ final List<FieldRule> fieldRules = [
     BackupTable.mealEntries,
     'name',
     invalid: ['', 'x' * 81, 5, null, 'a\u0000'],
-    valid: ['x', 'x' * 80, '😀' * 80],
+    valid: ['x', 'x' * 80, '\u{1F600}' * 80],
   ),
   FieldRule(
     BackupTable.mealEntries,
@@ -533,7 +533,7 @@ final List<FieldRule> fieldRules = [
     BackupTable.tasks,
     'title',
     invalid: ['', 'x' * 121, 5, null],
-    valid: ['x', 'x' * 120, '😀' * 120],
+    valid: ['x', 'x' * 120, '\u{1F600}' * 120],
   ),
   FieldRule(
     BackupTable.tasks,
@@ -573,7 +573,7 @@ final List<FieldRule> fieldRules = [
       <String>[],
       ['a', 'b', 'c', 'd', 'e'],
       ['x' * 20],
-      ['😀' * 20],
+      ['\u{1F600}' * 20],
       ['Büro', 'Bürste'],
     ],
   ),
