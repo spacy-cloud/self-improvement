@@ -17,7 +17,13 @@ Wird bis zur Abnahme laufend ergänzt. Offene Anforderungen stehen zusätzlich i
 
 - Sehr lange einzelne Wörter in Titeln können bei 320 px Breite und 200 % Schrift mitten im Wort umbrechen.
 - Ein erneuter Tipp auf den aktiven Tab scrollt die Seite nicht nach oben.
-- Die vorhersagende Zurück-Geste von Android ist nicht aktiviert; Zurück läuft über die eigene Reihenfolge der App (siehe [docs/screens/shell.md](screens/shell.md)).
+- Die vorhersagende Zurück-Geste von Android ist nicht aktiviert (ausdrücklicher Opt-out im Manifest, damit Android 16 sie nicht von sich aus einschaltet); Zurück läuft über die eigene Reihenfolge der App (siehe [docs/screens/shell.md](screens/shell.md)). Auf keinem Gerät geprüft.
+- Die Rückgängig-Snackbar wird für TalkBack nicht verlängert: Sie bleibt wie vorgegeben 8 Sekunden sichtbar (`persist` ist aus).
+- Beim Verschieben einer Dashboard-Karte sagt der Screenreader „verschoben“ auch dann an, wenn ein zweiter Zug ignoriert wurde, weil der erste noch lief.
+- Reduzierte Bewegung: Der App-Schalter erreicht die eigenen Animationen, das Plus-Sheet, alle modalen Sheets, die Snackbars und die über `appPageFor` gebauten Seitenwechsel. Er erreicht nicht den Seitenübergang von „Karten anpassen“, „Analyse als Tabelle“ und dem Lizenztext (sie werden mit einer `MaterialPageRoute` geöffnet) und nicht die System-Datums- und Zeitwähler, die nur dem Systemflag folgen.
+- Fokus-Timer: Beim Zurückkehren aus dem Hintergrund baut nur der geöffnete Sitzungsbildschirm den Countdown aus den gespeicherten Segmenten neu auf (`FocusRestorer.restore()`); die Verdrahtung der Shell ruft es nur beim Start und bei Reaktivierung des Moduls auf. Auf einem Gerät nicht geprüft.
+- Gewicht: Der Anker des Wochenvergleichs ist die letzte Messung am oder vor „heute minus 7 Tage“ und kann deshalb auch länger als eine Woche zurückliegen; die Beschriftung nennt weiter „7 Tage“. Eine Messung wird nie mit sich selbst verglichen (dann steht „Noch kein Wochenvergleich“).
+- Schritte: Nach einem abgelehnten Speichern springt der Fokus nicht auf das Eingabefeld (Gewicht, Mahlzeit und Workout tun es); die Meldung steht als Live-Region am Feld.
 - Fortschritt: Die Liste „Heute verdient“ des Entwurfs ist nicht umgesetzt.
 - Onboarding: Entwürfe überleben das Beenden des Prozesses nicht (gewollt: vor dem Abschluss wird nichts gespeichert).
 - Analyse: Der Wochenstreifen gilt nur für 7 Tage, der gewählte Zeitraum wird nach einem Neustart auf 7 Tage zurückgesetzt, und die Tabellenseite hat keine eigene Route (kein Deep Link).

@@ -28,7 +28,7 @@ Die Bildschirme enthalten kein SQL und keine Geschäftsregeln: alle Aktionen lau
 | Alle Trainings | `/workouts/all` | `4056:183` | nach Kalenderwoche (Montag bis Sonntag) gruppiert, seitenweise, leer, Fehler |
 | Dashboard-Karten `focus` und `workout` | (Home) | Home `2013:2` | Fokus: Tagesstand oder offene Sitzung mit "Fokus fortsetzen"; Workout: Wochenring mit echtem Stand |
 
-Plus-Menü: `workout` (Position 1, Route `/workouts/new`) und `focus` (Position 4, Route `/focus`; während einer offenen Sitzung heißt der Eintrag "Fokus fortsetzen").
+Plus-Menü: `workout` (Position 1, Route `/workouts/new`) und `focus` (Position 4, Route `/focus`; während einer offenen Sitzung heißt der Eintrag "Fokus fortsetzen" und führt zu `/focus/session`).
 
 Routen sind flach registriert, statische Pfade vor parametrischen (`/workouts/new` und `/workouts/all` vor `/workouts/:id`, `/focus/history` vor `/focus/history/:id`).
 
@@ -37,7 +37,7 @@ Routen sind flach registriert, statische Pfade vor parametrischen (`/workouts/ne
 ### 3.1 Fokus-Timer
 - **Eine offene Sitzung.** Der Startbildschirm zeigt bei offener Sitzung eine Wiederaufnahme-Karte statt der Einrichtung; die Datenbank verweigert zusätzlich eine zweite Sitzung. Zurücknavigieren aus der laufenden Sitzung erlaubt keinen zweiten Start.
 - **Einrichtung.** Dauer 5 bis 180 Minuten in Schritten von 5 (Standard 25), fünf Kategorien (Lesen, Lernen, Programmieren, Meditation, Sonstiges; vorgewählt ist "Sonstiges" wie in der Engine). Eine Eingabe unter 5 oder über 180 ist über die Oberfläche nicht erreichbar und wird von der Engine ohnehin abgewiesen.
-- **Anzeige.** Der Bildschirm zeigt nur die persistierte Sitzung (`focusCountdownProvider`). Innerhalb einer Vordergrundphase zählt die monotone Tickquelle; es gibt keine Datenbankschreibzugriffe pro Sekunde. Nach Prozessende, Hintergrundphase oder Neustart wird die Phase aus den UTC-Segmenten neu aufgebaut. Beim `resumed`-Lebenszyklusereignis stößt der Bildschirm zusätzlich `FocusRestorer.restore()` an (idempotent; die Shell tut dasselbe).
+- **Anzeige.** Der Bildschirm zeigt nur die persistierte Sitzung (`focusCountdownProvider`). Innerhalb einer Vordergrundphase zählt die monotone Tickquelle; es gibt keine Datenbankschreibzugriffe pro Sekunde. Nach Prozessende, Hintergrundphase oder Neustart wird die Phase aus den UTC-Segmenten neu aufgebaut. Beim `resumed`-Lebenszyklusereignis stößt der geöffnete Sitzungsbildschirm `FocusRestorer.restore()` an (idempotent). Die Shell ruft `restore()` beim Start und bei der Reaktivierung des Moduls auf (über `FocusModule.initialize`), aber nicht bei jedem `resumed`, obwohl der Kommentar an `FocusRestorer` das beschreibt: Ohne geöffneten Sitzungsbildschirm, zum Beispiel nur mit der Dashboard-Karte, wird der Countdown bei der Rückkehr aus dem Hintergrund nicht neu aus den gespeicherten Segmenten aufgebaut. Auf einem Gerät nicht geprüft; Behebung wäre ein Aufruf in der Verdrahtung der Shell.
 - **Ende der Zeit.** Die Engine persistiert genau einmal `awaiting_confirmation`. Bis zur Bestätigung gibt es weder XP noch eine Abschlusszeit noch Fokuszeit. Der Bildschirm sagt das ausdrücklich.
 - **Speichern.** Doppeltes Speichern ergibt einen Abschluss (Sperre im Controller, gleiche Command-ID bei Wiederholung). Ab 1 Sekunde speicherbar; unter 300 Sekunden wird die Zeit gespeichert, aber ohne XP. Das XP-Hinweisfeld spiegelt die XP-Regel (zehn Punkte, höchstens vier berechtigte Sitzungen pro Tag, Mindestlänge 300 Sekunden) und erscheint nur bei eingeschalteter Gamification.
 - **Beenden früher.** "Beenden" öffnet ein Sheet mit der bisherigen Zeit und drei Wegen: "Zeit speichern", "Verwerfen" (mit Rückgängig) und "Weiter fokussieren" (sicherer Standard, schließt auch mit Android-Zurück). Unter einer Sekunde wird Speichern nicht angeboten.
@@ -74,7 +74,7 @@ Routen sind flach registriert, statische Pfade vor parametrischen (`/workouts/ne
 
 - **XP je Fokus-Sitzung:** der Entwurf zeigt 15, die Regel lautet 10 (Workout dagegen 15 einmal pro Tag). Entscheidung: Regel; der Wert wird aus `XpRules` gelesen.
 - **Standard-Tagesziel Fokus:** der Entwurf zeigt 60 Minuten, der Standard der Engine ist 25. Entscheidung: Engine-Wert.
-- **Plus-Menü "Fokus fortsetzen":** `QuickAction.route` ist statisch, ein dynamisches Ziel `/focus/session` ist im Vertrag nicht vorgesehen. Entscheidung: Route bleibt `/focus`, das Label wechselt per `dynamicLabel`, der Startbildschirm zeigt die Wiederaufnahme zuoberst (ein Tipp mehr). Ein `dynamicRoute` im Kernvertrag würde den direkten Sprung erlauben.
+- **Plus-Menü "Fokus fortsetzen":** `QuickAction.route` ist statisch (`/focus`), ein dynamisches Ziel ist im Modulvertrag nicht vorgesehen. Entscheidung: Das Label wechselt per `dynamicLabel`, und die Shell kennt den Sonderfall: Läuft eine Sitzung (laufend, pausiert oder unbestätigt), heißt der Eintrag "Fokus fortsetzen" und führt direkt zu `/focus/session` (`resolvePlusEntries`, Tests `plus_entries_test.dart` und `app_shell_test.dart`); ohne Sitzung führt "Fokus" zu `/focus`. Der Startbildschirm zeigt bei offener Sitzung zusätzlich die Wiederaufnahme-Karte (zum Beispiel für den Weg über eine Dashboard-Karte). Ein `dynamicRoute` im Kernvertrag war dafür nicht nötig.
 - **Vorauswahl:** für Workouts gilt "nichts vorausgewählt". Für den Fokus-Start bleibt die Engine-Vorgabe "Sonstiges" und 25 Minuten als sichtbare Startwerte; gespeichert wird erst mit dem Start.
 
 ## 6. Barrierefreiheit
@@ -89,14 +89,14 @@ Routen sind flach registriert, statische Pfade vor parametrischen (`/workouts/ne
 
 ## 7. Tests
 
-Neue Testdateien unter `test/features/focus/` (239 neue Tests, Gesamtlauf: 4337 Tests grün):
+Neue Testdateien unter `test/features/focus/` (240 neue Tests; der Gesamtstand steht in [test-report.md](../test-report.md)):
 
 | Datei | Tests | Schwerpunkt (Abnahme-IDs) |
 |---|---|---|
 | `presentation/focus_start_screen_test.dart` | 26 | Einrichtung, Grenzen 4/5/180/181 Minuten, Start, Doppeltipp, Wiederaufnahme, Heute-Karte (AT12, AT16, AT25, AT27, F01, F02) |
 | `presentation/focus_session_screen_test.dart` | 36 | laufend/pausiert/Bestätigung, Neustart, Uhrsprung, Mitternacht, Sommerzeit, XP, 299/300 Sekunden, Verwerfen, Fehler, Semantik (AT12, AT16-AT18, AT25, AT27, AT33, AT34, F01, G01) |
 | `presentation/focus_history_screens_test.dart` | 22 | Verlauf, Zonen, seitenweise Laden, Notiz, Löschen mit Rückgängig, Konflikte, Verwerfen-Dialog (AT23, AT25, AT27, AT36, F02) |
-| `presentation/workout_form_screen_test.dart` | 25 | leeres Formular, Grenzen 0/1/600/601, optionale Felder, Fehler, Wiederholung, Bearbeiten, Löschen (AT12, AT20, AT23, AT27, F03) |
+| `presentation/workout_form_screen_test.dart` | 26 | leeres Formular, Grenzen 0/1/600/601, optionale Felder, Fehler, Wiederholung, Bearbeiten, Löschen (AT12, AT20, AT23, AT27, F03) |
 | `presentation/workout_overview_screens_test.dart` | 24 | Woche Montag bis Sonntag, Ring bei 100 Prozent, Wochenwechsel, Liste, Zonen (AT20, AT23, AT25, AT36, F03, A01) |
 | `presentation/focus_dashboard_cards_test.dart` | 16 | Karten, Wiederaufnahme, Übergang auf dem Dashboard, getrennte Zahlen (AT16, AT17, AT20, AT34) |
 | `presentation/focus_module_test.dart` | 22 | Routen, Plus-Menü, `canDeactivate`, `initialize` (AT19) |
@@ -120,13 +120,14 @@ Der letzte Befehl schreibt Bilder aller Bildschirme (Light, Dark, 320 px bei Tex
 
 Hinweis zum Testen: Aufrufe von `FocusRestorer.restore()` im Widget-Test laufen in der Testzone (nicht in `runAsync`), weil der Countdown-Stream seine Werte in der Fake-Zone zustellt; `restoreFocus` im Test-Kit kapselt das.
 
-## 8. Offene Punkte und Integrationshinweise
+## 8. Offene Punkte und Integration
 
-- Shell: `module.routes` registrieren, `module.initialize(ref)` beim Start aufrufen und bei `resumed` weiter `focusRestorerProvider.restore()` ausführen. Für den Übergang in die Bestätigung ohne sichtbaren Fokusbildschirm kann die Shell `focusCountdownProvider` an der Wurzel halten.
-- Modulverwaltung: bei `MustResolveFirst` die Aktion auf `/focus/session` (`focusDeactivationResolveRoute`) führen.
-- `feedbackServiceProvider` muss in der Shell überschrieben sein (Snackbar mit Rückgängig, Fehler mit "Erneut").
-- Zieleditor: `/goals` (BS-70) wird vom Link "Wochenziel ändern" geöffnet.
-- Plus-Menü: dynamisches Ziel für "Fokus fortsetzen" (siehe Abschnitt 5).
+Erledigt (Stand `c0ce096`): `FocusModule` ist in `bundledModules` registriert (Routen, Karten, Plus-Einträge); `initialize` läuft über den Modul-Lebenszyklus beim Start und bei Reaktivierung; die Dashboard-Karte hält `focusCountdownProvider` am Leben, sodass der Übergang in die Bestätigung auch ohne Fokusbildschirm stattfindet; die Modulverwaltung führt bei `MustResolveFirst` zu `/focus/session` (`focusDeactivationResolveRoute`); `feedbackServiceProvider` ist mit der Snackbar überschrieben; "Wochenziel ändern" öffnet den Zieleditor `/goals`; das Plus-Menü springt bei offener Sitzung direkt zu `/focus/session` (Abschnitt 5).
+
+Offen:
+
+- Die Shell ruft `FocusRestorer.restore()` nicht bei jedem `resumed` auf (Abschnitt 3.1). Nur der geöffnete Sitzungsbildschirm tut es.
 - Tagesziel-Hinweis "ab morgen" gehört in den Zieleditor; die Workout-Übersicht verweist darauf.
 - Erinnerung zum Fokus-Ende gehört zur Reminder-Engine (Zustandsänderung `FocusStateChanged`) und ist nicht Teil dieser Oberfläche.
 - Verbleibende Sichtabweichungen siehe Abschnitt 4; die Frames wurden für Light verglichen, Dark wurde auf Lesbarkeit geprüft.
+- Auf einem Gerät nicht geprüft: Hintergrundphasen und Prozessende, TalkBack, Systemschrift, echte Tastatur.

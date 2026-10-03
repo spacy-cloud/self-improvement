@@ -19,7 +19,7 @@ Oberfläche des Moduls `tasks` für [BS-65](https://spacy-cloud.atlassian.net/br
 
 ## 2. Verhalten
 
-**Habits-Tab.** Kopf mit Plus (legt je nach Ansicht Gewohnheit oder Aufgabe an) und Umschalter Aufgaben / Gewohnheiten mit Zählern ("3 offen", "2/5"). Ansicht Gewohnheiten: Wochenleiste der letzten sieben Tage, Fortschrittskarte des gewählten Tages, Liste "Deine Habits" mit runder Checkbox je Gewohnheit, darunter "Archiviert" (beendete Gewohnheiten, nur lesbar). Ein Tipp auf die Checkbox setzt den Zustand (Soll-Zustand, kein blindes Toggle) und zeigt erst nach dem Commit "Abgehakt" mit "Rückgängig" (8 s). Ein Tag der Leiste zeigt die Gewohnheiten dieses Tages und erlaubt Nachtragen oder Entfernen; "Zurück zu heute" und der Tageswechsel setzen die Auswahl zurück. Zukunft, Tage vor dem Start und ab dem Archivdatum sind nicht wählbar (Regeln der Engine, `checkDateError`).
+**Habits-Tab.** Kopf mit Plus (legt je nach Ansicht Gewohnheit oder Aufgabe an) und Umschalter Aufgaben / Gewohnheiten mit Zählern ("3 offen", "2/5"). Ansicht Gewohnheiten: Wochenleiste der letzten sieben Tage, Fortschrittskarte des gewählten Tages, Liste "Deine Habits" mit runder Checkbox je Gewohnheit, darunter "Archiviert" (beendete Gewohnheiten, nur lesbar). Ein Tipp auf die Checkbox setzt den Zustand (Soll-Zustand, kein blindes Toggle) und zeigt erst nach dem Commit "Abgehakt" mit "Rückgängig" (8 s). Ein Tag der Leiste zeigt die Gewohnheiten dieses Tages und erlaubt Nachtragen oder Entfernen; "Zurück zu heute" und der Tageswechsel setzen die Auswahl zurück. Zukunft, Tage vor dem Start und ab dem Archivdatum sind nicht wählbar (Regeln der Engine, `checkDateError`). Ist das Aufgabenmodul ausgeschaltet, zeigt der Tab statt dieses Inhalts nur "Aufgaben und Gewohnheiten sind ausgeschaltet" mit "Aufgaben und Gewohnheiten aktivieren" und "Module verwalten"; es gibt dann weder Daten noch eine Schreibaktion, die Einträge bleiben erhalten.
 
 **Aufgabenliste.** Segmente Offen / Erledigt / Alle, Suche in Titel und Beschreibung, Prioritätsfilter (Hoch, Normal, Niedrig, Alle), Reihenfolge der Engine (Priorität hoch zuerst, dann Fälligkeit aufsteigend, ohne Datum zuletzt, dann Erstellzeit und ID). Zeilen werden lazy gebaut. Jede Zeile hat Checkbox (Erledigen/Wiederöffnen als Soll-Zustand), Textbereich (öffnet die Bearbeitung) und Menü (Bearbeiten, Als erledigt markieren oder Wieder öffnen, Löschen). Überfällig steht als Text ("Überfällig seit 02.10.2026") plus rotem Rahmen. Löschen fragt per Sheet nach und bietet danach Undo, das den exakten Zustand inklusive Erledigt-Flag wiederherstellt. Leere Zustände: keine Aufgaben, nichts offen, nichts erledigt, keine Treffer (mit "Suche zurücksetzen"); Ladefehler mit `ErrorState` und erneutem Lesen. Der Filterzustand bleibt beim Tabwechsel erhalten.
 
@@ -73,7 +73,7 @@ Oberfläche des Moduls `tasks` für [BS-65](https://spacy-cloud.atlassian.net/br
 
 Befehle: `flutter test test/features/tasks` (808 Tests: 470 Engine, 338 UI), `flutter test` (gesamt), `dart run tool/at_coverage.dart`.
 
-| Datei in `test/features/tasks/` | Inhalt | Akzeptanz |
+| Datei (unter `test/features/tasks/`, sonst mit Pfad) | Inhalt | Akzeptanz |
 |---|---|---|
 | `domain/habit_day_test.dart`, `domain/task_tag_suggestions_test.dart` | Tagesmodell, Wochenleiste, Vorschläge | T02 |
 | `presentation/habits_tab_test.dart` (22) | Fortschritt, Abhaken und Undo, Doppeltipp, Fehler mit Retry, Leer- und Fehlerzustand, Wochenleiste, Nachtragen, Archiv ab morgen, Tageswechsel, Umschalter und Deep Link, große Schrift | AT12, AT21, AT23, AT24, AT25, AT27, AT33 |
@@ -85,6 +85,7 @@ Befehle: `flutter test test/features/tasks` (808 Tests: 470 Engine, 338 UI), `fl
 | `presentation/tasks_module_test.dart` (7) | Karte, Plus-Einträge, Routenreihenfolge (`/tasks/new` ist nie eine ID) | BS-53 |
 | `presentation/responsive_a11y_test.dart` (100) | alle Screens bei 320, 360, 393, 430 px mit 100 % und 200 % Text ohne Überlauf, Tap-Ziele und Labels, Themes Light, Dark und OLED, Screenreader-Texte, reduzierte Bewegung | AT33 |
 | `presentation/contrast_test.dart` (120) | Kontrast der verwendeten Farbpaare in drei Themes | AT33 |
+| `test/app/module_tab_gate_test.dart` (2) | Habits-Tab bei ausgeschaltetem Aufgabenmodul: Hinweis, keine Daten, keine Schreibaktion, Aktivieren bringt die Einträge zurück | AT03 |
 
 Visuelle Prüfung: jeder Screen wurde als Widget-Test bei 393 x 852 (Light) und 320 px mit 200 % Text als PNG gerendert und mit dem Figma-Screenshot verglichen; die Abweichungen stehen oben. Ein Gerät oder Emulator stand nicht zur Verfügung.
 
@@ -98,4 +99,4 @@ Visuelle Prüfung: jeder Screen wurde als Widget-Test bei 393 x 852 (Light) und 
 - Die Uhrzeitauswahl der Erinnerung (Material-Dialog) ist nur durch Öffnen und Abbrechen getestet; das Setzen einer Uhrzeit ist manuell zu prüfen.
 - Die Erlaubnis für Benachrichtigungen fragt das Formular nicht an; sie gehört zu den Einstellungen (Hinweis im Formular).
 - TalkBack, Systemschrift und Zeitzonenwechsel auf einem Gerät sind nicht prüfbar.
-- Die Shell muss `HabitsTabScreen` auf `/habits` registrieren und die Modulrouten zentral absichern.
+- Die Shell registriert `HabitsTabScreen` auf `/habits` und sichert die Modulrouten zentral ab (`guardModuleRoutes`). Bei ausgeschaltetem Aufgabenmodul ersetzt `ModuleTabGate` den Tab-Inhalt (siehe [shell.md](shell.md), Abschnitt 4).

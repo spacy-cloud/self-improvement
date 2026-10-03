@@ -63,7 +63,7 @@ Weitere Dateien: `lib/features/settings/application/data_backup_actions.dart` (F
 
 ## 6. Tests
 
-Befehl: `flutter test test/features/settings test/features/reminders`. Stand 2026-10-03: 89 Tests unter `test/features/settings` und 94 unter `test/features/reminders` (je 2 davon sind Bildtests), im Gesamtlauf 4364 Tests grün, `flutter analyze` ohne Befund. Reale In-Memory-Datenbank, Uhr 2026-10-03 10:00 Europe/Berlin, Fakes der Plattformadapter (`InMemoryBackupFileGateway`, `FakeBackupFilePicker`, `FakeReminderPlatform`), nur synthetische Daten.
+Befehl: `flutter test test/features/settings/data test/features/reminders`. Stand `c0ce096`: 89 Tests unter `test/features/settings/data` und 94 unter `test/features/reminders` (je 2 davon sind Bildtests); der Gesamtstand steht in [test-report.md](../test-report.md). Reale In-Memory-Datenbank, Uhr 2026-10-03 10:00 Europe/Berlin, Fakes der Plattformadapter (`InMemoryBackupFileGateway`, `FakeBackupFilePicker`, `FakeReminderPlatform`), nur synthetische Daten.
 
 | Datei | Inhalt | Abnahme-IDs |
 |---|---|---|
@@ -77,24 +77,24 @@ Befehl: `flutter test test/features/settings test/features/reminders`. Stand 202
 
 Zwei Mutationsproben bestätigen, dass die Tests greifen (großzügige Wortprüfung und fehlendes Berechtigungs-Sheet lassen je einen Test scheitern).
 
-## 7. Verdrahtung beim App-Start (Erwartung an die Shell)
+## 7. Verdrahtung beim App-Start
 
-Pflicht:
+Die Oberflächen setzen voraus, dass die App beim Start einiges verdrahtet. Stand `c0ce096` ist das erledigt (`lib/app/wiring/app_overrides.dart`, `lib/app/wiring/app_wiring.dart`, `lib/app/app.dart`, `lib/app/router/`):
 
-1. `feedbackServiceProvider` mit der Snack-Bar-Implementierung überschreiben (beide Oberflächen lesen sie).
-2. `notificationCancellerProvider` überschreiben: `ref.watch(reminderNotificationCancellerProvider)`. Ohne das bleiben nach Import und Reset geplante Systembenachrichtigungen des alten Bestands bestehen.
-3. `backupListenerProvider` überschreiben: `CompositeBackupListener([<Invalidierungen der Shell>, ref.watch(reminderReplanListenerProvider)])`. Die Invalidierungen (zwischengespeicherte Provider, laufende Timer-Oberflächen, Onboarding-Zustand) kennt nur die Shell; die Reminder-Planung aus den importierten Regeln steuert der mitgelieferte Listener bei.
-4. Route `/settings/data` auf `DataScreen()`; die Einstellungen betten `const RemindersSection()` unter der Gruppenüberschrift "Erinnerungen" ein. Der Block zeichnet seine eigene Karte, aber keine Überschrift.
-5. Der Router muss `/` auf das Onboarding umleiten, solange `profile.onboardingCompleted` falsch ist, und diese Entscheidung bei Änderungen des Profils neu auswerten (Refresh-Listener auf `profileProvider`). `DataScreen` ruft nach dem Zurücksetzen `context.go('/')`.
-6. Beim Start einmal `backupServiceProvider.cleanUpTemporaryExports()` aufrufen (Engine-Vertrag).
+1. `feedbackServiceProvider` ist mit der Snackbar-Implementierung überschrieben (`SnackBarFeedbackService`); beide Oberflächen lesen sie.
+2. `notificationCancellerProvider` ist mit `PlatformNotificationCanceller` überschrieben (storniert alle ausstehenden Systembenachrichtigungen der Plattform nach Import und Reset). Es ist dasselbe Verhalten wie `ReminderNotificationCanceller` aus `reminder_data_ports.dart`; die App nutzt ihre eigene Klasse.
+3. `backupListenerProvider` ist mit `AppBackupListener` überschrieben: Daten-Epoche erhöhen, die Kernprovider (Profil, Einstellungen, Modulstatus, Dashboard-Karten, Zielversionen, Tagesstatus, Streak, offene Fokus-Sitzung) neu lesen, "heute" neu lesen und die Erinnerungen über `ReminderService.reconcile()` neu planen. Die Bausteine `CompositeBackupListener` und `reminderReplanListenerProvider` aus `reminder_data_ports.dart` sind getestet (`reminder_data_ports_test.dart`), werden von der App aber nicht verwendet.
+4. Die Route `/settings/data` baut `DataScreen`; die Einstellungen betten `const RemindersSection()` zwischen den Darstellungs-Zeilen und "Module" ein, ohne eigene Gruppenüberschrift; der Block zeichnet seine eigene Karte, deren Hauptzeile "Erinnerungen" heißt.
+5. Der Router leitet auf `/onboarding` um, solange `profile.onboardingCompleted` falsch ist, und wertet das bei Änderungen des Profils neu aus (Refresh über `profileProvider`). `DataScreen` ruft nach dem Zurücksetzen `context.go('/')`.
+6. `backupServiceProvider.cleanUpTemporaryExports()` läuft einmal nach dem Start (`AppWiring.start`).
 
-Reminder-Engine wie im Doc-Kommentar von `ReminderService` beschrieben, hier nur die Punkte, von denen die Oberfläche abhängt:
+Reminder-Engine wie im Doc-Kommentar von `ReminderService` beschrieben, hier die Punkte, von denen die Oberfläche abhängt:
 
-7. `reminderPlatformProvider` ist der echte Adapter; die Shell ruft `initialize()` einmal vor dem ersten Frame auf. Tests überschreiben ihn mit `FakeReminderPlatform`.
-8. `reminderAutoReconcileProvider` und `reminderLifecycleProvider` einmal an der Wurzel lesen; `waterGoalReachedTodayProvider` mit dem echten Tagesstatus überschreiben. Der Block plant beim Zurückkehren in die App zusätzlich selbst neu (`AppLifecycleState.resumed`), die Shell-Verdrahtung bleibt für Start, Zeitzone und Datenänderungen nötig.
-9. Optional, aber empfohlen: `snapshotConsistencyCheckerProvider` aus dem Ziele-Feature, damit der Import widersprüchliche Tages-Snapshots ablehnt.
+7. `reminderPlatformProvider` ist der echte Adapter; die App ruft `initialize()` einmal vor dem ersten Frame auf (`_prepare` in `lib/app/app.dart`). Tests überschreiben ihn mit `FakeReminderPlatform`.
+8. `reminderAutoReconcileProvider` und `reminderLifecycleProvider` werden einmal beim Start gelesen (`AppWiring.start`); `waterGoalReachedTodayProvider` ist mit dem echten Tagesstatus überschrieben. Der Block plant beim Zurückkehren in die App zusätzlich selbst neu (`AppLifecycleState.resumed`), die Verdrahtung bleibt für Start, Zeitzone und Datenänderungen nötig.
+9. Nicht belegt: `snapshotConsistencyCheckerProvider` aus dem Ziele-Feature. Ohne ihn gleicht der Import die Tages-Snapshots der Datei nicht gegen die Historie ab (siehe [known-limitations.md](../known-limitations.md)).
 
-Keine Änderung an `lib/core/backup` oder `lib/core/notifications` war nötig. Neue Dateien liegen unter `lib/features/settings/{application,presentation}` (Präfix `data_`) und `lib/features/reminders/**`.
+Keine Änderung an `lib/core/backup` oder `lib/core/notifications` war für die Oberfläche nötig. Neue Dateien liegen unter `lib/features/settings/{application,presentation}` (Präfix `data_`) und `lib/features/reminders/**`.
 
 ## 8. Offene Punkte
 

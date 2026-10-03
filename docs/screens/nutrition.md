@@ -94,11 +94,11 @@ Routenreihenfolge in `NutritionModule.routes`: `/water`, `/water/:id`, `/nutriti
 | `nutrition_module_test.dart` | Routenreihenfolge, Karten-IDs und Ränge, Plus-Menü | - |
 | `visual_check_test.dart` | schreibt PNGs unter `build/` für den Vergleich mit den Frames | - |
 
-Befehle: `flutter test test/features/nutrition` (609 Tests, davon 245 der Oberfläche, die übrigen sind die Engine-Tests) und `flutter test` (Gesamtlauf, 4343 Tests grün). `dart run tool/at_coverage.dart` ordnet die Tests den Abnahmefällen AT10, AT11, AT12, AT14, AT23, AT24 und AT27 zu.
+Befehle: `flutter test test/features/nutrition` (610 Tests, davon 246 der Oberfläche (`presentation/` und `nutrition_module_test.dart`), die übrigen 364 sind Engine-Tests) und `flutter test` (Gesamtlauf; der aktuelle Stand steht in [test-report.md](../test-report.md)). `dart run tool/at_coverage.dart` ordnet die Tests den Abnahmefällen AT10, AT11, AT12, AT14, AT23, AT24 und AT27 zu.
 
 ## 7. Offene Punkte
 
-- Die Karten und Routen erscheinen in der App erst, wenn die Shell `NutritionModule` zentral registriert (Routen, Karten, Plus-Menü).
+- `NutritionModule` ist in `bundledModules` registriert: Routen, Karten und die Plus-Einträge `water` (Position 2) und `meal` (Position 7) erscheinen in der App, die Routen sind durch den Modulstatus geschützt (siehe [shell.md](shell.md)).
 - `ErrorState` kann in einer Zelle des `AdaptiveGrid` nicht gemessen werden (betrifft auch die Gewichtskarte); die Nutrition-Karten umgehen das, eine Korrektur im Design-System steht aus.
 - TalkBack, Systemschrift und Tastatur auf einem echten Gerät sind hier nicht prüfbar (kein SDK); geprüft sind Host-Tests für Semantics, Tap-Ziele und Skalierung.
 - Ein Mahlzeitentyp (Frühstück, Mittag, ...) würde eine Schemaerweiterung brauchen und ist nicht Teil von V1.

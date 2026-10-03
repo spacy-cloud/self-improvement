@@ -24,7 +24,7 @@ Code: `lib/features/profile/{domain,application,presentation}` und `lib/features
 
 **Ziele bearbeiten.** Wasser (250 bis 10.000 ml in 50er-Schritten), Schritte (100 bis 100.000), Fokus (5 bis 180 Minuten), „Gewicht erfassen“ und „Aufgabe erledigen“ (Schalter), Workouts pro Woche (1 bis 14). Wasser, Schritte und Fokus haben je einen eigenen Schalter; ein ausgeschaltetes Ziel behält seinen Wert und meldet in Worten „Ausgeschaltet: zählt nicht für den Tagesring.“ Alle Zielwerte und Schalter gelten ab morgen (Hinweisbox mit Datum, Gruppentitel „… · ab morgen“, Erfolgsmeldung „… gelten ab morgen“). Eine heute bereits gespeicherte Änderung wird beim Öffnen angezeigt („Heute noch: …“). Das Zielgewicht gilt sofort (Gruppe „Körperziel · gilt sofort“) und wird über `ProfileCommands` gespeichert; die Erfolgsmeldung nennt, was wann gilt. Speichern von Zielen und Zielgewicht sind zwei Commands: gelingt das erste und scheitert das zweite, bleibt das erste gespeichert, die Meldung sagt das, und die Wiederholung sendet nur noch das zweite. Ziele ausgeschalteter Module sind ausgeblendet, bleiben gespeichert und werden nicht validiert.
 
-**Einstellungen.** Profil-Eintrag („Nur lokal“), Design (Auswahlblatt mit System, Hell, Dunkel, OLED; „System“ wird bei dunklem Gerät Dunkel, OLED nur ausdrücklich), Reduzierte Bewegung, Haptisches Feedback, Erinnerungsblock (Platzhalter `RemindersSection`, gebaut vom Erinnerungs-Paket), Module („N von 5“), Daten & Sicherung, Version und Lizenzen. Es gibt genau zwei Schalter und keine Konto- oder Cloud-Elemente. Jede Änderung ist ein eigener Command; scheitert das Schreiben, bleibt der Schalter auf dem gespeicherten Wert und eine Fehlermeldung bietet „Erneut“ an.
+**Einstellungen.** Profil-Eintrag („Nur lokal“), Design (Auswahlblatt mit System, Hell, Dunkel, OLED; „System“ wird bei dunklem Gerät Dunkel, OLED nur ausdrücklich), Reduzierte Bewegung, Haptisches Feedback, Erinnerungsblock (`RemindersSection`, gebaut vom Erinnerungs-Paket, siehe [data-reminders.md](data-reminders.md)), Module („N von 5“), Daten & Sicherung, Version und Lizenzen. Außerhalb des Erinnerungsblocks gibt es genau zwei Schalter und keine Konto- oder Cloud-Elemente. Jede Änderung ist ein eigener Command; scheitert das Schreiben, bleibt der Schalter auf dem gespeicherten Wert und eine Fehlermeldung bietet „Erneut“ an.
 
 **Lizenzen.** Liest `LicenseRegistry` (lokal, ohne Netz) nach dem Registrieren der gebündelten Schriftlizenz (Inter, SIL OFL 1.1). Liste: Inter, Flutter SDK, „Open-Source-Pakete“ (mit echter Anzahl). Jeder Eintrag öffnet den vollständigen Text als träge Absatzliste, die bei jeder Schriftgröße umbricht und scrollt. Ein vorzeitiger Lesefehler zeigt die gelesenen Pakete mit Hinweis „unvollständig“.
 
@@ -71,7 +71,7 @@ Code: `lib/features/profile/{domain,application,presentation}` und `lib/features
 
 ## 6. Tests
 
-Befehle: `flutter test test/features/profile test/features/settings` (297 Tests: profile/domain 53, profile/application 52, profile/presentation 104, settings/application 28, settings/presentation 58, Architekturtest 2) und die gesamte Suite mit `flutter test` (2902 Tests, grün). `flutter analyze` meldet keine Probleme, `dart format lib test tool integration_test` ändert nichts.
+Befehle: `flutter test test/features/profile test/features/settings`. Von den 386 Tests dieser Verzeichnisse gehören 297 zu diesem Paket (profile/domain 53, profile/application 52, profile/presentation 104, settings/application 28, settings/presentation 58, Architekturtest 2); die übrigen 89 unter `settings/data` gehören zur Daten-Oberfläche ([data-reminders.md](data-reminders.md)). Den Gesamtstand und die Ergebnisse von `flutter analyze` und `dart format` nennt [test-report.md](../test-report.md).
 
 | Datei | Inhalt | Akzeptanz |
 |---|---|---|
@@ -95,9 +95,9 @@ Gewichte in den Tests sind Testdaten (71,5 kg, 74,0 kg, 68,0 kg) ohne Personenbe
 
 ## 7. Schnittstellen für andere Arbeitspakete
 
-- **Shell:** `appThemeModeProvider` (`AppThemeMode`) gehört in `MaterialApp` (`theme`, `darkTheme` = Dark oder OLED, `themeMode`); `reduceMotionProvider` gehört in `ReducedMotionScope`. Ohne diese Verdrahtung speichert der Schalter nur.
+- **Shell:** Das Theme und die reduzierte Bewegung gehören in `MaterialApp` (`theme`, `darkTheme` = Dark oder OLED, `themeMode`) und in `ReducedMotionScope`. Das ist verdrahtet: `_AppView` in `lib/app/app.dart` liest `appSettingsProvider` und wendet beide Werte an (`appThemeModeProvider` und `reduceMotionProvider` sind Lesehilfen im Settings-Feature). Die Reichweite des Schalters für reduzierte Bewegung beschreibt [shell.md](shell.md), Abschnitt 2.
 - **Haptik:** `appHapticsProvider.confirm()` ist der einzige Weg zu Vibration; Check-offs, Quick-Add und ähnliche Aktionen anderer Pakete rufen es nach dem Commit auf.
-- **Erinnerungen:** Die Einstellungen setzen `RemindersSection` zwischen „Darstellung“ und „Module“ ein, ohne eigene Überschrift. Das Widget soll die Überschrift „Erinnerungen“ selbst zeichnen.
+- **Erinnerungen:** Die Einstellungen setzen `RemindersSection` zwischen „Darstellung“ und „Module“ ein, ohne eigene Gruppenüberschrift; die Hauptzeile der Karte des Blocks heißt „Erinnerungen“ (Einzelheiten in [data-reminders.md](data-reminders.md)).
 - **Routen:** `/profile`, `/profile/edit`, `/goals`, `/settings`, `/settings/licenses` (hier gebaut) sowie `/settings/modules`, `/settings/data`, `/streak`, `/progress` (Ziele von Links).
 
 ## 8. Offene Punkte

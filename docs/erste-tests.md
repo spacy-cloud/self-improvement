@@ -7,7 +7,7 @@ Diese Anleitung ist für die ersten eigenen Tests auf einem Emulator oder einem 
 | Geprüft | Wie |
 |---|---|
 | Fachlogik, Datenbank, Oberflächen, Barrierefreiheit-Grundlagen | automatische Tests auf dem Entwicklungsrechner (siehe [test-report.md](test-report.md)) |
-| App baut als Debug-APK und startet auf einem Android-Emulator (API 34) | GitHub Actions, Jobs „Android debug APK“ und „Android emulator integration tests“ |
+| App baut als Debug-APK; auf einem Android-Emulator (API 34) laufen die Integrationstests (Start auf einer In-Memory-Datenbank, Tabs, Plus-Menü), der echte Produktionsstart nicht | GitHub Actions, Jobs „Android debug APK“ und „Android emulator integration tests“; was sie beweisen, steht in [test-report.md](test-report.md) |
 | Lasttest mit mehr als 10.000 synthetischen Einträgen | nur auf einem CI-Rechner, nicht auf einem Gerät |
 
 | Noch nicht geprüft | Folge für dich |

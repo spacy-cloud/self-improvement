@@ -11,22 +11,29 @@ Der App-Name steht noch nicht fest und wird im Code als eine Konstante geführt 
 | Bereich | Stand |
 |---|---|
 | Design | Freigegeben (V1, 02.10.2026) |
-| Umsetzung | In Arbeit: Android V1 im Jira-Epic [BS-51](https://spacy-cloud.atlassian.net/browse/BS-51); Fortschritt und Nachweise in [docs/requirements-matrix.md](docs/requirements-matrix.md) |
+| Umsetzung | Android V1 im Jira-Epic [BS-51](https://spacy-cloud.atlassian.net/browse/BS-51): Kern und alle fünf Module sind umgesetzt, der Integrationsbranch `feature/BS-51-android-v1` liegt als Entwurfs-PR gegen `main`. Stand der Anforderungen und Abnahmefälle mit Nachweisen und offenen Punkten: [docs/requirements-matrix.md](docs/requirements-matrix.md) |
+| Tests | 6160 Host-Tests lokal bestanden (Stand 2026-10-03, Code-Stand `c0ce096`), Analyse und Format ohne Befund; das CI-Ergebnis steht im Pull Request. Kein Test auf einem Gerät: Details und Grenzen in [docs/test-report.md](docs/test-report.md) |
+| Abnahme | Nicht abgenommen: Die Abnahme entscheidet das Team, kein Jira-Ticket ist auf „Erledigt“ |
 | iOS | Projektdateien vorbereitet, nicht gebaut und nicht getestet |
 
 ## Dokumentation
 
 - [Erste Tests](docs/erste-tests.md): App starten (Android Studio, Handy, CI-APK), Demo-Daten, Rundgang
-- [Design-Handoff](docs/design-handoff.md): Screens, Routen, Komponenten, Tokens, Barrierefreiheit
+- [Demo-Skript](docs/demo-script.md): 15-Minuten-Vorführung mit Vorbereitung, Ablauf, Fehlerplan und dem, was nicht behauptet wird
+- [Testbericht](docs/test-report.md): ausgeführte Prüfungen mit Befehlen und Ergebnissen, Lastzahlen, was die CI-Jobs beweisen, was nicht getestet ist
+- [Anforderungsmatrix](docs/requirements-matrix.md): Jira → Anforderung → Umsetzung → Test → Status, Abnahmefälle AT01 bis AT36, offene Punkte
+- [Architektur](docs/architecture.md): Schichten, Verzeichnisse, Datenmodell, Commands, Start der App
+- [Design-Handoff](docs/design-handoff.md): Screens, Routen, Komponenten, Tokens, Abweichungen vom Figma-Entwurf, Barrierefreiheit
+- [Screen-Dokumente](docs/screens/): je Bereich Screens, Verhalten, Abweichungen, Tests und offene Punkte
+- [Backup-Format](docs/backup-format.md): Aufbau und Prüfregeln der JSON-Sicherung
 - [Implementierungsentscheidungen](docs/implementation-decisions.md): exakte Versionen, Entscheidungen, Umgebung
-- [Anforderungsmatrix](docs/requirements-matrix.md): Jira → Anforderung → Umsetzung → Test → Status
 - [Bekannte Grenzen](docs/known-limitations.md)
 - Figma: [LF10-Desing-App](https://www.figma.com/design/K4IWQEjnzuNkRUzkq8JaKz/LF10-Desing-App)
 - Jira: [BS-Board](https://spacy-cloud.atlassian.net/jira/software/projects/BS/boards/34)
 
 ## Technik
 
-- Flutter / Dart, Zielplattform Android (iOS vorbereitet)
+- Flutter / Dart, Zielplattform Android ab API 26 (Android 8, `minSdk` 26; iOS vorbereitet)
 - `flutter_riverpod` (ohne Codegenerierung), Navigation mit `go_router`
 - Lokale Datenhaltung mit SQLite über `drift`, Diagramme mit `fl_chart`, lokale Erinnerungen mit `flutter_local_notifications`
 - JSON-Export/Import als Datei; keine Cloud, keine Konten, keine Telemetrie
@@ -51,9 +58,11 @@ flutter analyze
 flutter test                         # Unit-, Repository- und Widget-Tests (laufen auf dem Host)
 flutter test integration_test        # Integrationstests (benötigt Gerät oder Emulator)
 dart run tool/sync_app_name.dart     # native Anzeigenamen nach Änderung von AppConfig.appName angleichen
+dart run tool/at_coverage.dart       # welche Tests welchen Abnahmefall (AT01 bis AT36) benennen
+flutter test test/tool/demo_backup_test.dart   # erzeugt die Demo-Sicherung build/demo-backup/demo-daten-90-tage.json
 ```
 
-Die Continuous Integration (GitHub Actions, `.github/workflows/ci.yml`) führt Format-Check, Codegenerierung, Analyse, Tests, den Debug-APK-Build und die Integrationstests auf einem Android-Emulator aus.
+Die Continuous Integration (GitHub Actions, `.github/workflows/ci.yml`) führt Format-Check, Codegenerierung, Analyse und Tests aus, baut ein Debug-APK und ein Release-APK (mit Debug-Schlüssel signiert, nur für manuelle Leistungsproben) und führt die Integrationstests auf einem Android-Emulator aus. Sie veröffentlicht die Artefakte `debug-apk`, `release-apk`, `load-test-results` und `demo-backup`.
 
 APK-Dateien und Build-Ordner werden nicht eingecheckt. Eine Store-Veröffentlichung ist nicht Teil von V1.
 
