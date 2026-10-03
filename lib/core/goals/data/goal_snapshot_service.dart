@@ -3,6 +3,7 @@ import 'package:self_improvement/core/commands/id_generator.dart';
 import 'package:self_improvement/core/database/app_database.dart';
 import 'package:self_improvement/core/goals/data/goal_version_repository.dart';
 import 'package:self_improvement/core/goals/domain/day_snapshot.dart';
+import 'package:self_improvement/core/goals/domain/goal_keys.dart';
 import 'package:self_improvement/core/goals/domain/goal_version.dart';
 import 'package:self_improvement/core/modules/module_id.dart';
 import 'package:self_improvement/core/modules/module_status_repository.dart';
@@ -124,11 +125,15 @@ class GoalSnapshotService {
     }
   }
 
-  /// The stored snapshot of [day], or null.
+  /// The stored snapshot of [day], or null. Goals of habits that were deleted
+  /// are left out: deleting a habit removes it from the statistics, and an
+  /// undo (restoring the habit) brings its goal items back.
   Future<DaySnapshot?> snapshotFor(LocalDate day) async {
     final stored = await _storedBetween(day, day);
     final rows = stored[day];
-    return rows == null ? null : _toSnapshot(day, rows);
+    return rows == null
+        ? null
+        : _toSnapshot(day, rows, await _deletedHabitKeys());
   }
 
   /// Stored snapshots of `[from, to]` (days without one are absent).
@@ -137,9 +142,10 @@ class GoalSnapshotService {
     LocalDate to,
   ) async {
     final stored = await _storedBetween(from, to);
+    final deleted = await _deletedHabitKeys();
     return {
       for (final entry in stored.entries)
-        entry.key: _toSnapshot(entry.key, entry.value),
+        entry.key: _toSnapshot(entry.key, entry.value, deleted),
     };
   }
 
@@ -196,20 +202,32 @@ class GoalSnapshotService {
     return map;
   }
 
-  DaySnapshot _toSnapshot(LocalDate day, List<DailyGoalSnapshotRow> rows) =>
-      DaySnapshot(
-        date: day,
-        items: [
-          for (final row in rows)
-            if (ModuleId.tryParse(row.moduleId) case final module?)
-              GoalSnapshotItem(
-                goalKey: row.goalKey,
-                module: module,
-                target: row.targetInteger,
-                applicable: row.applicable,
-              ),
-        ],
-      );
+  /// Goal keys (`habit:<id>`) of soft-deleted habits.
+  Future<Set<String>> _deletedHabitKeys() async {
+    final deleted = await (_database.select(
+      _database.habits,
+    )..where((h) => h.deletedAtUtc.isNotNull())).get();
+    return {for (final habit in deleted) habitGoalKey(habit.id)};
+  }
+
+  DaySnapshot _toSnapshot(
+    LocalDate day,
+    List<DailyGoalSnapshotRow> rows, [
+    Set<String> excludedKeys = const {},
+  ]) => DaySnapshot(
+    date: day,
+    items: [
+      for (final row in rows)
+        if (!excludedKeys.contains(row.goalKey))
+          if (ModuleId.tryParse(row.moduleId) case final module?)
+            GoalSnapshotItem(
+              goalKey: row.goalKey,
+              module: module,
+              target: row.targetInteger,
+              applicable: row.applicable,
+            ),
+    ],
+  );
 
   List<DailyGoalSnapshotsCompanion> _companions(DaySnapshot snapshot) => [
     for (final item in snapshot.items) _companion(snapshot.date, item),

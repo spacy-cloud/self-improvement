@@ -593,6 +593,47 @@ void main() {
     );
   });
 
+  group('deleted habits', () {
+    test('a deleted habit disappears from past day statuses and comes back on undo', () async {
+      await db
+          .into(db.habits)
+          .insert(
+            HabitsCompanion.insert(
+              id: 'h1',
+              title: 'Lesen',
+              startedLocalDate: LocalDate(2026, 9, 1),
+              createdAtUtc: DateTime.utc(2026, 9, 1),
+              updatedAtUtc: DateTime.utc(2026, 9, 1),
+            ),
+          );
+      final repo = harness.dayStatusRepository();
+      final yesterday = LocalDate(2026, 10, 2);
+      final before = (await repo.statusFor(yesterday))!;
+      expect(before.goals.map((g) => g.goalKey), contains('habit:h1'));
+      expect(before.applicableCount, 6);
+
+      await (db.update(db.habits)..where((h) => h.id.equals('h1'))).write(
+        HabitsCompanion(deletedAtUtc: Value(DateTime.utc(2026, 10, 3, 9))),
+      );
+      final deleted = (await repo.statusFor(yesterday))!;
+      expect(deleted.goals.map((g) => g.goalKey), isNot(contains('habit:h1')));
+      expect(
+        deleted.applicableCount,
+        5,
+        reason: 'a deleted habit never existed for the statistics',
+      );
+
+      await (db.update(db.habits)..where((h) => h.id.equals('h1'))).write(
+        const HabitsCompanion(deletedAtUtc: Value(null)),
+      );
+      expect(
+        (await repo.statusFor(yesterday))!.applicableCount,
+        6,
+        reason: 'undo restores it',
+      );
+    });
+  });
+
   group('day status and streak from real data', () {
     test('no applicable goal means no ring and no active day', () async {
       final empty = await DataHarness.create(realProjection: true);
