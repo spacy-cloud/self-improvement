@@ -11,7 +11,7 @@ Dokumentiert tatsächlich ausgeführte Prüfungen mit Umgebung und Ergebnis. Nic
 | Toolchain | Flutter 3.47.6 (stable, Framework-Revision `5fc346839b`), Dart 3.13.5, DevTools 2.60.0 (Ausgabe von `flutter --version`; siehe [implementation-decisions.md](implementation-decisions.md)) |
 | Host | Linux x86_64 |
 | Host-Tests | `flutter test` mit echter In-Memory-SQLite-Datenbank (Drift), fester Uhr `FakeClock` (Zone Europa/Berlin, 2026-10-03), Fakes für Erinnerungs-Plattform, Teilen und Dateiauswahl, simulierter Textskala und Tastatur; nur synthetische Daten |
-| Lokales Android-Ziel | In der automatischen Entwicklungsumgebung keines (kein Android-SDK, kein Gerät, kein Emulator); der Projektinhaber startet die App lokal in Android Studio |
+| Lokales Android-Ziel | In der automatischen Entwicklungsumgebung keines (kein Android-SDK, kein Gerät, kein Emulator); der Projektinhaber startet die App lokal in Android Studio und hat sie auf einem Samsung S25 (Debug-Build) gestartet |
 | CI | GitHub Actions, siehe `.github/workflows/ci.yml` und Abschnitt 5 |
 
 ## 2. Gesamtlauf der Host-Tests
@@ -113,13 +113,13 @@ Definiert in `.github/workflows/ci.yml`; Ergebnis der Läufe: siehe Pull Request
 
 Das CI-Ergebnis des Emulator-Jobs steht im Pull Request. Die Abläufe löschen die App-Datenbank des Zielgeräts und starten deshalb nur mit der ausdrücklichen Bestätigung `--dart-define=WIPE_APP_DATA=yes` (die CI übergibt sie); sie gehören nicht auf ein Handy mit echten Daten.
 
-Zusätzlich lief die App am 2026-10-03 manuell auf einem Android-Emulator des Projektteams (Debug-Build aus Android Studio): Start mit dem Produktionspfad und Anzeige des Dashboards mit leeren Zuständen. Weitere manuelle Prüfungen (Rundgang in [erste-tests.md](erste-tests.md)) sind offen.
+Zusätzlich lief die App am 2026-10-03 manuell auf einem Android-Emulator des Projektteams (Debug-Build aus Android Studio): Start mit dem Produktionspfad und Anzeige des Dashboards mit leeren Zuständen. Am 2026-10-04 lief ein Debug-Build (arm64) auf einem Samsung S25 und zeigte die Willkommensseite des Onboardings; der erste Versuch mit einer älteren Installation war beim Start abgestürzt, die Ursache ist nicht untersucht (kein Log vorhanden). Weitere manuelle Prüfungen (Rundgang in [erste-tests.md](erste-tests.md)) sind offen.
 
 ## 6. Nicht getestet
 
 Nicht auf einem Gerät oder mit der echten Plattform geprüft (in der automatischen Entwicklungsumgebung gibt es kein Android-SDK; Emulator-Läufe stammen aus der CI und aus dem einen manuellen Lauf des Projektteams); die jeweils vorhandenen Stellvertreter stehen in der [Anforderungsmatrix](requirements-matrix.md), Abschnitt 6:
 
-- **Echtes Gerät:** Gefühl bei Start und Scrollen, Leistung, Speicher.
+- **Echtes Gerät:** Gefühl bei Start und Scrollen, Leistung, Speicher. Gesehen wurde nur der Start eines Debug-Builds auf einem Samsung S25 (2026-10-04, Willkommensseite des Onboardings).
 - **TalkBack** und die Lesereihenfolge; echte Systemschrift bis 200 % und echte Tastatur (im Host nur simuliert).
 - **Zustellung von Erinnerungen:** Systemdialog ab Android 13, endgültige Ablehnung, ungenau getaktete Alarme, Verhalten nach Force-Stop, Antippen einer echten Benachrichtigung.
 - **Teilen-Menü und Dateiauswahl** für Export und Import, einschließlich der Kopie der Auswahl im Cache und sehr großer Dateien.

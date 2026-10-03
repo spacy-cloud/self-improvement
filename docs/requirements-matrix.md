@@ -15,7 +15,7 @@ Letzter Stand: 2026-10-03, Code-Stand `873f9ff` (Integrationsbranch `feature/BS-
 |---|---|---|
 | Host-Test | `flutter test` auf einem Linux-Rechner: echte In-Memory-SQLite-Datenbank, feste Uhr (`FakeClock`, Zone Europa/Berlin), Fakes für Erinnerungs-Plattform, Teilen und Dateiauswahl, simulierte Textskala und Tastatur | Verhalten auf einem Gerät: Prozessende, Datei-Datenbank, Systemdialoge, echte Zustellung, TalkBack, echte Systemschrift, Leistung |
 | Emulator-CI | Job „Android emulator integration tests (API 34)“: `integration_test/app_smoke_test.dart` (Start auf In-Memory-Datenbank hinter dem Onboarding, vier Tabs, Plus-Menü öffnen und schließen) und `integration_test/app_flows_test.dart` (sieben Abläufe F1 bis F7 mit dem echten Produktionsstart: echte SQLite-Datei, echte Zeitzonenerkennung, echtes Benachrichtigungs-Plugin; siehe [integration-tests.md](integration-tests.md)) | Ein Emulator ist kein Gerät: Systemdialoge, Teilen-Menü, Dateiauswahl, TalkBack, echte Benachrichtigungszustellung, Leistung und der Release-Build laufen dort nicht; der Neustart ist der Abbau und Neuaufbau des Widget-Baums, nicht das Prozessende des Betriebssystems |
-| Gerät | Prüfung auf einem echten Android-Gerät | bisher **nicht durchgeführt** (kein Gerät, kein Android-SDK in der Entwicklungsumgebung) |
+| Gerät | Prüfung auf einem echten Android-Gerät | bisher **nur der Start gesehen**: Am 2026-10-04 lief ein Debug-Build auf einem Samsung S25 (arm64) und zeigte die Willkommensseite des Onboardings; sonst ist auf einem Gerät nichts geprüft (die Entwicklungsumgebung hat kein Gerät und kein Android-SDK) |
 
 Das Ergebnis der CI-Läufe steht im Pull Request, nicht in dieser Datei; die Ergebnisse der lokalen Läufe mit Befehlen stehen in [test-report.md](test-report.md).
 
@@ -175,7 +175,7 @@ Die Akzeptanzkriterien jedes Tickets stehen in der Jira-Beschreibung. Diese Date
 
 ## 6. Offene Punkte und nicht prüfbare Anforderungen
 
-Nicht geprüft, weil kein Gerät und kein Android-SDK zur Verfügung standen (die Grenze gilt für die Entwicklungsumgebung, nicht für das Team):
+Auf einem Gerät ist bisher nur der Start eines Debug-Builds gesehen worden (Samsung S25, 2026-10-04). Alles Weitere ist nicht geprüft, weil kein Gerät und kein Android-SDK zur Verfügung standen (die Grenze gilt für die Entwicklungsumgebung, nicht für das Team):
 
 - **TalkBack** und die Lesereihenfolge (AT34, Q02): nur Semantics-Stellvertreter im Host-Test.
 - **Echte Systemschrift und echte Tastatur** (AT33, Q02).
