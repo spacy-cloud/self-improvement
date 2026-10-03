@@ -40,6 +40,10 @@ Der App-Name steht noch nicht fest und wird im Code als eine Konstante geführt 
 - JSON-Export/Import als Datei; keine Cloud, keine Konten, keine Telemetrie
 - App-Symbol: grüner Verlauf mit weißem Pfeil nach oben wie das Zeichen im Onboarding, adaptiv ab Android 8 und mit einfarbiger Ebene ab Android 13; Quelle und Lizenz in [assets/branding/README.md](assets/branding/README.md). Die iOS-Symbole sind nicht angepasst.
 
+## Lizenz
+
+Der eigene Code und die Dokumentation stehen unter der [MIT-Lizenz](LICENSE) (Copyright Team IA24). Mitgelieferte Fremdinhalte behalten ihre Lizenzen: die Schrift Inter (SIL Open Font License 1.1, Text in `assets/fonts/OFL.txt`), der Pfeil des App-Symbols aus den Material Icons (CC BY 4.0, Quelle und Namensnennung in [assets/branding/README.md](assets/branding/README.md)) und die Abhängigkeiten laut `pubspec.lock` (die Lizenzseite der App listet sie).
+
 ## Entwicklungsumgebung einrichten
 
 Voraussetzungen: Flutter **3.47.6** (stable, Dart 3.13.5). Für Android-Builds zusätzlich Android SDK (API 36 oder die von Flutter geforderte Version) und JDK 17 oder 21.

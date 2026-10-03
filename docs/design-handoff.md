@@ -125,6 +125,7 @@ Weitere Tokens: Modulfarben (`color/module/*`), Abstände 4/8/12/16/24/32, Radie
 | Asset | Quelle | Lizenz | Hinweis |
 |---|---|---|---|
 | Inter | Google Fonts / rsms | SIL Open Font License 1.1 | Lokal eingebunden (`assets/fonts`), kein Laufzeit-Download; Lizenztext liegt bei den Fontdateien. |
+| App-Symbol (Launcher) | Zeichen des Onboardings; der Pfeil ist `Icons.trending_up_rounded` aus den Material Icons des Flutter SDK | CC BY 4.0 (Pfeil), Projekt (Verlauf und Anordnung) | `assets/branding/` (Referenzbild, Herleitung, Lizenztext); Namensnennung in `assets/branding/README.md` und im README. |
 | Icons | Eigene SVG-Pfade im Figma | Projekt | Gleichwertige Material Icons (Flutter `Icons`, keine Material Symbols) als Fallback; Zuordnung in Abschnitt 8.3. |
 | Illustrationen (Empty State, Fehler) | Eigene SVG | Projekt | – |
 | Diagramme, Ringe, Fortschritt | Datengetrieben | – | Im Code gerendert, keine Bilder. Keine temporären Figma-URLs zur Laufzeit. |
