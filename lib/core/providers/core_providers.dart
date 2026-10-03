@@ -3,6 +3,8 @@ import 'package:self_improvement/core/commands/command_runner.dart';
 import 'package:self_improvement/core/commands/id_generator.dart';
 import 'package:self_improvement/core/commands/projection_synchronizer.dart';
 import 'package:self_improvement/core/database/app_database.dart';
+import 'package:self_improvement/core/goals/data/goal_snapshot_service.dart';
+import 'package:self_improvement/core/goals/data/projection_synchronizer_impl.dart';
 import 'package:self_improvement/core/modules/module_id.dart';
 import 'package:self_improvement/core/modules/module_status_repository.dart';
 import 'package:self_improvement/core/profile/profile_repository.dart';
@@ -10,6 +12,7 @@ import 'package:self_improvement/core/profile/user_profile.dart';
 import 'package:self_improvement/core/settings/app_settings_repository.dart';
 import 'package:self_improvement/core/settings/app_settings_value.dart';
 import 'package:self_improvement/core/time/clock_service.dart';
+import 'package:self_improvement/features/gamification/data/xp_projector.dart';
 import 'package:self_improvement/shared/local_date.dart';
 
 /// The clock. Overridden at the app root (SystemClock) and in tests
@@ -35,10 +38,18 @@ final commandEventsProvider = Provider<CommandEvents>((ref) {
   return events;
 });
 
-/// Keeps goal snapshots and XP consistent inside command transactions. The
-/// default does nothing; the real implementation overrides it.
+/// Keeps goal snapshots and XP consistent inside command transactions. Tests
+/// may override it with a recording or no-op synchronizer.
 final projectionSynchronizerProvider = Provider<ProjectionSynchronizer>(
-  (ref) => const NoopProjectionSynchronizer(),
+  (ref) => ProjectionSynchronizerImpl(
+    database: ref.watch(appDatabaseProvider),
+    snapshots: GoalSnapshotService(
+      database: ref.watch(appDatabaseProvider),
+      clock: ref.watch(clockProvider),
+      ids: ref.watch(idGeneratorProvider),
+    ),
+    xp: XpProjector(ref.watch(appDatabaseProvider)),
+  ),
 );
 
 final moduleStatusRepositoryProvider = Provider<ModuleStatusRepository>(
