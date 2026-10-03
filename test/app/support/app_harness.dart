@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
@@ -73,11 +74,34 @@ class AppFixture {
     }
   }
 
-  /// Presses the system back button.
+  /// How often the app asked the system to close it.
+  int exitRequests = 0;
+
+  void _recordExitRequests() {
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'SystemNavigator.pop') {
+          exitRequests++;
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+  }
+
+  /// Presses the system back button. Returns `true` when the app handled it
+  /// and `false` when it let the system close the app.
   Future<bool> systemBack() async {
-    final handled = await tester.binding.handlePopRoute().then((_) => true);
+    final before = exitRequests;
+    await tester.binding.handlePopRoute();
     await settle();
-    return handled;
+    return exitRequests == before;
   }
 }
 
@@ -145,7 +169,7 @@ Future<AppFixture> pumpFullApp(
     harness: harness,
     platform: platform,
     backupFiles: backupFiles,
-  );
+  ).._recordExitRequests();
   if (waitForReady) {
     await tester.pumpUntil(
       () =>
