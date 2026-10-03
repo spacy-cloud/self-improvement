@@ -73,6 +73,7 @@ void main() {
         await start();
         await controller().setEnabled(ModuleId.nutrition, enabled: false);
         final restarted = harness.createContainer();
+        restarted.listen(moduleStatusesProvider, (_, _) {});
         final value = await restarted.read(moduleStatusesProvider.future);
         expect(value[ModuleId.nutrition], isFalse);
         expect(value[ModuleId.body], isTrue);

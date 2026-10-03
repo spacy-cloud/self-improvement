@@ -110,7 +110,7 @@ class ModuleToggleList extends ConsumerWidget {
             title: module.title,
             subtitle: (statuses[module.id] ?? true)
                 ? module.description
-                : 'Ausgeschaltet. Deine Daten bleiben erhalten.',
+                : 'Aus. Deine Daten bleiben erhalten.',
             icon: module.icon,
             accent: managerAccentFor(module.id),
             value: statuses[module.id] ?? true,

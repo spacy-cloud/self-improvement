@@ -150,13 +150,16 @@ Future<AppFixture> pumpFullApp(
   bool waitForReady = true,
   Future<void> Function(DataHarness harness)? seed,
   void Function(FakeReminderPlatform platform)? preparePlatform,
+  DataHarness? reuse,
 }) async {
-  final harness = await createTestHarness(
-    tester,
-    onboarded: onboarded,
-    enabledModules: enabledModules,
-    nowIso: nowIso,
-  );
+  final harness =
+      reuse ??
+      await createTestHarness(
+        tester,
+        onboarded: onboarded,
+        enabledModules: enabledModules,
+        nowIso: nowIso,
+      );
   if (seed != null) {
     await tester.runAsync(() => seed(harness));
   }

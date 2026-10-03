@@ -139,43 +139,55 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.tokens.colors;
+    final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final close = AppIconButton(
+      icon: AppIcon.close.data,
+      semanticLabel: 'Schließen',
+      filled: true,
+      onPressed: onClose,
+    );
+    final titles = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        ExcludeSemantics(
+          child: Text(
+            'DEIN TAG. DEIN FORTSCHRITT',
+            style: AppTextStyles.captionStrong.copyWith(
+              color: colors.primaryText,
+              letterSpacing: 0.66,
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Semantics(
+          header: true,
+          container: true,
+          child: Text(
+            'Was möchtest du eintragen?',
+            style: AppTextStyles.titleScreen.copyWith(
+              color: colors.textPrimary,
+            ),
+          ),
+        ),
+      ],
+    );
+    // Large text: the close button gets its own row so the title can use the
+    // full width instead of breaking inside words.
+    if (scale > AppSizes.stackTextScale) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Align(alignment: Alignment.centerRight, child: close),
+          titles,
+        ],
+      );
+    }
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              ExcludeSemantics(
-                child: Text(
-                  'DEIN TAG. DEIN FORTSCHRITT',
-                  style: AppTextStyles.captionStrong.copyWith(
-                    color: colors.primaryText,
-                    letterSpacing: 0.66,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Semantics(
-                header: true,
-                container: true,
-                child: Text(
-                  'Was möchtest du eintragen?',
-                  style: AppTextStyles.titleScreen.copyWith(
-                    color: colors.textPrimary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+        Expanded(child: titles),
         const SizedBox(width: AppSpacing.s8),
-        AppIconButton(
-          icon: AppIcon.close.data,
-          semanticLabel: 'Schließen',
-          filled: true,
-          onPressed: onClose,
-        ),
+        close,
       ],
     );
   }
@@ -195,7 +207,7 @@ class _PlusTile extends StatelessWidget {
       semanticLabel: entry.label,
       padding: const EdgeInsets.all(10),
       showShadow: false,
-      borderColor: colors.borderInput,
+      borderColor: colors.borderDecorative,
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 40),
         child: Row(
