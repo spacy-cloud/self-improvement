@@ -5,7 +5,7 @@ Zuordnung **Jira-Key → Anforderungen/Arbeitspaket → Screen/Route → Impleme
 **Statuswerte:** `offen` · `in Arbeit` · `umgesetzt` (Code und automatisierte Tests vorhanden und ausgeführt) · `Review` (umgesetzt, PR offen, Team-Abnahme ausstehend) · `nicht prüfbar` (mit Grund, z. B. kein Gerät) · `teilweise` (mit Angabe des offenen Teils).
 Ein gestarteter CI-Lauf gilt nicht als bestanden. Prüfungen mit Fakes oder Host-Tests sind von realen Geräteprüfungen getrennt ausgewiesen.
 
-Letzter Stand: 2026-10-03, Code-Stand `93ee81f` (Integrationsbranch `feature/BS-51-android-v1`, als Entwurfs-PR 2 gegen `main`; PR 1, der Bootstrap BS-52, ist bereits in `main` gemergt). Diese Datei wird mit jedem Meilenstein aktualisiert.
+Letzter Stand: 2026-10-03, Code-Stand `93ee81f` (Integrationsbranch `feature/BS-51-android-v1`, als PR 2 gegen `main`; PR 1, der Bootstrap BS-52, ist bereits in `main` gemergt). Diese Datei wird mit jedem Meilenstein aktualisiert.
 
 ## 0. Wie die Nachweise gelesen werden
 
@@ -25,7 +25,7 @@ Das Ergebnis der CI-Läufe steht im Pull Request, nicht in dieser Datei; die Erg
 
 ## 1. Jira-Umsetzungstickets (Epic [BS-51](https://spacy-cloud.atlassian.net/browse/BS-51))
 
-Testzahlen: Ergebnis von `flutter test <Verzeichnis>` am genannten Stand, alle grün. Teilen sich zwei Tickets ein Verzeichnis, ist die Zahl nach Dateipräfix aufgeteilt (Wasser und Mahlzeiten, Aufgaben und Gewohnheiten, Fokus und Workouts); gemeinsame Dateien stehen getrennt dabei. Die vollständige Zählung je Verzeichnis mit der Summe 6485 steht in [test-report.md](test-report.md). PR 2 ist der Entwurfs-PR des Integrationsbranches; Merge-Commits stehen, wo ein Ticket auf einem eigenen Branch entstand.
+Testzahlen: Ergebnis von `flutter test <Verzeichnis>` am genannten Stand, alle grün. Teilen sich zwei Tickets ein Verzeichnis, ist die Zahl nach Dateipräfix aufgeteilt (Wasser und Mahlzeiten, Aufgaben und Gewohnheiten, Fokus und Workouts); gemeinsame Dateien stehen getrennt dabei. Die vollständige Zählung je Verzeichnis mit der Summe 6485 steht in [test-report.md](test-report.md). PR 2 ist der Pull Request des Integrationsbranches; Merge-Commits stehen, wo ein Ticket auf einem eigenen Branch entstand.
 
 | Jira | AP | Prio | Arbeitspaket | Anforderungen | Abnahmetests | Screen / Route | Implementierung | Tests | PR / Commit | Jira-Status |
 |---|---|---|---|---|---|---|---|---|---|---|
