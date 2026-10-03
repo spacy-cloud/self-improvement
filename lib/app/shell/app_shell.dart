@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:self_improvement/app/shell/plus_sheet.dart';
@@ -70,12 +71,24 @@ class _AppShellState extends ConsumerState<AppShell> {
       child: Scaffold(
         backgroundColor: colors.background,
         body: shell,
-        bottomNavigationBar: AppBottomNavBar(
-          key: _navigationKey,
-          selectedIndex: shell.currentIndex,
-          onSelected: _select,
-          onPlusPressed: _openPlus,
-          plusOpen: _plusOpen,
+        // The system navigation bar takes the colour of the bar above it and
+        // its icons follow the theme (edge to edge, no contrast scrim).
+        bottomNavigationBar: AnnotatedRegion<SystemUiOverlayStyle>(
+          value: SystemUiOverlayStyle(
+            systemNavigationBarColor: colors.surface,
+            systemNavigationBarDividerColor: Colors.transparent,
+            systemNavigationBarIconBrightness: context.tokens.isDark
+                ? Brightness.light
+                : Brightness.dark,
+            systemNavigationBarContrastEnforced: false,
+          ),
+          child: AppBottomNavBar(
+            key: _navigationKey,
+            selectedIndex: shell.currentIndex,
+            onSelected: _select,
+            onPlusPressed: _openPlus,
+            plusOpen: _plusOpen,
+          ),
         ),
       ),
     );
