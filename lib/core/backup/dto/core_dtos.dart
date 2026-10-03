@@ -484,8 +484,11 @@ final class ReminderRuleDto {
     route: row.route,
   );
 
-  /// An in-app route: starts with `/`, only URL path characters, no scheme.
-  static final RegExp _routePattern = RegExp(r'^/[A-Za-z0-9_\-./?=&%:~+@]*$');
+  /// An in-app route: starts with a single `/`, only URL path characters, no
+  /// scheme and no host (`//host`).
+  static final RegExp _routePattern = RegExp(
+    r'^/(?!/)[A-Za-z0-9_\-./?=&%:~+@]*$',
+  );
 
   static ReminderRuleDto read(FieldReader r) {
     final dto = ReminderRuleDto(

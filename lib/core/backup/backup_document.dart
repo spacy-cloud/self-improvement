@@ -169,6 +169,10 @@ final class BackupDraft {
   /// checks, so that a broken habit does not cause bogus foreign key errors.
   final Set<String> habitIdsInFile = {};
 
+  /// Whether the `habits` section was present as a list. Without it the
+  /// foreign keys of the habit checks cannot be judged.
+  bool habitsSectionRead = false;
+
   /// The document, or `null` if anything is missing or invalid.
   BackupDocument? toDocument() {
     final exportedAt = exportedAtUtc;
@@ -425,7 +429,7 @@ final class BackupParser {
       draft.workoutEntries,
     );
     _readList(data, BackupTable.tasks, TaskDto.read, draft.tasks);
-    _readList(
+    draft.habitsSectionRead = _readList(
       data,
       BackupTable.habits,
       HabitDto.read,
@@ -469,7 +473,8 @@ final class BackupParser {
     return readObject(FieldReader.record(table, 0, value, _problems), read);
   }
 
-  void _readList<T extends Object>(
+  /// Reads a list section into [into]; returns whether the section was a list.
+  bool _readList<T extends Object>(
     Map<String, Object?> data,
     BackupTable table,
     T Function(FieldReader reader) read,
@@ -478,18 +483,18 @@ final class BackupParser {
   }) {
     if (!data.containsKey(table.key)) {
       _problems.add(ImportProblem.table(table, 'Pflichtabschnitt fehlt'));
-      return;
+      return false;
     }
     final value = data[table.key];
     if (value is! List<Object?>) {
       _problems.add(
         ImportProblem.table(table, 'Abschnitt muss eine Liste sein'),
       );
-      return;
+      return false;
     }
     for (var index = 0; index < value.length; index++) {
       if (_problems.isFull) {
-        return;
+        return true;
       }
       final element = value[index];
       if (element is! Map<String, Object?>) {
@@ -502,5 +507,6 @@ final class BackupParser {
         readObject(FieldReader.record(table, index, element, _problems), read),
       );
     }
+    return true;
   }
 }
