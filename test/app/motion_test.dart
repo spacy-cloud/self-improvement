@@ -182,6 +182,40 @@ void main() {
       );
     });
 
+    testWidgets('applies to the way back of an open page, both ways', (
+      tester,
+    ) async {
+      final app = await pumpFullApp(tester, animations: true);
+
+      // Opened with motion, then reduced while open: the way back is immediate.
+      unawaited(app.router.push<void>('/settings'));
+      await tester.pumpAndSettle();
+      await _reduceMotion(app);
+      await app.settle();
+      app.router.pop();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(find.byType(SettingsScreen), findsNothing);
+
+      // Opened without motion, then allowed while open: the way back moves.
+      unawaited(app.router.push<void>('/settings'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(find.byType(SettingsScreen), findsOneWidget);
+      await _setReduceMotion(app, false);
+      await app.settle();
+      app.router.pop();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 20));
+      expect(
+        find.byType(SettingsScreen),
+        findsOneWidget,
+        reason: 'the page is still on its way out',
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(SettingsScreen), findsNothing);
+    });
+
     testWidgets('keeps a sheet that is open above a page', (tester) async {
       final app = await pumpFullApp(tester, animations: true);
       unawaited(app.router.push<void>('/settings'));
