@@ -2,6 +2,8 @@
 library;
 
 import 'package:flutter/foundation.dart';
+import 'package:self_improvement/core/goals/domain/goal_type.dart';
+import 'package:self_improvement/core/goals/domain/goal_version.dart';
 import 'package:self_improvement/core/time/clock_service.dart';
 import 'package:self_improvement/features/focus/domain/focus_category.dart';
 import 'package:self_improvement/features/focus/domain/focus_formatting.dart';
@@ -189,6 +191,14 @@ final class FocusTodaySummary {
     final missing = goal * 60 - completedSeconds;
     return missing <= 0 ? 0 : (missing + 59) ~/ 60;
   }
+}
+
+/// The daily focus goal in minutes that applies on [day] (the goal version in
+/// effect, or the default of 25 minutes), or null when the goal is switched
+/// off.
+int? focusGoalMinutesOn(Iterable<GoalVersion> versions, LocalDate day) {
+  final goal = effectiveGoalOrDefault(versions, GoalType.focusMinutes, day);
+  return goal.enabled ? GoalType.focusMinutes.resolveTarget(goal.target) : null;
 }
 
 /// Today's summary from [sessions] (any statuses and days): only COMPLETED
