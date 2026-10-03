@@ -15,6 +15,12 @@ const int maxWaterEntryMl = 2000;
 /// The amounts of the one-tap quick add buttons, in the order they are shown.
 const List<int> waterQuickAmountsMl = [250, 500];
 
+/// Step of the plus/minus buttons of the custom amount in ml.
+const int waterAmountStepMl = 10;
+
+/// Value the custom amount buttons start from when nothing valid is typed.
+const int waterAmountStartMl = 250;
+
 /// Smallest daily water target in ml (from the goal definition).
 int get minWaterGoalMl => GoalType.water.minTarget;
 
@@ -83,6 +89,25 @@ WaterMlParseResult parseWaterMl(String input) {
     return const WaterMlInvalid(WaterMlError.aboveMaximum);
   }
   return WaterMlParsed(ml);
+}
+
+/// Applies a plus/minus step to the typed amount: [direction] times
+/// [waterAmountStepMl] from the typed whole number, clamped to 50 to 2000 ml.
+/// When the text is not a whole number (empty, letters), the result is
+/// [startMl] itself, so the first press shows a sensible starting amount.
+int stepWaterMl({
+  required String currentText,
+  required int direction,
+  int startMl = waterAmountStartMl,
+}) {
+  final typed = parseDigits(currentText.trim());
+  if (typed == null) {
+    return startMl;
+  }
+  return (typed + direction * waterAmountStepMl).clamp(
+    minWaterEntryMl,
+    maxWaterEntryMl,
+  );
 }
 
 /// German hint for [parseWaterMl] and the repository range check.
