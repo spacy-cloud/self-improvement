@@ -5,9 +5,6 @@ import 'package:self_improvement/features/nutrition/domain/meal_entry.dart';
 import 'package:self_improvement/features/nutrition/domain/meal_summary.dart';
 import 'package:self_improvement/shared/local_date.dart';
 
-/// Default length of the meal history window in local days (including today).
-const int defaultMealHistoryDays = 14;
-
 final mealRepositoryProvider = Provider<MealRepository>(
   (ref) => MealRepository(
     database: ref.watch(appDatabaseProvider),

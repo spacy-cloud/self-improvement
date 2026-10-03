@@ -2,6 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:self_improvement/features/nutrition/domain/meal_entry.dart';
 import 'package:self_improvement/shared/local_date.dart';
 
+/// Default length of the meal history window in local days (including today).
+const int defaultMealHistoryDays = 14;
+
 /// How complete the calorie information of a set of meals is.
 enum KcalCompleteness {
   /// No meals: nothing to say about calories.

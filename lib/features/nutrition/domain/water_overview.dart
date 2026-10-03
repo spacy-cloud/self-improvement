@@ -142,7 +142,8 @@ WaterToday buildWaterToday({
 }) {
   final sorted = [...entries]..sort(compareWaterNewestFirst);
   final total = sumWaterMl(sorted);
-  if (targetMl == null) {
+  // A target is always positive; anything else cannot be a goal.
+  if (targetMl == null || targetMl <= 0) {
     return WaterToday(
       date: date,
       totalMl: total,
@@ -266,7 +267,7 @@ WaterHistoryDay _historyDay(
     date: date,
     totalMl: total,
     targetMl: targetMl,
-    goalReached: targetMl != null && total >= targetMl,
+    goalReached: targetMl != null && targetMl > 0 && total >= targetMl,
     entriesNewestFirst: List.unmodifiable(sorted),
   );
 }
