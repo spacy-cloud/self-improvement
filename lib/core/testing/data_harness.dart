@@ -1,3 +1,5 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:self_improvement/core/bootstrap/app_bootstrap.dart';
 import 'package:self_improvement/core/commands/command_runner.dart';
 import 'package:self_improvement/core/commands/id_generator.dart';
@@ -5,6 +7,7 @@ import 'package:self_improvement/core/commands/projection_synchronizer.dart';
 import 'package:self_improvement/core/database/app_database.dart';
 import 'package:self_improvement/core/modules/module_id.dart';
 import 'package:self_improvement/core/modules/module_status_repository.dart';
+import 'package:self_improvement/core/providers/core_providers.dart';
 import 'package:self_improvement/core/testing/test_database.dart';
 import 'package:self_improvement/core/time/clock_service.dart';
 import 'package:self_improvement/core/time/fake_clock.dart';
@@ -25,6 +28,7 @@ class DataHarness {
     required this.events,
     required this.runner,
     required this.moduleStatus,
+    required this.projections,
   });
 
   final AppDatabase database;
@@ -33,6 +37,7 @@ class DataHarness {
   final CommandEvents events;
   final CommandRunner runner;
   final ModuleStatusRepository moduleStatus;
+  final ProjectionSynchronizer projections;
 
   /// Creates the harness with the database bootstrapped (profile + settings
   /// singletons exist, onboarding not completed).
@@ -66,10 +71,35 @@ class DataHarness {
       events: events,
       runner: runner,
       moduleStatus: moduleStatus,
+      projections: projections,
     );
   }
 
+  /// A [ProviderContainer] wired to this harness (database, clock, ids,
+  /// projection, events). Provider retry is disabled. Disposed with the
+  /// harness.
+  ProviderContainer createContainer({List<Override> overrides = const []}) {
+    final container = ProviderContainer(
+      retry: (retryCount, error) => null,
+      overrides: [
+        appDatabaseProvider.overrideWithValue(database),
+        clockProvider.overrideWithValue(clock),
+        idGeneratorProvider.overrideWithValue(ids),
+        commandEventsProvider.overrideWithValue(events),
+        projectionSynchronizerProvider.overrideWithValue(projections),
+        ...overrides,
+      ],
+    );
+    _containers.add(container);
+    return container;
+  }
+
+  final List<ProviderContainer> _containers = [];
+
   Future<void> dispose() async {
+    for (final container in _containers) {
+      container.dispose();
+    }
     await events.dispose();
     await database.close();
   }
