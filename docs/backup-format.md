@@ -41,7 +41,7 @@ Gewichte sind ganze Gramm in 100-g-Schritten, Wassermengen ganze Milliliter. Die
 
 ## Abschnitte von `data`
 
-Alle 16 Schlüssel müssen vorhanden sein. `profile` und `app_settings` sind einzelne Objekte (Singletons), alle anderen Arrays (auch leer). Die Spalte „null“ zeigt, ob `null` erlaubt ist. Alle Instanten sind UTC-Zeitpunkte, alle Zeiten `HH:mm`.
+Alle 16 Schlüssel müssen vorhanden sein. `profile` und `app_settings` sind einzelne Objekte (Singletons), alle anderen Arrays (auch leer). Die Spalte „null“ zeigt, ob `null` erlaubt ist. Alle Zeitpunkte sind UTC, alle Uhrzeiten `HH:mm`.
 
 Es werden nur **aktive** Fachdatensätze exportiert. Weich gelöschte Zeilen (`deleted_at_utc`) sind nicht Teil des Formats; das Feld `deleted_at_utc` ist unbekannt und wird abgelehnt.
 
