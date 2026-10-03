@@ -155,6 +155,53 @@ void main() {
       );
     });
 
+    test(
+      'at start the picker copies left in the cache go: UUID folders that hold '
+      'only JSON files, nothing else',
+      () async {
+        final sep = Platform.pathSeparator;
+        void put(String relative, [String content = '{}']) {
+          final file = File('${cache.path}$sep$relative')
+            ..createSync(recursive: true);
+          file.writeAsStringSync(content);
+        }
+
+        const copy = '123e4567-e89b-42d3-a456-426614174000';
+        const mixed = '223e4567-e89b-42d3-a456-426614174000';
+        const foreign = '323e4567-e89b-42d3-a456-426614174000';
+        put('$copy${sep}meine-sicherung.json');
+        put('$mixed${sep}a.json');
+        put('$mixed${sep}notes.txt', 'keep');
+        put('$foreign${sep}image.png', 'keep');
+        put('notes${sep}b.json');
+        put('loose.json');
+
+        // Without the flag nothing of the picker is touched.
+        await gateway().deleteTemporaryExports();
+        expect(Directory('${cache.path}$sep$copy').existsSync(), isTrue);
+
+        await gateway().deleteTemporaryExports(
+          includePlatformShareCopies: true,
+        );
+
+        expect(Directory('${cache.path}$sep$copy').existsSync(), isFalse);
+        expect(
+          File('${cache.path}$sep$mixed${sep}a.json').existsSync(),
+          isTrue,
+          reason: 'a folder with other content is not a picker copy',
+        );
+        expect(
+          File('${cache.path}$sep$foreign${sep}image.png').existsSync(),
+          isTrue,
+        );
+        expect(
+          File('${cache.path}${sep}notes${sep}b.json').existsSync(),
+          isTrue,
+        );
+        expect(File('${cache.path}${sep}loose.json').existsSync(), isTrue);
+      },
+    );
+
     test('deleting is idempotent when there is nothing to delete', () async {
       final g = gateway();
       await g.deleteTemporaryExports();
@@ -233,6 +280,7 @@ void main() {
 
     test('returns the bytes and the name of the chosen file', () async {
       final picker = FileSelectorBackupFilePicker(
+        cacheDirectory: () async => cache,
         openFile: (groups) async => file(bytesOf('{"a":1}')),
       );
       final picked = await picker.pickBackupFile();
@@ -240,8 +288,92 @@ void main() {
       expect(picked.bytes, bytesOf('{"a":1}'));
     });
 
+    group('the picker copy of the chosen document', () {
+      const copyFolder = '123e4567-e89b-42d3-a456-426614174000';
+
+      File writeFile(Directory directory, String relative, String content) {
+        final file = File('${directory.path}${Platform.pathSeparator}$relative')
+          ..createSync(recursive: true);
+        file.writeAsStringSync(content);
+        return file;
+      }
+
+      FileSelectorBackupFilePicker pickerFor(File file) =>
+          FileSelectorBackupFilePicker(
+            openFile: (groups) async => XFile(file.path),
+            cacheDirectory: () async => cache,
+          );
+
+      test(
+        'is removed from the cache as soon as the bytes were read (the backup '
+        'must not stay behind unencrypted)',
+        () async {
+          final copy = writeFile(
+            cache,
+            '$copyFolder${Platform.pathSeparator}meine-sicherung.json',
+            '{"a":1}',
+          );
+          final picked = await pickerFor(copy).pickBackupFile();
+          expect(picked!.bytes, bytesOf('{"a":1}'));
+          expect(copy.existsSync(), isFalse);
+          expect(copy.parent.existsSync(), isFalse);
+        },
+      );
+
+      test(
+        'is removed after an oversized file was read up to the limit',
+        () async {
+          final copy = writeFile(
+            cache,
+            '$copyFolder${Platform.pathSeparator}gross.json',
+            '0123456789',
+          );
+          final picked = await pickerFor(copy).pickBackupFile(maxBytes: 4);
+          expect(picked!.bytes, hasLength(5));
+          expect(copy.parent.existsSync(), isFalse);
+        },
+      );
+
+      test(
+        'a file outside the cache is never touched (desktop platforms return '
+        'the user\'s own file)',
+        () async {
+          final other = await Directory.systemTemp.createTemp('picked_other');
+          addTearDown(() async {
+            if (await other.exists()) {
+              await other.delete(recursive: true);
+            }
+          });
+          final own = writeFile(
+            other,
+            '$copyFolder${Platform.pathSeparator}meine-sicherung.json',
+            '{}',
+          );
+          await pickerFor(own).pickBackupFile();
+          expect(own.existsSync(), isTrue);
+        },
+      );
+
+      test(
+        'a file in the cache that is not in a copy folder is never touched',
+        () async {
+          final loose = writeFile(cache, 'loose.json', '{}');
+          final named = writeFile(
+            cache,
+            'notes${Platform.pathSeparator}b.json',
+            '{}',
+          );
+          await pickerFor(loose).pickBackupFile();
+          await pickerFor(named).pickBackupFile();
+          expect(loose.existsSync(), isTrue);
+          expect(named.existsSync(), isTrue);
+        },
+      );
+    });
+
     test('returns null when the user cancels', () async {
       final picker = FileSelectorBackupFilePicker(
+        cacheDirectory: () async => cache,
         openFile: (groups) async => null,
       );
       expect(await picker.pickBackupFile(), isNull);
@@ -252,6 +384,7 @@ void main() {
       () async {
         List<XTypeGroup>? offered;
         final picker = FileSelectorBackupFilePicker(
+          cacheDirectory: () async => cache,
           openFile: (groups) async {
             offered = groups;
             return null;
@@ -268,6 +401,7 @@ void main() {
     test('a file at the limit is read completely', () async {
       final content = Uint8List.fromList(List.generate(100, (i) => i));
       final picker = FileSelectorBackupFilePicker(
+        cacheDirectory: () async => cache,
         openFile: (groups) async => file(content),
       );
       final picked = await picker.pickBackupFile(maxBytes: 100);
@@ -279,6 +413,7 @@ void main() {
       () async {
         final content = Uint8List.fromList(List.generate(1000, (i) => i % 251));
         final picker = FileSelectorBackupFilePicker(
+          cacheDirectory: () async => cache,
           openFile: (groups) async => file(content),
         );
         final picked = await picker.pickBackupFile(maxBytes: 100);
@@ -292,6 +427,7 @@ void main() {
       () async {
         final huge = Uint8List(BackupFormat.maxFileBytes + 5000);
         final picker = FileSelectorBackupFilePicker(
+          cacheDirectory: () async => cache,
           openFile: (groups) async => file(huge),
         );
         final picked = await picker.pickBackupFile();

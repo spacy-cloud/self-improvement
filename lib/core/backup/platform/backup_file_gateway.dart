@@ -34,11 +34,13 @@ abstract interface class BackupFileGateway {
 
   /// Deletes the temporary export files. Idempotent.
   ///
-  /// With [includePlatformShareCopies] it also removes copies the platform's
-  /// share mechanism made of earlier exports (Android's share plugin keeps
-  /// one in its own cache folder). Pass `true` only when no share is in
-  /// progress (app start, reset): a receiving app may still be reading such a
-  /// copy right after the sheet closed.
+  /// With [includePlatformShareCopies] it also removes copies the platform
+  /// made: of earlier exports (Android's share plugin keeps one in its own
+  /// cache folder) and of imported files (the file picker's copy in a UUID
+  /// folder of the cache, left behind only if the process ended before the
+  /// picker adapter removed it). Pass `true` only when no share is in progress
+  /// (app start, reset): a receiving app may still be reading such a copy
+  /// right after the sheet closed.
   Future<void> deleteTemporaryExports({
     bool includePlatformShareCopies = false,
   });
