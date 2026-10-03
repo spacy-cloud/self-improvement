@@ -734,6 +734,42 @@ void main() {
       }
     });
 
+    test('goals that applied without anything recorded are no data', () {
+      // a fresh start: the goals exist, nothing is done yet
+      final fresh = report(
+        days: [
+          for (var i = 0; i < 14; i++)
+            AnalysisDay(
+              date: d2026(9, 20).addDays(i),
+              applicableGoals: 5,
+              fulfilledGoals: 0,
+            ),
+        ],
+      );
+      expect(fresh.cardFor(AnalysisMetric.dailyGoals)!.hasData, isTrue);
+      expect(
+        fresh.cardFor(AnalysisMetric.dailyGoals)!.primary.currentText,
+        '0$nb%',
+        reason: 'a true 0: the goals applied and none was complete',
+      );
+      expect(fresh.hasAnyData, isFalse, reason: 'nothing was recorded');
+      final started = report(
+        days: [
+          for (var i = 0; i < 14; i++)
+            AnalysisDay(
+              date: d2026(9, 20).addDays(i),
+              applicableGoals: 5,
+              fulfilledGoals: i == 13 ? 1 : 0,
+            ),
+        ],
+      );
+      expect(
+        started.hasAnyData,
+        isTrue,
+        reason: 'one goal was fulfilled today',
+      );
+    });
+
     test('the average is null, not 0, without recorded days', () {
       expect(empty.current.steps.average, isNull);
       expect(empty.current.water.average, isNull);

@@ -150,5 +150,11 @@ final class AnalysisDay {
   );
 
   @override
-  String toString() => 'AnalysisDay($date)';
+  String toString() =>
+      'AnalysisDay($date, steps: $stepsRecorded, water: $waterMl/$waterEntries, '
+      'weight: $weightGrams, workouts: $workoutEntries/$workoutMinutes, '
+      'focus: $focusCompletedSessions/$focusCompletedSeconds, '
+      'tasks: $tasksCompleted, meals: $mealEntries/$mealsWithKcal/$knownKcal, '
+      'goals: $fulfilledGoals/$applicableGoals, '
+      'habits: $fulfilledHabits/$applicableHabits)';
 }

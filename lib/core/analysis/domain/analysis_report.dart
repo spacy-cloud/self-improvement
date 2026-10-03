@@ -95,10 +95,19 @@ final class AnalysisReport {
   /// Whether no module is active at all.
   bool get noModuleActive => activeModules.isEmpty;
 
-  /// Whether any card of the current period has data. `false` means the
+  /// Whether anything was recorded in the current period. `false` means the
   /// screen shows its honest empty state ("Noch keine Daten").
+  ///
+  /// The daily goals card alone does not count: goals that applied while
+  /// nothing was recorded (a fresh start) are no data. It counts as soon as
+  /// one goal was fulfilled on a day of the period.
   bool get hasAnyData =>
-      cards.any((card) => card.hasData) || (workoutWeek?.hasData ?? false);
+      cards.any(
+        (card) => card.metric == AnalysisMetric.dailyGoals
+            ? current.goals.activeDays > 0
+            : card.hasData,
+      ) ||
+      (workoutWeek?.hasData ?? false);
 
   /// The card of [metric], or `null` when it is not part of the report (the
   /// module is off).
