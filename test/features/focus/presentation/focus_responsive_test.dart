@@ -257,109 +257,115 @@ void main() {
     }
   }
 
-  testSemantics('tap targets and labels hold at 320 px and text scale 2.0 '
-      '(AT33, AT34)', (tester) async {
-    final ui = await createFocusUi(tester);
-    final done = await tester.completeFocus(ui, seconds: 600);
-    await tester.addWorkout(ui, title: 'Upper Body', minutes: 60);
-    const size = Size(320, 640);
-    for (final location in [
-      '/focus',
-      '/focus/history',
-      '/focus/history/$done',
-      '/workouts',
-      '/workouts/all',
-      '/workouts/new',
-    ]) {
+  testWidgets(
+    'tap targets and labels hold at 320 px and text scale 2.0 (AT33, AT34)',
+    (tester) => withSemantics(tester, () async {
+      final ui = await createFocusUi(tester);
+      final done = await tester.completeFocus(ui, seconds: 600);
+      await tester.addWorkout(ui, title: 'Upper Body', minutes: 60);
+      const size = Size(320, 640);
+      for (final location in [
+        '/focus',
+        '/focus/history',
+        '/focus/history/$done',
+        '/workouts',
+        '/workouts/all',
+        '/workouts/new',
+      ]) {
+        await pumpFocusApp(
+          tester,
+          ui,
+          initialLocation: location,
+          size: size,
+          textScale: 2.0,
+        );
+        await expectLater(
+          tester,
+          meetsGuideline(androidTapTargetGuideline),
+          reason: location,
+        );
+        await expectLater(
+          tester,
+          meetsGuideline(labeledTapTargetGuideline),
+          reason: location,
+        );
+      }
+      await tester.startFocus(ui);
       await pumpFocusApp(
         tester,
         ui,
-        initialLocation: location,
+        initialLocation: '/focus/session',
         size: size,
         textScale: 2.0,
       );
-      await expectLater(
-        tester,
-        meetsGuideline(androidTapTargetGuideline),
-        reason: location,
-      );
-      await expectLater(
-        tester,
-        meetsGuideline(labeledTapTargetGuideline),
-        reason: location,
-      );
-    }
-    await tester.startFocus(ui);
-    await pumpFocusApp(
-      tester,
-      ui,
-      initialLocation: '/focus/session',
-      size: size,
-      textScale: 2.0,
-    );
-    await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
-    await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
-  });
+      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+    }),
+  );
 
   group('with the keyboard open', () {
     for (final size in [responsiveSizes.first, responsiveSizes[2]]) {
-      testWidgets('the workout save button stays above the keyboard at '
-          '${size.width.toInt()} px (AT33)', (tester) async {
+      testWidgets(
+        'the workout save button stays above the keyboard at ${size.width.toInt()} px (AT33)',
+        (tester) async {
+          final ui = await createFocusUi(tester);
+          const keyboard = 300.0;
+          await pumpFocusApp(
+            tester,
+            ui,
+            initialLocation: '/workouts/new',
+            size: size,
+            textScale: 2.0,
+            viewInsets: const EdgeInsets.only(bottom: keyboard),
+          );
+          final duration = find.byType(TextField).at(1);
+          await tester.ensureVisible(duration);
+          await tester.tap(duration);
+          await tester.pump();
+          final save = find.text('Training speichern');
+          expect(tester.takeException(), isNull);
+          await tester.ensureVisible(save);
+          await tester.pump();
+          final rect = tester.getRect(save);
+          expect(
+            rect.bottom,
+            lessThanOrEqualTo(size.height - keyboard),
+            reason: 'the save button is not covered by the keyboard',
+          );
+          expect(rect.top, greaterThanOrEqualTo(0));
+          await tester.tap(save); // reachable: the tap lands on it
+          await tester.pump();
+          expect(
+            find.text('Bitte wähle eine Trainingskategorie.'),
+            findsOneWidget,
+          );
+        },
+      );
+    }
+
+    testWidgets(
+      'the note field of the session is reachable above the keyboard (AT33)',
+      (tester) async {
         final ui = await createFocusUi(tester);
+        final id = await tester.completeFocus(ui, seconds: 600);
+        const size = Size(320, 640);
         const keyboard = 300.0;
         await pumpFocusApp(
           tester,
           ui,
-          initialLocation: '/workouts/new',
+          initialLocation: '/focus/history/$id',
           size: size,
           textScale: 2.0,
           viewInsets: const EdgeInsets.only(bottom: keyboard),
         );
-        final duration = find.byType(TextField).at(1);
-        await tester.ensureVisible(duration);
-        await tester.tap(duration);
+        await tester.enterText(find.byType(TextField), 'Notiz');
         await tester.pump();
-        final save = find.text('Training speichern');
         expect(tester.takeException(), isNull);
-        await tester.ensureVisible(save);
+        await tester.ensureVisible(find.text('Änderungen speichern'));
         await tester.pump();
-        final rect = tester.getRect(save);
-        expect(
-          rect.bottom,
-          lessThanOrEqualTo(size.height - keyboard),
-          reason: 'the save button is not covered by the keyboard',
-        );
-        expect(rect.top, greaterThanOrEqualTo(0));
-        await tester.tap(save); // reachable: the tap lands on it
-        await tester.pump();
-        expect(
-          find.text('Bitte wähle eine Trainingskategorie.'),
-          findsOneWidget,
-        );
-      });
-    }
-
-    testWidgets('the note field of the session is reachable above the '
-        'keyboard (AT33)', (tester) async {
-      final ui = await createFocusUi(tester);
-      final id = await tester.completeFocus(ui, seconds: 600);
-      const size = Size(320, 640);
-      const keyboard = 300.0;
-      await pumpFocusApp(
-        tester,
-        ui,
-        initialLocation: '/focus/history/$id',
-        size: size,
-        textScale: 2.0,
-        viewInsets: const EdgeInsets.only(bottom: keyboard),
-      );
-      await tester.enterText(find.byType(TextField), 'Notiz');
-      await tester.pump();
-      expect(tester.takeException(), isNull);
-      await tester.ensureVisible(find.text('Änderungen speichern'));
-      await tester.pump();
-      final rect = tester.getRect(find.text('Änderungen speichern'));
-      expect(rect.bottom, lessThanOrEqualTo(size.height - keyboard));
-    });
+        final rect = tester.getRect(find.text('Änderungen speichern'));
+        expect(rect.bottom, lessThanOrEqualTo(size.height - keyboard));
+      },
+    );
   });
 }

@@ -220,9 +220,7 @@ void main() {
     });
 
     testWidgets(
-      'the manager refuses too, nothing is deleted silently; the session is '
-      'resolved on the focus screen, then the module can be switched off '
-      '(AT19)',
+      'the manager refuses too, nothing is deleted silently; the session is resolved on the focus screen, then the module can be switched off (AT19)',
       (tester) async {
         final ui = await createFocusUi(tester);
         await tester.startFocus(ui);

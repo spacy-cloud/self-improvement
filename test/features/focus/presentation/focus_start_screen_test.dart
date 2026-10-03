@@ -135,37 +135,38 @@ void main() {
       expect((await tester.focusRows(ui)).single.plannedSeconds, 10800);
     });
 
-    testSemantics('the buttons at the limits are disabled and spoken', (
-      tester,
-    ) async {
-      final ui = await createFocusUi(tester);
-      await pumpFocusApp(tester, ui);
-      SemanticsNode node(String label) =>
-          tester.getSemantics(find.bySemanticsLabel(label));
-      expect(
-        node('Dauer um 5 Minuten verringern')
-            .getSemanticsData()
-            .flagsCollection
-            .isEnabled,
-        Tristate.isTrue,
-      );
-      ui.container.read(focusSetupProvider.notifier).setPlannedMinutes(5);
-      await tester.pump();
-      final down = node('Dauer um 5 Minuten verringern').getSemanticsData();
-      expect(
-        down.flagsCollection.isEnabled,
-        Tristate.isFalse,
-        reason: 'at 5 minutes',
-      );
-      ui.container.read(focusSetupProvider.notifier).setPlannedMinutes(180);
-      await tester.pump();
-      final up = node('Dauer um 5 Minuten erhöhen').getSemanticsData();
-      expect(
-        up.flagsCollection.isEnabled,
-        Tristate.isFalse,
-        reason: 'at 180 minutes',
-      );
-    });
+    testWidgets(
+      'the buttons at the limits are disabled and spoken',
+      (tester) => withSemantics(tester, () async {
+        final ui = await createFocusUi(tester);
+        await pumpFocusApp(tester, ui);
+        SemanticsNode node(String label) =>
+            tester.getSemantics(find.bySemanticsLabel(label));
+        expect(
+          node('Dauer um 5 Minuten verringern')
+              .getSemanticsData()
+              .flagsCollection
+              .isEnabled,
+          Tristate.isTrue,
+        );
+        ui.container.read(focusSetupProvider.notifier).setPlannedMinutes(5);
+        await tester.pump();
+        final down = node('Dauer um 5 Minuten verringern').getSemanticsData();
+        expect(
+          down.flagsCollection.isEnabled,
+          Tristate.isFalse,
+          reason: 'at 5 minutes',
+        );
+        ui.container.read(focusSetupProvider.notifier).setPlannedMinutes(180);
+        await tester.pump();
+        final up = node('Dauer um 5 Minuten erhöhen').getSemanticsData();
+        expect(
+          up.flagsCollection.isEnabled,
+          Tristate.isFalse,
+          reason: 'at 180 minutes',
+        );
+      }),
+    );
   });
 
   group('starting', () {
@@ -195,6 +196,24 @@ void main() {
       },
     );
 
+    testWidgets(
+      'going back from the running session never allows a second start '
+      '(F01)',
+      (tester) async {
+        final ui = await createFocusUi(tester);
+        final router = await pumpFocusApp(tester, ui);
+        await tester.tapAndSettleDb(start);
+        expect(router.state.uri.path, '/focus/session');
+
+        router.pop();
+        await tester.pumpAndSettle();
+        expect(router.state.uri.path, '/focus');
+        expect(find.text('Fokus starten'), findsNothing);
+        expect(find.text('Sitzung fortsetzen'), findsOneWidget);
+        expect(await tester.focusRows(ui), hasLength(1));
+      },
+    );
+
     testWidgets('a double tap on start creates ONE session (AT12, F01)', (
       tester,
     ) async {
@@ -208,8 +227,7 @@ void main() {
     });
 
     testWidgets(
-      'a failed start keeps the choice, retries with the same command id and '
-      'creates one session (AT27, AT12)',
+      'a failed start keeps the choice, retries with the same command id and creates one session (AT27, AT12)',
       (tester) async {
         late FlakyFocusRepository flaky;
         final ui = await createFocusUi(

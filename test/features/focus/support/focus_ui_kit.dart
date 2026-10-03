@@ -393,6 +393,21 @@ Future<GoRouter> pumpFocusApp(
   return router;
 }
 
+/// Runs [body] with the semantics tree enabled (what a screen reader sees).
+/// The handle is released before the test ends. Written as a helper so tests
+/// stay literal `testWidgets` calls that `tool/at_coverage.dart` can index.
+Future<void> withSemantics(
+  WidgetTester tester,
+  Future<void> Function() body,
+) async {
+  final handle = tester.ensureSemantics();
+  try {
+    await body();
+  } finally {
+    handle.dispose();
+  }
+}
+
 /// Removes the app from the screen (the process ends).
 Future<void> closeApp(WidgetTester tester) async {
   await tester.pumpWidget(const SizedBox.shrink());

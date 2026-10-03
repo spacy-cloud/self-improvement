@@ -137,22 +137,24 @@ void main() {
       expect(find.text('10 Min.'), findsOneWidget);
     });
 
-    testWidgets('an older session stays on the day of its confirmation, '
-        'also after a time zone change (AT25)', (tester) async {
-      final ui = await createFocusUi(tester);
-      await tester.completeFocus(ui, seconds: 600); // 08:10Z = 10:10 Berlin
-      ui.harness.clock.setTimeZone('Asia/Tokyo'); // the phone travels
-      ui.container.read(todayProvider.notifier).refresh();
-      await pumpFocusApp(tester, ui, initialLocation: '/focus/history');
-      expect(
-        find.text('10:10 · früher beendet'),
-        findsOneWidget,
-        reason: 'the frozen zone, not 17:10 of Tokyo',
-      );
-      expect(find.text('17:10 · früher beendet'), findsNothing);
-      expect(find.text('Heute'), findsNothing, reason: 'no row title');
-      expect(find.text('HEUTE'), findsOneWidget);
-    });
+    testWidgets(
+      'an older session stays on the day of its confirmation, also after a time zone change (AT25)',
+      (tester) async {
+        final ui = await createFocusUi(tester);
+        await tester.completeFocus(ui, seconds: 600); // 08:10Z = 10:10 Berlin
+        ui.harness.clock.setTimeZone('Asia/Tokyo'); // the phone travels
+        ui.container.read(todayProvider.notifier).refresh();
+        await pumpFocusApp(tester, ui, initialLocation: '/focus/history');
+        expect(
+          find.text('10:10 · früher beendet'),
+          findsOneWidget,
+          reason: 'the frozen zone, not 17:10 of Tokyo',
+        );
+        expect(find.text('17:10 · früher beendet'), findsNothing);
+        expect(find.text('Heute'), findsNothing, reason: 'no row title');
+        expect(find.text('HEUTE'), findsOneWidget);
+      },
+    );
 
     testWidgets('loads older sessions on request, built lazily (AT36)', (
       tester,
@@ -342,55 +344,59 @@ void main() {
       expect((await tester.focusRows(ui)).single.note, isNull);
     });
 
-    testWidgets('a failed save keeps the text and retries with the same '
-        'command id (AT27, AT12)', (tester) async {
-      late FlakyFocusRepository flaky;
-      final ui = await createFocusUi(
-        tester,
-        overrides: [flakyFocusRepository((r) => flaky = r, noteFailures: 1)],
-      );
-      final id = await tester.completeFocus(ui, seconds: 600);
-      await pumpFocusApp(tester, ui, initialLocation: '/focus/history/$id');
-      await tester.enterText(noteField, 'Wichtig');
-      await tester.pump();
-      await tester.tapAndSettleDb(saveChanges);
+    testWidgets(
+      'a failed save keeps the text and retries with the same command id (AT27, AT12)',
+      (tester) async {
+        late FlakyFocusRepository flaky;
+        final ui = await createFocusUi(
+          tester,
+          overrides: [flakyFocusRepository((r) => flaky = r, noteFailures: 1)],
+        );
+        final id = await tester.completeFocus(ui, seconds: 600);
+        await pumpFocusApp(tester, ui, initialLocation: '/focus/history/$id');
+        await tester.enterText(noteField, 'Wichtig');
+        await tester.pump();
+        await tester.tapAndSettleDb(saveChanges);
 
-      expect((await tester.focusRows(ui)).single.note, isNull);
-      expect(
-        ui.feedback.last!.message,
-        'Speichern fehlgeschlagen. Deine Notiz bleibt erhalten.',
-      );
-      expect(find.text('Wichtig'), findsOneWidget, reason: 'input kept');
-      ui.feedback.last!.onRetry!();
-      await tester.settleDb();
-      expect((await tester.focusRows(ui)).single.note, 'Wichtig');
-      expect(flaky.noteIds, hasLength(2));
-      expect(flaky.noteIds.first, flaky.noteIds.last);
-    });
+        expect((await tester.focusRows(ui)).single.note, isNull);
+        expect(
+          ui.feedback.last!.message,
+          'Speichern fehlgeschlagen. Deine Notiz bleibt erhalten.',
+        );
+        expect(find.text('Wichtig'), findsOneWidget, reason: 'input kept');
+        ui.feedback.last!.onRetry!();
+        await tester.settleDb();
+        expect((await tester.focusRows(ui)).single.note, 'Wichtig');
+        expect(flaky.noteIds, hasLength(2));
+        expect(flaky.noteIds.first, flaky.noteIds.last);
+      },
+    );
 
-    testWidgets('a change made elsewhere meanwhile is a conflict: nothing '
-        'is overwritten, the input stays (AT27)', (tester) async {
-      final ui = await createFocusUi(tester);
-      final id = await tester.completeFocus(ui, seconds: 600);
-      await pumpFocusApp(tester, ui, initialLocation: '/focus/history/$id');
-      await tester.runCommand(
-        () => ui.focusRepository.updateNote(
-          commandId: ui.ids.newId(),
-          id: id,
-          note: 'Von woanders',
-        ),
-      );
-      await tester.enterText(noteField, 'Meine Version');
-      await tester.pump();
-      await tester.tapAndSettleDb(saveChanges);
+    testWidgets(
+      'a change made elsewhere meanwhile is a conflict: nothing is overwritten, the input stays (AT27)',
+      (tester) async {
+        final ui = await createFocusUi(tester);
+        final id = await tester.completeFocus(ui, seconds: 600);
+        await pumpFocusApp(tester, ui, initialLocation: '/focus/history/$id');
+        await tester.runCommand(
+          () => ui.focusRepository.updateNote(
+            commandId: ui.ids.newId(),
+            id: id,
+            note: 'Von woanders',
+          ),
+        );
+        await tester.enterText(noteField, 'Meine Version');
+        await tester.pump();
+        await tester.tapAndSettleDb(saveChanges);
 
-      expect((await tester.focusRows(ui)).single.note, 'Von woanders');
-      expect(
-        ui.feedback.last!.message,
-        'Die Sitzung wurde inzwischen geändert. Bitte öffne sie erneut.',
-      );
-      expect(find.text('Meine Version'), findsOneWidget);
-    });
+        expect((await tester.focusRows(ui)).single.note, 'Von woanders');
+        expect(
+          ui.feedback.last!.message,
+          'Die Sitzung wurde inzwischen geändert. Bitte öffne sie erneut.',
+        );
+        expect(find.text('Meine Version'), findsOneWidget);
+      },
+    );
 
     testWidgets('leaving with unsaved text asks first; "Weiter bearbeiten" '
         'keeps it, "Verwerfen" leaves', (tester) async {
@@ -453,32 +459,35 @@ void main() {
       expect((await tester.focusRows(ui)).single.deletedAtUtc, isNull);
     });
 
-    testWidgets('deleting removes the time and its XP; the undo brings back '
-        'the same session (AT23, G01)', (tester) async {
-      final ui = await createFocusUi(tester, realProjection: true);
-      final id = await tester.completeFocus(ui, seconds: 1500);
-      expect(await tester.xpAwards(ui), hasLength(1));
-      await pumpFocusApp(tester, ui, initialLocation: '/focus/history/$id');
+    testWidgets(
+      'deleting removes the time and its XP; the undo brings back the same session (AT23, G01)',
+      (tester) async {
+        final ui = await createFocusUi(tester, realProjection: true);
+        final id = await tester.completeFocus(ui, seconds: 1500);
+        expect(await tester.xpAwards(ui), hasLength(1));
+        await pumpFocusApp(tester, ui, initialLocation: '/focus/history/$id');
 
-      await tester.tap(find.text('Sitzung löschen'));
-      await tester.pumpAndSettle();
-      await tester.tapAndSettleDb(find.text('Löschen'));
+        await tester.tap(find.text('Sitzung löschen'));
+        await tester.pumpAndSettle();
+        await tester.tapAndSettleDb(find.text('Löschen'));
 
-      expect((await tester.focusRows(ui)).single.deletedAtUtc, isNotNull);
-      expect(await tester.xpAwards(ui), isEmpty, reason: 'its XP is gone');
-      expect(ui.feedback.last!.message, 'Sitzung gelöscht');
-      expect(ui.feedback.last!.undo, isNotNull);
-      final today = await tester.runAsync(
-        () => ui.focusRepository.watchCompletedOn(LocalDate(2026, 10, 3)).first,
-      );
-      expect(today, isEmpty, reason: 'the focus time of the day shrank');
+        expect((await tester.focusRows(ui)).single.deletedAtUtc, isNotNull);
+        expect(await tester.xpAwards(ui), isEmpty, reason: 'its XP is gone');
+        expect(ui.feedback.last!.message, 'Sitzung gelöscht');
+        expect(ui.feedback.last!.undo, isNotNull);
+        final today = await tester.runAsync(
+          () =>
+              ui.focusRepository.watchCompletedOn(LocalDate(2026, 10, 3)).first,
+        );
+        expect(today, isEmpty, reason: 'the focus time of the day shrank');
 
-      await tester.runAsync(() => ui.feedback.last!.undo!.perform());
-      final row = (await tester.focusRows(ui)).single;
-      expect(row.id, id);
-      expect(row.deletedAtUtc, isNull);
-      expect(await tester.xpAwards(ui), hasLength(1), reason: 'XP is back');
-    });
+        await tester.runAsync(() => ui.feedback.last!.undo!.perform());
+        final row = (await tester.focusRows(ui)).single;
+        expect(row.id, id);
+        expect(row.deletedAtUtc, isNull);
+        expect(await tester.xpAwards(ui), hasLength(1), reason: 'XP is back');
+      },
+    );
 
     testWidgets('a failed delete keeps the session (AT27)', (tester) async {
       final projection = RecordingProjectionSynchronizer();
@@ -529,24 +538,27 @@ void main() {
   });
 
   group('accessibility', () {
-    testSemantics('history and detail have labels and 48 px targets (AT33, '
-        'AT34)', (tester) async {
-      final ui = await createFocusUi(tester);
-      final id = await tester.completeFocus(ui, seconds: 600);
-      await pumpFocusApp(tester, ui, initialLocation: '/focus/history');
-      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
-      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
-      expect(
-        find.bySemanticsLabel(
-          'Lernen, 10:10 Uhr, früher beendet, 10 Minuten. '
-          'Tippen zum Bearbeiten',
-        ),
-        findsOneWidget,
-      );
-      await closeApp(tester);
-      await pumpFocusApp(tester, ui, initialLocation: '/focus/history/$id');
-      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
-      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
-    });
+    testWidgets(
+      'history and detail have labels and 48 px targets (AT33, '
+      'AT34)',
+      (tester) => withSemantics(tester, () async {
+        final ui = await createFocusUi(tester);
+        final id = await tester.completeFocus(ui, seconds: 600);
+        await pumpFocusApp(tester, ui, initialLocation: '/focus/history');
+        await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+        await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+        expect(
+          find.bySemanticsLabel(
+            'Lernen, 10:10 Uhr, früher beendet, 10 Minuten. '
+            'Tippen zum Bearbeiten',
+          ),
+          findsOneWidget,
+        );
+        await closeApp(tester);
+        await pumpFocusApp(tester, ui, initialLocation: '/focus/history/$id');
+        await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+        await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+      }),
+    );
   });
 }

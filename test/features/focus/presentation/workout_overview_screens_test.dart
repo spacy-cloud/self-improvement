@@ -81,8 +81,7 @@ void main() {
     });
 
     testWidgets(
-      'this week: the real count against the goal, minutes, average and what '
-      'is missing (F03, A01, AT20)',
+      'this week: the real count against the goal, minutes, average and what is missing (F03, A01, AT20)',
       (tester) async {
         final ui = await seeded(tester);
         await pumpFocusApp(tester, ui, initialLocation: '/workouts');
@@ -180,6 +179,24 @@ void main() {
       expect(find.text('Cardio · 30 Min. · Leicht'), findsOneWidget);
       expect(find.text('Mo., 21. Sep. · 07:00'), findsOneWidget);
     });
+
+    testWidgets(
+      'after a time zone change old workouts keep their time and their week (AT25)',
+      (tester) async {
+        final ui = await seeded(tester);
+        ui.harness.clock.setTimeZone('Asia/Tokyo'); // the phone travels
+        ui.container.read(todayProvider.notifier).refresh();
+        await pumpFocusApp(tester, ui, initialLocation: '/workouts');
+        // Logged at 09:00 in Berlin: still 09:00, not 16:00 of Tokyo.
+        expect(find.text('Heute · 09:00'), findsOneWidget);
+        expect(find.text('Heute · 16:00'), findsNothing);
+        expect(find.text('Dienstag · 18:10'), findsOneWidget);
+        expect(
+          find.text('2 / 3 Trainings', findRichText: true),
+          findsOneWidget,
+        );
+      },
+    );
 
     testWidgets('shows only the newest five', (tester) async {
       final ui = await createFocusUi(tester);
@@ -324,27 +341,29 @@ void main() {
       expect(find.text('Noch kein Training'), findsOneWidget);
     });
 
-    testSemantics('the week is read with the real count; every control has a '
-        'label and a 48 px target (AT33, AT34)', (tester) async {
-      final ui = await seeded(tester);
-      await pumpFocusApp(tester, ui, initialLocation: '/workouts');
-      expect(
-        find.bySemanticsLabel(
-          'Diese Woche 2 von 3 Trainings, 105 Minuten. 1 fehlt zum Ziel.',
-        ),
-        findsOneWidget,
-      );
-      expect(find.bySemanticsLabel('Brust, zuletzt heute'), findsOneWidget);
-      expect(
-        find.bySemanticsLabel(
-          'Upper Body, Kraft, 60 Minuten, Mittel, Brust, Schultern, Rücken, '
-          'Bizeps, Trizeps, Heute, 09:00 Uhr. Tippen zum Bearbeiten',
-        ),
-        findsOneWidget,
-      );
-      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
-      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
-    });
+    testWidgets(
+      'the week is read with the real count; every control has a label and a 48 px target (AT33, AT34)',
+      (tester) => withSemantics(tester, () async {
+        final ui = await seeded(tester);
+        await pumpFocusApp(tester, ui, initialLocation: '/workouts');
+        expect(
+          find.bySemanticsLabel(
+            'Diese Woche 2 von 3 Trainings, 105 Minuten. 1 fehlt zum Ziel.',
+          ),
+          findsOneWidget,
+        );
+        expect(find.bySemanticsLabel('Brust, zuletzt heute'), findsOneWidget);
+        expect(
+          find.bySemanticsLabel(
+            'Upper Body, Kraft, 60 Minuten, Mittel, Brust, Schultern, Rücken, '
+            'Bizeps, Trizeps, Heute, 09:00 Uhr. Tippen zum Bearbeiten',
+          ),
+          findsOneWidget,
+        );
+        await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+        await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+      }),
+    );
   });
 
   group('all workouts', () {
@@ -454,31 +473,40 @@ void main() {
       expect(loadMore, findsNothing, reason: 'all 70 are loaded');
     });
 
-    testWidgets('a deleted workout disappears and the week count follows '
-        '(AT23, A01)', (tester) async {
-      final ui = await seeded(tester);
-      final rows = await tester.workoutRows(ui);
-      final upper = rows.firstWhere((r) => r.title == 'Upper Body');
-      await pumpFocusApp(tester, ui, initialLocation: '/workouts');
-      expect(find.text('2 / 3 Trainings', findRichText: true), findsOneWidget);
-      await tester.runCommand(
-        () => ui.workoutRepository.delete(
-          commandId: ui.ids.newId(),
-          id: upper.id,
-        ),
-      );
-      expect(find.text('1 / 3 Trainings', findRichText: true), findsOneWidget);
-      expect(find.text('45 Min.'), findsWidgets);
-      expect(find.text('Upper Body'), findsNothing);
-    });
+    testWidgets(
+      'a deleted workout disappears and the week count follows (AT23, A01)',
+      (tester) async {
+        final ui = await seeded(tester);
+        final rows = await tester.workoutRows(ui);
+        final upper = rows.firstWhere((r) => r.title == 'Upper Body');
+        await pumpFocusApp(tester, ui, initialLocation: '/workouts');
+        expect(
+          find.text('2 / 3 Trainings', findRichText: true),
+          findsOneWidget,
+        );
+        await tester.runCommand(
+          () => ui.workoutRepository.delete(
+            commandId: ui.ids.newId(),
+            id: upper.id,
+          ),
+        );
+        expect(
+          find.text('1 / 3 Trainings', findRichText: true),
+          findsOneWidget,
+        );
+        expect(find.text('45 Min.'), findsWidgets);
+        expect(find.text('Upper Body'), findsNothing);
+      },
+    );
 
-    testSemantics('every row has a label and a 48 px target (AT33, AT34)', (
-      tester,
-    ) async {
-      final ui = await seeded(tester);
-      await pumpFocusApp(tester, ui, initialLocation: '/workouts/all');
-      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
-      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
-    });
+    testWidgets(
+      'every row has a label and a 48 px target (AT33, AT34)',
+      (tester) => withSemantics(tester, () async {
+        final ui = await seeded(tester);
+        await pumpFocusApp(tester, ui, initialLocation: '/workouts/all');
+        await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+        await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+      }),
+    );
   });
 }

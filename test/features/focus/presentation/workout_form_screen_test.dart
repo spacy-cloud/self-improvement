@@ -9,7 +9,6 @@ import 'package:self_improvement/features/focus/domain/workout_intensity.dart';
 import 'package:self_improvement/shared/local_date.dart';
 import 'package:self_improvement/shared/local_time.dart';
 
-import '../../../support/pump_app.dart';
 import '../support/focus_ui_kit.dart';
 
 /// The workout form (`/workouts/new`, `/workouts/:id`): nothing preselected,
@@ -109,26 +108,37 @@ void main() {
       expect(find.text('Intensität'), findsWidgets);
     });
 
-    testWidgets('saving an empty form shows what is missing and keeps the '
-        'input (AT27)', (tester) async {
-      final ui = await createFocusUi(tester);
-      await openNew(tester, ui);
-      await tester.enterText(nameField, 'Mein Training');
-      await tester.tap(muscle('Beine'));
-      await tester.pump();
-      await save(tester);
+    testWidgets(
+      'saving an empty form shows what is missing and keeps the input (AT27)',
+      (tester) async {
+        final ui = await createFocusUi(tester);
+        await openNew(tester, ui);
+        await tester.enterText(nameField, 'Mein Training');
+        await tester.tap(muscle('Beine'));
+        await tester.pump();
+        await save(tester);
 
-      expect(find.text('Bitte wähle eine Trainingskategorie.'), findsOneWidget);
-      expect(find.text('Bitte gib die Dauer in Minuten ein.'), findsOneWidget);
-      expect(await tester.workoutRows(ui), isEmpty);
-      expect(find.text('Mein Training'), findsOneWidget, reason: 'input kept');
-      expect(chipSelected(tester, muscle('Beine')), isTrue);
-      expect(ui.feedback.events, isEmpty, reason: 'no success message');
-    });
+        expect(
+          find.text('Bitte wähle eine Trainingskategorie.'),
+          findsOneWidget,
+        );
+        expect(
+          find.text('Bitte gib die Dauer in Minuten ein.'),
+          findsOneWidget,
+        );
+        expect(await tester.workoutRows(ui), isEmpty);
+        expect(
+          find.text('Mein Training'),
+          findsOneWidget,
+          reason: 'input kept',
+        );
+        expect(chipSelected(tester, muscle('Beine')), isTrue);
+        expect(ui.feedback.events, isEmpty, reason: 'no success message');
+      },
+    );
 
     testWidgets(
-      'category and duration are enough; optional fields stay empty (F03, '
-      'AT20)',
+      'category and duration are enough; optional fields stay empty (F03, AT20)',
       (tester) async {
         final ui = await createFocusUi(tester);
         await openNew(tester, ui);
@@ -307,54 +317,56 @@ void main() {
       expect(row.localDate, LocalDate(2026, 10, 2));
     });
 
-    testWidgets('a failed save keeps ALL input; the retry reuses the command '
-        'id and saves one workout (AT27, AT12)', (tester) async {
-      final projection = RecordingProjectionSynchronizer();
-      final ui = await createFocusUi(tester, projection: projection);
-      await openNew(tester, ui);
-      await tester.tap(category('Kraft'));
-      await tester.enterText(nameField, 'Upper Body');
-      await tester.enterText(durationField, '60');
-      await tester.tap(muscle('Brust'));
-      await tester.tap(muscle('Rücken'));
-      await tester.tap(find.text('Mittel'));
-      await tester.enterText(noteField, 'Gut');
-      await tester.pump();
+    testWidgets(
+      'a failed save keeps ALL input; the retry reuses the command id and saves one workout (AT27, AT12)',
+      (tester) async {
+        final projection = RecordingProjectionSynchronizer();
+        final ui = await createFocusUi(tester, projection: projection);
+        await openNew(tester, ui);
+        await tester.tap(category('Kraft'));
+        await tester.enterText(nameField, 'Upper Body');
+        await tester.enterText(durationField, '60');
+        await tester.tap(muscle('Brust'));
+        await tester.tap(muscle('Rücken'));
+        await tester.tap(find.text('Mittel'));
+        await tester.enterText(noteField, 'Gut');
+        await tester.pump();
 
-      projection.failure = StateError('disk full');
-      final before = ui.ids.issued.length;
-      await save(tester);
+        projection.failure = StateError('disk full');
+        final before = ui.ids.issued.length;
+        await save(tester);
 
-      expect(
-        await tester.workoutRows(ui),
-        isEmpty,
-        reason: 'nothing committed',
-      );
-      expect(ui.feedback.last!.kind, 'error');
-      expect(
-        ui.feedback.last!.message,
-        'Speichern fehlgeschlagen. Deine Eingabe bleibt erhalten.',
-      );
-      expect(ui.feedback.last!.onRetry, isNotNull);
-      expect(chipSelected(tester, category('Kraft')), isTrue);
-      expect(chipSelected(tester, muscle('Brust')), isTrue);
-      expect(chipSelected(tester, muscle('Rücken')), isTrue);
-      expect(intensity(tester).selected, WorkoutIntensity.moderate);
-      expect(find.text('Upper Body'), findsOneWidget);
-      expect(find.text('60'), findsOneWidget);
-      expect(find.text('Gut'), findsOneWidget);
-      expect(saveNew, findsOneWidget, reason: 'the form stays');
-      final firstId = ui.ids.issued[before];
+        expect(
+          await tester.workoutRows(ui),
+          isEmpty,
+          reason: 'nothing committed',
+        );
+        expect(ui.feedback.last!.kind, 'error');
+        expect(
+          ui.feedback.last!.message,
+          'Speichern fehlgeschlagen. Deine Eingabe bleibt erhalten.',
+        );
+        expect(ui.feedback.last!.onRetry, isNotNull);
+        expect(chipSelected(tester, category('Kraft')), isTrue);
+        expect(chipSelected(tester, muscle('Brust')), isTrue);
+        expect(chipSelected(tester, muscle('Rücken')), isTrue);
+        expect(intensity(tester).selected, WorkoutIntensity.moderate);
+        expect(find.text('Upper Body'), findsOneWidget);
+        expect(find.text('60'), findsOneWidget);
+        expect(find.text('Gut'), findsOneWidget);
+        expect(saveNew, findsOneWidget, reason: 'the form stays');
+        final firstId = ui.ids.issued[before];
 
-      projection.failure = null;
-      ui.feedback.last!.onRetry!();
-      await tester.settleDb();
-      final rows = await tester.workoutRows(ui);
-      expect(rows, hasLength(1));
-      expect(rows.single.title, 'Upper Body');
-      final receipts = await tester.receipts(ui, 'workout.create');
-      expect(receipts.single.commandId, firstId, reason: 'same command id');
-    });
+        projection.failure = null;
+        ui.feedback.last!.onRetry!();
+        await tester.settleDb();
+        final rows = await tester.workoutRows(ui);
+        expect(rows, hasLength(1));
+        expect(rows.single.title, 'Upper Body');
+        final receipts = await tester.receipts(ui, 'workout.create');
+        expect(receipts.single.commandId, firstId, reason: 'same command id');
+      },
+    );
 
     testWidgets('a double tap on save creates ONE workout (AT12)', (
       tester,
@@ -448,66 +460,82 @@ void main() {
       expect(find.text('Training löschen'), findsOneWidget);
     });
 
-    testWidgets('a change is saved with a message and undo; the time stays '
-        'when it was not touched (AT23)', (tester) async {
-      final ui = await createFocusUi(tester);
-      final entry = await tester.addWorkout(
-        ui,
-        minutes: 40,
-        at: DateTime.utc(2026, 10, 2, 16, 30),
-      );
-      await pumpFocusApp(tester, ui, initialLocation: '/workouts/${entry.id}');
-      await tester.enterText(durationField, '50');
-      await tester.pump();
-      await save(tester, saveEdit);
+    testWidgets(
+      'a change is saved with a message and undo; the time stays when it was not touched (AT23)',
+      (tester) async {
+        final ui = await createFocusUi(tester);
+        final entry = await tester.addWorkout(
+          ui,
+          minutes: 40,
+          at: DateTime.utc(2026, 10, 2, 16, 30),
+        );
+        await pumpFocusApp(
+          tester,
+          ui,
+          initialLocation: '/workouts/${entry.id}',
+        );
+        await tester.enterText(durationField, '50');
+        await tester.pump();
+        await save(tester, saveEdit);
 
-      final row = (await tester.workoutRows(ui)).single;
-      expect(row.id, entry.id);
-      expect(row.durationMinutes, 50);
-      expect(row.occurredAtUtc, DateTime.utc(2026, 10, 2, 16, 30));
-      expect(row.localDate, LocalDate(2026, 10, 2));
-      expect(ui.feedback.last!.message, 'Training aktualisiert');
+        final row = (await tester.workoutRows(ui)).single;
+        expect(row.id, entry.id);
+        expect(row.durationMinutes, 50);
+        expect(row.occurredAtUtc, DateTime.utc(2026, 10, 2, 16, 30));
+        expect(row.localDate, LocalDate(2026, 10, 2));
+        expect(ui.feedback.last!.message, 'Training aktualisiert');
 
-      await tester.runAsync(() => ui.feedback.last!.undo!.perform());
-      expect((await tester.workoutRows(ui)).single.durationMinutes, 40);
-    });
+        await tester.runAsync(() => ui.feedback.last!.undo!.perform());
+        expect((await tester.workoutRows(ui)).single.durationMinutes, 40);
+      },
+    );
 
-    testWidgets('deleting asks first; confirm deletes with a message and an '
-        'undo that restores the same id (AT23, AT20)', (tester) async {
-      final ui = await createFocusUi(tester, realProjection: true);
-      final entry = await tester.addWorkout(
-        ui,
-        title: 'Upper Body',
-        minutes: 60,
-      );
-      expect(await tester.xpAwards(ui), hasLength(1), reason: '15 XP');
-      await pumpFocusApp(tester, ui, initialLocation: '/workouts/${entry.id}');
+    testWidgets(
+      'deleting asks first; confirm deletes with a message and an undo that restores the same id (AT23, AT20)',
+      (tester) async {
+        final ui = await createFocusUi(tester, realProjection: true);
+        final entry = await tester.addWorkout(
+          ui,
+          title: 'Upper Body',
+          minutes: 60,
+        );
+        expect(await tester.xpAwards(ui), hasLength(1), reason: '15 XP');
+        await pumpFocusApp(
+          tester,
+          ui,
+          initialLocation: '/workouts/${entry.id}',
+        );
 
-      await tapVisible(tester, find.text('Training löschen'));
-      expect(find.text('Training vom 3. Okt. löschen?'), findsOneWidget);
-      expect(
-        find.text(
-          'Upper Body (60 Min.) wird entfernt. Du kannst es direkt danach '
-          'rückgängig machen.',
-        ),
-        findsOneWidget,
-      );
-      await tester.tap(find.text('Abbrechen'));
-      await tester.pumpAndSettle();
-      expect((await tester.workoutRows(ui)).single.deletedAtUtc, isNull);
+        await tapVisible(tester, find.text('Training löschen'));
+        expect(find.text('Training vom 3. Okt. löschen?'), findsOneWidget);
+        expect(
+          find.text(
+            'Upper Body (60 Min.) wird entfernt. Du kannst es direkt danach '
+            'rückgängig machen.',
+          ),
+          findsOneWidget,
+        );
+        await tester.tap(find.text('Abbrechen'));
+        await tester.pumpAndSettle();
+        expect((await tester.workoutRows(ui)).single.deletedAtUtc, isNull);
 
-      await tapVisible(tester, find.text('Training löschen'));
-      await tester.tapAndSettleDb(find.text('Löschen'));
-      expect((await tester.workoutRows(ui)).single.deletedAtUtc, isNotNull);
-      expect(await tester.xpAwards(ui), isEmpty, reason: 'the XP went with it');
-      expect(ui.feedback.last!.message, 'Training gelöscht');
+        await tapVisible(tester, find.text('Training löschen'));
+        await tester.tapAndSettleDb(find.text('Löschen'));
+        expect((await tester.workoutRows(ui)).single.deletedAtUtc, isNotNull);
+        expect(
+          await tester.xpAwards(ui),
+          isEmpty,
+          reason: 'the XP went with it',
+        );
+        expect(ui.feedback.last!.message, 'Training gelöscht');
 
-      await tester.runAsync(() => ui.feedback.last!.undo!.perform());
-      final row = (await tester.workoutRows(ui)).single;
-      expect(row.id, entry.id);
-      expect(row.deletedAtUtc, isNull);
-      expect(await tester.xpAwards(ui), hasLength(1));
-    });
+        await tester.runAsync(() => ui.feedback.last!.undo!.perform());
+        final row = (await tester.workoutRows(ui)).single;
+        expect(row.id, entry.id);
+        expect(row.deletedAtUtc, isNull);
+        expect(await tester.xpAwards(ui), hasLength(1));
+      },
+    );
 
     testWidgets('a failed delete keeps the workout (AT27)', (tester) async {
       final projection = RecordingProjectionSynchronizer();
@@ -564,20 +592,24 @@ void main() {
     });
   });
 
-  testSemantics('every control has a label and a 48 px target (AT33, AT34)', (
-    tester,
-  ) async {
-    final ui = await createFocusUi(tester);
-    await openNew(tester, ui);
-    await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
-    await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
-    expect(find.bySemanticsLabel('Dauer um 5 Minuten erhöhen'), findsOneWidget);
-    expect(
-      find.bySemanticsLabel('Dauer um 5 Minuten verringern'),
-      findsOneWidget,
-    );
-    expect(find.bySemanticsLabel('Dauer in Minuten'), findsOneWidget);
-    expect(find.bySemanticsLabel('Trainingskategorie'), findsOneWidget);
-    expect(find.bySemanticsLabel('Intensität'), findsWidgets);
-  });
+  testWidgets(
+    'every control has a label and a 48 px target (AT33, AT34)',
+    (tester) => withSemantics(tester, () async {
+      final ui = await createFocusUi(tester);
+      await openNew(tester, ui);
+      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+      expect(
+        find.bySemanticsLabel('Dauer um 5 Minuten erhöhen'),
+        findsOneWidget,
+      );
+      expect(
+        find.bySemanticsLabel('Dauer um 5 Minuten verringern'),
+        findsOneWidget,
+      );
+      expect(find.bySemanticsLabel('Dauer in Minuten'), findsOneWidget);
+      expect(find.bySemanticsLabel('Trainingskategorie'), findsOneWidget);
+      expect(find.bySemanticsLabel('Intensität'), findsWidgets);
+    }),
+  );
 }

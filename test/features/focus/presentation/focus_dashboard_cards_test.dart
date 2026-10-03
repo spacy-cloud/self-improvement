@@ -158,38 +158,42 @@ void main() {
       expect(find.text('Fokus fortsetzen'), findsOneWidget);
     });
 
-    testWidgets('the card alone turns an ended countdown into the '
-        'confirmation, exactly once (AT17, F01)', (tester) async {
-      final ui = await createFocusUi(tester);
-      await tester.startFocus(ui);
-      await pumpCards(tester, ui);
-      await tester.tick(ui, 1500);
-      await tester.settleDb();
+    testWidgets(
+      'the card alone turns an ended countdown into the confirmation, exactly once (AT17, F01)',
+      (tester) async {
+        final ui = await createFocusUi(tester);
+        await tester.startFocus(ui);
+        await pumpCards(tester, ui);
+        await tester.tick(ui, 1500);
+        await tester.settleDb();
 
-      expect(find.text('Geschafft!'), findsOneWidget);
-      expect(find.text('Lernen · Bestätigung offen'), findsOneWidget);
-      expect(find.text('Sitzung bestätigen'), findsOneWidget);
-      expect(
-        (await tester.focusRows(ui)).single.status,
-        'awaiting_confirmation',
-      );
-      expect(
-        await tester.receipts(ui, 'focus.await_confirmation'),
-        hasLength(1),
-      );
-    });
+        expect(find.text('Geschafft!'), findsOneWidget);
+        expect(find.text('Lernen · Bestätigung offen'), findsOneWidget);
+        expect(find.text('Sitzung bestätigen'), findsOneWidget);
+        expect(
+          (await tester.focusRows(ui)).single.status,
+          'awaiting_confirmation',
+        );
+        expect(
+          await tester.receipts(ui, 'focus.await_confirmation'),
+          hasLength(1),
+        );
+      },
+    );
 
-    testWidgets('a session that ran out while the app was closed is shown '
-        'as waiting after the restoration (AT17)', (tester) async {
-      var ui = await createFocusUi(tester);
-      await tester.startFocus(ui, category: FocusCategory.meditation);
-      ui.advance(2000);
-      ui = ui.restarted();
-      await pumpCards(tester, ui);
-      await restoreFocus(tester, ui);
-      expect(find.text('Geschafft!'), findsOneWidget);
-      expect(find.text('Meditation · Bestätigung offen'), findsOneWidget);
-    });
+    testWidgets(
+      'a session that ran out while the app was closed is shown as waiting after the restoration (AT17)',
+      (tester) async {
+        var ui = await createFocusUi(tester);
+        await tester.startFocus(ui, category: FocusCategory.meditation);
+        ui.advance(2000);
+        ui = ui.restarted();
+        await pumpCards(tester, ui);
+        await restoreFocus(tester, ui);
+        expect(find.text('Geschafft!'), findsOneWidget);
+        expect(find.text('Meditation · Bestätigung offen'), findsOneWidget);
+      },
+    );
 
     testWidgets('loading and error states', (tester) async {
       final never = StreamController<FocusSession?>();
@@ -222,27 +226,28 @@ void main() {
       expect(rich('0 / 25 Min.'), findsOneWidget);
     });
 
-    testSemantics('the card is read as one button with its state (AT34)', (
-      tester,
-    ) async {
-      final ui = await createFocusUi(tester);
-      await pumpCards(tester, ui);
-      expect(
-        find.bySemanticsLabel(
-          'Fokus, Fokuszeit heute: 0 von 25 Minuten, '
-          'Noch 25 Min. bis zu deinem Tagesziel',
-        ),
-        findsOneWidget,
-      );
-      await tester.startFocus(ui);
-      await tester.pump();
-      expect(
-        find.bySemanticsLabel('Fokus, Läuft, Lernen · Noch 25 Min.'),
-        findsOneWidget,
-      );
-      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
-      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
-    });
+    testWidgets(
+      'the card is read as one button with its state (AT34)',
+      (tester) => withSemantics(tester, () async {
+        final ui = await createFocusUi(tester);
+        await pumpCards(tester, ui);
+        expect(
+          find.bySemanticsLabel(
+            'Fokus, Fokuszeit heute: 0 von 25 Minuten, '
+            'Noch 25 Min. bis zu deinem Tagesziel',
+          ),
+          findsOneWidget,
+        );
+        await tester.startFocus(ui);
+        await tester.pump();
+        expect(
+          find.bySemanticsLabel('Fokus, Läuft, Lernen · Noch 25 Min.'),
+          findsOneWidget,
+        );
+        await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+        await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+      }),
+    );
   });
 
   group('workout card', () {
@@ -261,31 +266,33 @@ void main() {
       expect(router.state.uri.path, '/workouts/new');
     });
 
-    testWidgets('this week: count, minutes, the latest workout and the '
-        'ring (F03, A01, AT20)', (tester) async {
-      final ui = await createFocusUi(tester);
-      await tester.addWorkout(
-        ui,
-        title: 'Upper Body',
-        minutes: 60,
-        groups: [MuscleGroup.chest],
-        at: DateTime.utc(2026, 10, 3, 7),
-      );
-      await tester.addWorkout(
-        ui,
-        title: 'Lower Body',
-        minutes: 45,
-        at: DateTime.utc(2026, 9, 29, 16),
-      );
-      final router = await pumpCards(tester, ui);
-      expect(rich('2 / 3 Trainings'), findsOneWidget);
-      expect(find.text('105 Min. diese Woche'), findsOneWidget);
-      expect(find.text('Zuletzt: Upper Body'), findsOneWidget);
-      expect(workoutRing(tester).value, closeTo(2 / 3, 0.0001));
-      await tester.tap(find.text('Workout'));
-      await tester.pumpAndSettle();
-      expect(router.state.uri.path, '/workouts');
-    });
+    testWidgets(
+      'this week: count, minutes, the latest workout and the ring (F03, A01, AT20)',
+      (tester) async {
+        final ui = await createFocusUi(tester);
+        await tester.addWorkout(
+          ui,
+          title: 'Upper Body',
+          minutes: 60,
+          groups: [MuscleGroup.chest],
+          at: DateTime.utc(2026, 10, 3, 7),
+        );
+        await tester.addWorkout(
+          ui,
+          title: 'Lower Body',
+          minutes: 45,
+          at: DateTime.utc(2026, 9, 29, 16),
+        );
+        final router = await pumpCards(tester, ui);
+        expect(rich('2 / 3 Trainings'), findsOneWidget);
+        expect(find.text('105 Min. diese Woche'), findsOneWidget);
+        expect(find.text('Zuletzt: Upper Body'), findsOneWidget);
+        expect(workoutRing(tester).value, closeTo(2 / 3, 0.0001));
+        await tester.tap(find.text('Workout'));
+        await tester.pumpAndSettle();
+        expect(router.state.uri.path, '/workouts');
+      },
+    );
 
     testWidgets('the ring is capped at 100 percent, the real numbers stay '
         '(F03, A01)', (tester) async {
@@ -342,21 +349,22 @@ void main() {
       expect(rich('0 / 3 Trainings'), findsOneWidget);
     });
 
-    testSemantics('the week is read with the real count (AT34)', (
-      tester,
-    ) async {
-      final ui = await createFocusUi(tester);
-      await tester.addWorkout(ui, title: 'Laufen', minutes: 30);
-      await pumpCards(tester, ui);
-      expect(
-        find.bySemanticsLabel(
-          'Workout, Diese Woche 1 von 3 Trainings, 30 Minuten. '
-          '2 fehlen zum Ziel. Zuletzt: Laufen',
-        ),
-        findsOneWidget,
-      );
-      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
-      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
-    });
+    testWidgets(
+      'the week is read with the real count (AT34)',
+      (tester) => withSemantics(tester, () async {
+        final ui = await createFocusUi(tester);
+        await tester.addWorkout(ui, title: 'Laufen', minutes: 30);
+        await pumpCards(tester, ui);
+        expect(
+          find.bySemanticsLabel(
+            'Workout, Diese Woche 1 von 3 Trainings, 30 Minuten. '
+            '2 fehlen zum Ziel. Zuletzt: Laufen',
+          ),
+          findsOneWidget,
+        );
+        await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+        await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+      }),
+    );
   });
 }
