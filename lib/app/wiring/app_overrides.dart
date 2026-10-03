@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
@@ -17,6 +19,7 @@ import 'package:self_improvement/core/providers/command_providers.dart';
 import 'package:self_improvement/core/providers/core_providers.dart';
 import 'package:self_improvement/features/modules/application/data_epoch.dart';
 import 'package:self_improvement/features/modules/application/module_providers.dart';
+import 'package:self_improvement/features/settings/application/settings_providers.dart';
 
 /// The provider overrides of the running app: the opened database, the clock,
 /// the router, the snack bar feedback, and the integration of the reminder
@@ -39,6 +42,9 @@ List<Override> buildAppOverrides({
         context: () => navigatorKey.currentContext,
         ids: ref.watch(idGeneratorProvider),
         bottomOffset: feedbackBottomOffset,
+        // A committed action confirms itself with a light tap when the
+        // setting "Haptisches Feedback" is on (read at every call).
+        onSaved: () => unawaited(ref.read(appHapticsProvider).confirm()),
       ),
     ),
     // Reminders: water reminders stop once today's water goal is reached.

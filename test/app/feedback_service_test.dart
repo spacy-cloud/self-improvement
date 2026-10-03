@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/core/commands/command_runner.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/core/errors/app_failure.dart';
 import 'package:self_improvement/core/feedback/feedback_service.dart';
+import 'package:self_improvement/features/settings/application/settings_actions.dart';
 
 import 'support/app_harness.dart';
 import 'support/fake_modules.dart';
@@ -189,6 +191,72 @@ void main() {
         findsWidgets,
       );
       handle.dispose();
+    });
+  });
+
+  group('haptic confirmation follows the setting', () {
+    /// Records the haptic requests the app sends to the platform. Call it
+    /// after the app was pumped: the app fixture installs its own handler on
+    /// the platform channel.
+    List<String> recordHaptics(WidgetTester tester) {
+      final calls = <String>[];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'HapticFeedback.vibrate') {
+            calls.add(call.arguments as String);
+          }
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+      return calls;
+    }
+
+    testWidgets('a saved message gives one light tap while the switch is on', (
+      tester,
+    ) async {
+      final app = await pumpFullApp(tester);
+      final calls = recordHaptics(tester);
+      await _show(app, () => _feedback(app).showSaved('Gespeichert'));
+      expect(calls, <String>['HapticFeedbackType.lightImpact']);
+    });
+
+    testWidgets('an undo message taps once as well', (tester) async {
+      final app = await pumpFullApp(tester);
+      final calls = recordHaptics(tester);
+      final undo = UndoAction(run: (id) async => const CommandOutcome());
+      await _show(
+        app,
+        () => _feedback(app).showSaved('Gespeichert', undo: undo),
+      );
+      expect(calls, hasLength(1));
+    });
+
+    testWidgets('errors and information never tap', (tester) async {
+      final app = await pumpFullApp(tester);
+      final calls = recordHaptics(tester);
+      await _show(app, () => _feedback(app).showError('Fehler'));
+      await _show(app, () => _feedback(app).showInfo('Hinweis'));
+      expect(calls, isEmpty);
+    });
+
+    testWidgets('no tap after the switch was turned off', (tester) async {
+      final app = await pumpFullApp(tester);
+      final calls = recordHaptics(tester);
+      final result = await app.runLive(
+        () => app.container
+            .read(settingsActionsProvider)
+            .setHaptics(value: false),
+      );
+      expect(result, isA<SettingsSaved>());
+      await _show(app, () => _feedback(app).showSaved('Gespeichert'));
+      expect(calls, isEmpty);
     });
   });
 }

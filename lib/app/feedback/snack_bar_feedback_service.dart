@@ -19,6 +19,7 @@ class SnackBarFeedbackService implements FeedbackService {
     required this.context,
     required this.ids,
     this.bottomOffset = _noOffset,
+    this.onSaved,
   });
 
   /// A context below the `ScaffoldMessenger` (the root navigator's).
@@ -30,6 +31,11 @@ class SnackBarFeedbackService implements FeedbackService {
   /// How far above the bottom edge the bar floats: zero above the navigation
   /// bar, [AppSizes.pinnedActionArea] above a pinned primary action.
   final double Function() bottomOffset;
+
+  /// Called once for every committed action that is reported with
+  /// [showSaved]; the app wires the haptic confirmation (which honours the
+  /// "Haptisches Feedback" setting) here.
+  final VoidCallback? onSaved;
 
   static double _noOffset() => 0;
 
@@ -44,6 +50,7 @@ class SnackBarFeedbackService implements FeedbackService {
 
   @override
   void showSaved(String message, {UndoAction? undo}) {
+    onSaved?.call();
     if (undo == null) {
       _present(
         (context, offset) => showSuccessSnackBar(
