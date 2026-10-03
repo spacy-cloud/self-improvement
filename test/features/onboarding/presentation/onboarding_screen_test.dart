@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:self_improvement/core/config/app_config.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/core/errors/app_failure.dart';
 import 'package:self_improvement/core/goals/domain/goal_type.dart';
@@ -38,7 +39,7 @@ void main() {
       (tester) async {
         await pumpOnboarding(tester);
 
-        expect(find.text('App-Name'), findsOneWidget);
+        expect(find.text(AppConfig.appName), findsOneWidget);
         expect(
           find.text('Kleine Schritte, große Veränderungen.'),
           findsOneWidget,
@@ -558,7 +559,7 @@ void main() {
         for (var i = 0; i < 4; i++) {
           await tapAndSettle(tester, backButton);
         }
-        expect(find.text('App-Name'), findsOneWidget);
+        expect(find.text(AppConfig.appName), findsOneWidget);
         // ... and forward again: everything is still there.
         await tapPrimary(tester);
         expect(selectedGoalTitles(tester), <String>['Gute Gewohnheiten']);
@@ -614,7 +615,7 @@ void main() {
           const OnboardingScreen(),
           container: env.harness.createContainer(),
         );
-        expect(find.text('App-Name'), findsOneWidget);
+        expect(find.text(AppConfig.appName), findsOneWidget);
         await goToStep(tester, OnboardingStep.goals);
         expect(selectedGoalTitles(tester), isEmpty);
         await tapPrimary(tester);
@@ -637,7 +638,7 @@ void main() {
       await pressSystemBack(tester);
       expect(find.text('Schritt 1 von 4'), findsOneWidget);
       await pressSystemBack(tester);
-      expect(find.text('App-Name'), findsOneWidget);
+      expect(find.text(AppConfig.appName), findsOneWidget);
 
       await goToStep(tester, OnboardingStep.body);
       expect(typedIn(tester, 'age'), '30');
@@ -653,7 +654,7 @@ void main() {
 
         expect(exits.count, 1, reason: 'Android convention on a root screen');
         expect(find.byType(ConfirmationSheet), findsNothing);
-        expect(find.text('App-Name'), findsOneWidget);
+        expect(find.text(AppConfig.appName), findsOneWidget);
       },
     );
 
@@ -666,7 +667,7 @@ void main() {
         await tester.tap(find.text('Abnehmen'));
         await tester.pump();
         await tapAndSettle(tester, backButton);
-        expect(find.text('App-Name'), findsOneWidget);
+        expect(find.text(AppConfig.appName), findsOneWidget);
 
         await pressSystemBack(tester);
         expect(find.text('Einrichtung abbrechen?'), findsOneWidget);
@@ -894,7 +895,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(env.router!.state.uri.path, '/');
         expect(find.text('Dashboard-Platzhalter'), findsOneWidget);
-        expect(find.text('App-Name'), findsNothing);
+        expect(find.text(AppConfig.appName), findsNothing);
         expect((await env.profile(tester)).onboardingCompleted, isTrue);
       },
     );

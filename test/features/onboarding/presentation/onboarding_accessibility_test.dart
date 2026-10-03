@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:self_improvement/core/config/app_config.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/features/onboarding/application/onboarding_state.dart';
 
@@ -25,7 +26,7 @@ void main() {
     ) async {
       await pumpOnboarding(tester);
       expect(
-        tester.getSemantics(find.bySemanticsLabel('App-Name')),
+        tester.getSemantics(find.bySemanticsLabel(AppConfig.appName)),
         isSemantics(isHeader: true),
       );
       final titles = <String>[
@@ -314,7 +315,11 @@ void main() {
       await tester.pump();
       await tester.pump();
       expect(find.text('Was ist dein Ziel?'), findsOneWidget);
-      expect(find.text('App-Name'), findsNothing, reason: 'no cross fade');
+      expect(
+        find.text(AppConfig.appName),
+        findsNothing,
+        reason: 'no cross fade',
+      );
       expect(tester.hasRunningAnimations, isFalse);
     });
 
@@ -325,10 +330,14 @@ void main() {
       await tester.tap(primaryButton);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 60));
-      expect(find.text('App-Name'), findsOneWidget, reason: 'still fading out');
+      expect(
+        find.text(AppConfig.appName),
+        findsOneWidget,
+        reason: 'still fading out',
+      );
       expect(find.text('Was ist dein Ziel?'), findsOneWidget);
       await tester.pump(const Duration(milliseconds: 200));
-      expect(find.text('App-Name'), findsNothing);
+      expect(find.text(AppConfig.appName), findsNothing);
     });
   });
 }
