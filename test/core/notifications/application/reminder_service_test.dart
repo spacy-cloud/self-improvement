@@ -270,7 +270,7 @@ void main() {
       },
     );
 
-    test('a daylight saving change keeps the wall clock time', () async {
+    test('a daylight saving change keeps the wall clock time (AT25)', () async {
       h.data.clock.setNow(DateTime.utc(2026, 3, 28, 8));
       await h.setWanted(true);
       await h.setWaterHours({10});

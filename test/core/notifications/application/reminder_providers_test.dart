@@ -353,7 +353,7 @@ void main() {
     });
   });
 
-  group('device zone', () {
+  group('device zone (AT25)', () {
     test('the tracker reads the zone through the injected source', () async {
       final c = container(
         overrides: [

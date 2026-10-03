@@ -99,5 +99,6 @@ void main() {
     fixture.router.go('/streak');
     await tester.pumpAndSettle();
     await _shot(tester, 'large_streak');
+    expect(tester.takeException(), isNull, reason: 'no overflow at 200 % text');
   });
 }

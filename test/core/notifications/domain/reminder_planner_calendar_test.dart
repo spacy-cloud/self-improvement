@@ -122,7 +122,7 @@ void main() {
     });
   });
 
-  group('daylight saving time', () {
+  group('daylight saving time (AT25)', () {
     group('spring forward on 2026-03-29 (23 hour day)', () {
       // 09:00 local on 2026-03-28 (CET, 08:00Z).
       final now = DateTime.utc(2026, 3, 28, 8);
@@ -367,7 +367,7 @@ void main() {
     });
   });
 
-  group('time zone', () {
+  group('time zone (AT25)', () {
     test('the same slot is planned at another instant in a new zone', () {
       final now = DateTime.utc(2026, 10, 3, 6, 30);
       final inBerlin = planner.plan(
