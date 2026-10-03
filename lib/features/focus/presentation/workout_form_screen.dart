@@ -103,7 +103,9 @@ class _WorkoutFormState extends ConsumerState<_WorkoutForm> {
   late final TextEditingController _title;
   late final TextEditingController _duration;
   late final TextEditingController _note;
+  final FocusNode _titleFocus = FocusNode();
   final FocusNode _durationFocus = FocusNode();
+  final FocusNode _noteFocus = FocusNode();
 
   WorkoutFormArgs get _args => widget.args;
   bool get _isEdit => _args.entry != null;
@@ -122,7 +124,9 @@ class _WorkoutFormState extends ConsumerState<_WorkoutForm> {
     _title.dispose();
     _duration.dispose();
     _note.dispose();
+    _titleFocus.dispose();
     _durationFocus.dispose();
+    _noteFocus.dispose();
     super.dispose();
   }
 
@@ -156,11 +160,18 @@ class _WorkoutFormState extends ConsumerState<_WorkoutForm> {
           return;
         }
         final rejected = ref.read(workoutFormProvider(_args));
-        // The duration is the text field that can be wrong (title and note are
-        // limited by the field itself, the category is a choice): it takes the
-        // focus, so a screen reader reads its label together with the hint.
-        if (rejected.fieldErrors.containsKey(WorkoutFields.duration)) {
+        // The first invalid text field takes the focus, so a screen reader
+        // reads its label together with the hint. The title and the note are
+        // limited by their fields, but a field counts characters and the rules
+        // count code points, so they can be wrong too (the category is a
+        // choice, not a text field).
+        final errors = rejected.fieldErrors;
+        if (errors.containsKey(WorkoutFields.title)) {
+          _titleFocus.requestFocus();
+        } else if (errors.containsKey(WorkoutFields.duration)) {
           _durationFocus.requestFocus();
+        } else if (errors.containsKey(WorkoutFields.note)) {
+          _noteFocus.requestFocus();
         }
         final failure = rejected.submitFailure;
         if (failure == null) {
@@ -292,6 +303,7 @@ class _WorkoutFormState extends ConsumerState<_WorkoutForm> {
             _TrainingCard(
               state: state,
               title: _title,
+              titleFocus: _titleFocus,
               error: errors[WorkoutFields.title],
               categoryError: errors[WorkoutFields.category],
               onTitle: _controller.setTitle,
@@ -336,6 +348,7 @@ class _WorkoutFormState extends ConsumerState<_WorkoutForm> {
               label: 'Notiz',
               requirementLabel: 'optional',
               controller: _note,
+              focusNode: _noteFocus,
               hint: 'Zum Beispiel: Schulter war etwas steif',
               maxLength: maxWorkoutNoteLength,
               minLines: 2,
@@ -373,6 +386,7 @@ class _TrainingCard extends StatelessWidget {
   const _TrainingCard({
     required this.state,
     required this.title,
+    required this.titleFocus,
     required this.error,
     required this.categoryError,
     required this.onTitle,
@@ -381,6 +395,7 @@ class _TrainingCard extends StatelessWidget {
 
   final WorkoutFormState state;
   final TextEditingController title;
+  final FocusNode titleFocus;
   final String? error;
   final String? categoryError;
   final ValueChanged<String> onTitle;
@@ -405,6 +420,7 @@ class _TrainingCard extends StatelessWidget {
             label: 'Name',
             requirementLabel: 'optional',
             controller: title,
+            focusNode: titleFocus,
             hint: 'Zum Beispiel: Upper Body',
             helperText: 'Ohne Namen wird die Kategorie angezeigt.',
             maxLength: maxWorkoutTitleLength,

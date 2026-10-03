@@ -241,6 +241,65 @@ void main() {
       );
     });
 
+    // The field counts characters (grapheme clusters), the rules count code
+    // points: a family emoji is one character for the field and five code
+    // points for the rules, so text the field accepts can still be too long.
+    const family = '\u{1F468}\u200D\u{1F469}\u200D\u{1F467}';
+
+    testWidgets('a rejected name takes the focus (Q02)', (tester) async {
+      final ui = await createFocusUi(tester);
+      await openNew(tester, ui);
+      await tester.tap(category('Sport'));
+      await tester.enterText(durationField, '30');
+      await tester.enterText(nameField, family * 17);
+      await tester.pump();
+      await save(tester);
+      expect(
+        find.text('Der Titel darf höchstens 80 Zeichen lang sein.'),
+        findsOneWidget,
+      );
+      expect(tester.widget<TextField>(nameField).focusNode!.hasFocus, isTrue);
+      expect(await tester.workoutRows(ui), isEmpty);
+    });
+
+    testWidgets('a rejected note takes the focus (Q02)', (tester) async {
+      final ui = await createFocusUi(tester);
+      await openNew(tester, ui);
+      await tester.tap(category('Sport'));
+      await tester.enterText(durationField, '30');
+      await tester.enterText(noteField, family * 101);
+      await tester.pump();
+      await save(tester);
+      expect(
+        find.text('Die Notiz darf höchstens 500 Zeichen lang sein.'),
+        findsOneWidget,
+      );
+      expect(tester.widget<TextField>(noteField).focusNode!.hasFocus, isTrue);
+    });
+
+    testWidgets('the first of two wrong fields takes the focus', (
+      tester,
+    ) async {
+      final ui = await createFocusUi(tester);
+      await openNew(tester, ui);
+      await tester.tap(category('Sport'));
+      await tester.enterText(durationField, '30');
+      await tester.enterText(nameField, family * 17);
+      await tester.enterText(noteField, family * 101);
+      await tester.pump();
+      await save(tester);
+      expect(
+        find.text('Der Titel darf höchstens 80 Zeichen lang sein.'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Die Notiz darf höchstens 500 Zeichen lang sein.'),
+        findsOneWidget,
+      );
+      expect(tester.widget<TextField>(nameField).focusNode!.hasFocus, isTrue);
+      expect(tester.widget<TextField>(noteField).focusNode!.hasFocus, isFalse);
+    });
+
     testWidgets('only digits can be typed into the duration', (tester) async {
       final ui = await createFocusUi(tester);
       await openNew(tester, ui);

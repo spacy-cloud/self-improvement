@@ -351,6 +351,42 @@ void main() {
     });
   });
 
+  group('a rejected note', () {
+    testWidgets('puts the focus on the note when only the note is invalid', (
+      tester,
+    ) async {
+      final ui = await NutritionUi.create(tester);
+      await ui.pumpRoute('/water');
+      await _openSheet(tester);
+      await _type(tester, '300');
+      // The field counts characters, the rule counts code points: 101 family
+      // emojis are 101 characters for the field and 505 code points for the
+      // rule of 500.
+      final note = find.byType(TextField).last;
+      await tester.enterText(
+        note,
+        '\u{1F468}\u200D\u{1F469}\u200D\u{1F467}' * 101,
+      );
+      await tester.pump();
+
+      _primary(tester).onPressed!();
+      await tester.pump();
+
+      expect(
+        find.text('Die Notiz darf höchstens 500 Zeichen lang sein.'),
+        findsOneWidget,
+      );
+      expect(tester.widget<TextField>(note).focusNode!.hasFocus, isTrue);
+      expect(
+        tester
+            .widget<TextField>(find.byKey(waterAmountFieldKey))
+            .focusNode!
+            .hasFocus,
+        isFalse,
+      );
+    });
+  });
+
   group('small screens', () {
     testWidgets(
       'with the keyboard open at 200 % text the button is reachable',
