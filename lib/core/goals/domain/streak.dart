@@ -104,10 +104,10 @@ final class StreakSummary {
 ///   when active).
 /// - `activeDays`: number of active days since [profileStart].
 ///
-/// The data layer typically passes `activeDays.contains` of a set it built from
-/// the day statuses of `[profileStart, today]`. Only [LocalDate] arithmetic is
-/// used, so daylight saving changes and month or year boundaries cannot shift
-/// a day.
+/// The data layer typically passes the `contains` method of a set of active
+/// days that it built from the day statuses of `[profileStart, today]`. Only
+/// [LocalDate] arithmetic is used, so daylight saving changes and month or year
+/// boundaries cannot shift a day.
 StreakSummary computeStreak({
   required LocalDate today,
   required LocalDate profileStart,

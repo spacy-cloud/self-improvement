@@ -22,9 +22,6 @@ final class StepsEligibility {
   /// The threshold that was applicable at that moment.
   final int? xpGoalTargetSteps;
 
-  /// Whether a decision has been made (and is therefore never revised).
-  bool get isDecided => reachedGoalEligible != null;
-
   @override
   bool operator ==(Object other) =>
       other is StepsEligibility &&

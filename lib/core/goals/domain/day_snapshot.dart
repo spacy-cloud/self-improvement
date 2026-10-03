@@ -55,8 +55,8 @@ final class GoalSnapshotItem {
 
   /// The frozen threshold in the unit of the goal type: ml, steps, minutes, or
   /// 1 for the two on/off goals. `null` for habits. It is kept even while
-  /// [applicable] is `false`, so restoring an item never needs the goal
-  /// versions again.
+  /// [applicable] is `false` (for example masked by a module change today), so
+  /// the original threshold is still there when the goal applies again.
   final int? target;
 
   /// Whether the goal counts on this day (enabled and its module active).
@@ -67,14 +67,6 @@ final class GoalSnapshotItem {
 
   /// The habit id for habit keys, otherwise `null`.
   String? get habitId => habitIdFromKey(goalKey);
-
-  /// A copy with another [applicable] flag; target and module stay frozen.
-  GoalSnapshotItem withApplicable(bool value) => GoalSnapshotItem(
-    goalKey: goalKey,
-    module: module,
-    target: target,
-    applicable: value,
-  );
 
   @override
   bool operator ==(Object other) =>
@@ -123,6 +115,27 @@ final class DaySnapshot {
     final item = itemFor(goalKey);
     return item != null && item.applicable ? item.target : null;
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (other is! DaySnapshot ||
+        other.date != date ||
+        other.items.length != items.length) {
+      return false;
+    }
+    for (var i = 0; i < items.length; i++) {
+      if (other.items[i] != items[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  @override
+  int get hashCode => Object.hash(date, Object.hashAll(items));
+
+  @override
+  String toString() => 'DaySnapshot($date, $items)';
 }
 
 /// Builds the snapshot of [day] from the stored sources, or returns `null` for
@@ -172,18 +185,19 @@ DaySnapshot? buildDaySnapshot({
 /// A module change takes effect for today immediately: goals of a disabled
 /// module become not applicable, and enabling the module again restores them
 /// with the ORIGINAL frozen target and the goal's own enabled flag (a goal that
-/// was switched off stays off). Items are never dropped and never retargeted:
-/// the targets of [stored] are kept even if [versions] would resolve to
-/// something else by now. Habits that became applicable meanwhile (a habit
-/// created today) are added.
+/// was switched off stays off). The five daily goal items are never dropped and
+/// never retargeted: their targets are taken from [stored], even if [versions]
+/// would resolve to something else by now. Habit items follow [habits]: a habit
+/// created today is added, one that is gone is removed.
 ///
 /// Days other than [today] are returned unchanged: a module choice made today
 /// never rewrites a past day (and future days are not stored).
 ///
 /// Inputs: [stored] is the persisted snapshot of the day, [versions] and
 /// [habits] as for [buildDaySnapshot] (they supply the goal-level enabled
-/// flags), [isModuleEnabledNow] the live module status. When the sources are
-/// unchanged this equals [buildDaySnapshot] for today with the live status.
+/// flags), [isModuleEnabledNow] the live module status. The data layer
+/// persists the result for today. When the sources are unchanged it equals
+/// [buildDaySnapshot] for today with the live module status.
 DaySnapshot maskTodaySnapshot({
   required LocalDate today,
   required DaySnapshot stored,
