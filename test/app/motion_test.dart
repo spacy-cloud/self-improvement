@@ -155,6 +155,33 @@ void main() {
       expect(offset(), before);
     });
 
+    testWidgets('during a running page change does no harm', (tester) async {
+      final app = await pumpFullApp(tester, animations: true);
+      unawaited(app.router.push<void>('/settings'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(
+        tester.binding.transientCallbackCount,
+        greaterThan(0),
+        reason: 'the transition is still running',
+      );
+
+      await _reduceMotion(app);
+      await app.settle();
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(SettingsScreen), findsOneWidget);
+      app.router.pop();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(
+        find.byType(SettingsScreen),
+        findsNothing,
+        reason: 'the way back is immediate now',
+      );
+    });
+
     testWidgets('keeps a sheet that is open above a page', (tester) async {
       final app = await pumpFullApp(tester, animations: true);
       unawaited(app.router.push<void>('/settings'));
