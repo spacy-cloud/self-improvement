@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:self_improvement/app/router/app_routes.dart';
+import 'package:self_improvement/app/router/navigation.dart';
 import 'package:self_improvement/app/router/route_guard.dart';
 
 /// The system back button, with the last step of the back order added.
@@ -34,8 +35,7 @@ bool handleUnhandledBack(GoRouter router, RouteGuardState guard) {
   if (!guard.ready || !guard.onboardingCompleted) {
     return false;
   }
-  final path = router.routerDelegate.currentConfiguration.uri.path;
-  if (path == AppRoutes.home) {
+  if (currentPath(router) == AppRoutes.home) {
     return false;
   }
   router.go(AppRoutes.home);

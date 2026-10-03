@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:self_improvement/app/router/app_routes.dart';
+import 'package:self_improvement/app/router/navigation.dart';
 import 'package:self_improvement/app/router/route_guard.dart';
 import 'package:self_improvement/core/backup/backup_providers.dart';
 import 'package:self_improvement/core/notifications/application/reminder_providers.dart';
@@ -92,9 +93,8 @@ final class AppWiring {
       debugPrint('notification entry failed: ${error.runtimeType}');
       return;
     }
-    final path = router.routerDelegate.currentConfiguration.uri.path;
     if (route == AppRoutes.home) {
-      if (AppRoutes.isTabRoot(path)) {
+      if (AppRoutes.isTabRoot(currentPath(router))) {
         router.go(AppRoutes.home);
       }
       return;

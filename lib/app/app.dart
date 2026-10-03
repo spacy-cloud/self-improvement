@@ -10,6 +10,7 @@ import 'package:self_improvement/app/bootstrap/bootstrap_screens.dart';
 import 'package:self_improvement/app/router/app_back_dispatcher.dart';
 import 'package:self_improvement/app/router/app_router.dart';
 import 'package:self_improvement/app/router/app_routes.dart';
+import 'package:self_improvement/app/router/navigation.dart';
 import 'package:self_improvement/app/router/route_guard.dart';
 import 'package:self_improvement/app/wiring/app_overrides.dart';
 import 'package:self_improvement/app/wiring/app_wiring.dart';
@@ -141,6 +142,8 @@ class _RunningAppState extends State<_RunningApp> {
   late final ProviderContainer _container;
   late final AppBackButtonDispatcher _backDispatcher;
   ProviderSubscription<AsyncValue<UserProfile?>>? _guardSubscription;
+  final List<ProviderSubscription<Object?>> _keepAlive =
+      <ProviderSubscription<Object?>>[];
   AppWiring? _wiring;
   Object? _prepareError;
   bool _ready = false;
@@ -151,8 +154,9 @@ class _RunningAppState extends State<_RunningApp> {
   /// The snack bar floats above the navigation bar on a tab and above a pinned
   /// primary action on every other screen.
   double _feedbackOffset() {
-    final path = _router.routerDelegate.currentConfiguration.uri.path;
-    return AppRoutes.isTabRoot(path) ? 0 : AppSizes.pinnedActionArea;
+    return AppRoutes.isTabRoot(currentPath(_router))
+        ? 0
+        : AppSizes.pinnedActionArea;
   }
 
   @override
@@ -193,6 +197,13 @@ class _RunningAppState extends State<_RunningApp> {
         }
       },
     );
+    // The start state, the module statuses and the settings are needed for the
+    // whole lifetime of the app: keep them listened to (an unlistened stream
+    // provider does not run).
+    _keepAlive.addAll(<ProviderSubscription<Object?>>[
+      _container.listen<AsyncValue<Object?>>(moduleStatusesProvider, (_, _) {}),
+      _container.listen<AsyncValue<Object?>>(appSettingsProvider, (_, _) {}),
+    ]);
     unawaited(_prepare());
   }
 
@@ -245,6 +256,9 @@ class _RunningAppState extends State<_RunningApp> {
   @override
   void dispose() {
     _guardSubscription?.close();
+    for (final subscription in _keepAlive) {
+      subscription.close();
+    }
     unawaited(_wiring?.dispose());
     _container.dispose();
     _router.dispose();
