@@ -61,6 +61,16 @@ Schritte:
 
 Ohne Android Studio geht es auch mit `flutter run` im Projektordner, sobald ein Gerät verbunden ist.
 
+Neuen Stand holen, wenn es Änderungen auf dem Branch gibt:
+
+```bash
+git pull
+flutter pub get
+dart run build_runner build
+```
+
+Danach die App in Android Studio mit **Stop** und **Run** neu starten (ein Hot Reload reicht für neue Dateien nicht). Die Daten der App bleiben dabei erhalten, solange du sie nicht deinstallierst.
+
 **Achtung bei den Integrationstests:** `flutter test integration_test` (die Emulator-Abläufe aus [integration-tests.md](integration-tests.md)) löscht die Datenbank der App auf dem Zielgerät, damit jeder Ablauf wie eine frische Installation startet. Die Abläufe starten deshalb nur mit `--dart-define=WIPE_APP_DATA=yes`. Nie auf einem Handy mit echten Daten, und nicht auf dem Emulator, auf dem du von Hand testest, solange du die Einträge behalten willst.
 
 ## Demo-Daten laden (optional, empfohlen für Diagramme und Analyse)
