@@ -64,8 +64,18 @@ void main() {
 
       // Seven rows and two switches: nothing without a function, no account
       // or cloud switch, no export/import/reset shortcuts.
-      expect(find.byType(EntryListTile), findsNWidgets(7));
-      expect(find.byType(AppSwitch), findsNWidgets(2));
+      // The reminders block draws its own controls and is counted separately.
+      int outsideReminders(Type type) =>
+          find.byType(type).evaluate().length -
+          find
+              .descendant(
+                of: find.byType(RemindersSection),
+                matching: find.byType(type),
+              )
+              .evaluate()
+              .length;
+      expect(outsideReminders(EntryListTile), 7);
+      expect(outsideReminders(AppSwitch), 2);
       expect(find.byType(Switch), findsNothing);
       expect(find.text('Konto löschen'), findsNothing);
       expect(find.text('Alle Daten zurücksetzen'), findsNothing);
