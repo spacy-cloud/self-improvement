@@ -110,9 +110,15 @@ class AppScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final colors = tokens.colors;
-    final overlay =
-        (tokens.isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark)
-            .copyWith(statusBarColor: Colors.transparent);
+    // Only the status bar is styled: transparent, icons follow the theme. The
+    // navigation bar of the system is left to the shell.
+    final overlay = SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: tokens.isDark
+          ? Brightness.light
+          : Brightness.dark,
+      statusBarBrightness: tokens.isDark ? Brightness.dark : Brightness.light,
+    );
 
     final content = Column(
       children: <Widget>[

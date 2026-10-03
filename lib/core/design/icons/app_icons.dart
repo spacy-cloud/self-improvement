@@ -90,6 +90,9 @@ enum AppIcon {
   /// Local only (lock).
   lock(Icons.lock_outline_rounded),
 
+  /// Hint or tip (light bulb).
+  hint(Icons.lightbulb_outline_rounded),
+
   /// Validation or save error.
   error(Icons.error_outline_rounded),
 

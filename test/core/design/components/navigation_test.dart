@@ -1,6 +1,7 @@
 import 'dart:ui' show Tristate;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/core/design/internal/ink_surface.dart';
@@ -611,6 +612,32 @@ void main() {
           );
           expect(bandRect.top, 0);
           expect(tester.getTopLeft(find.byType(AppHeader)).dy, 24);
+        },
+      );
+    }
+
+    for (final variant in allVariants) {
+      testWidgets(
+        '${variant.name}: the status bar is transparent with matching icons',
+        (tester) async {
+          await pumpDesign(
+            tester,
+            const AppScaffold(title: 'Mein Dashboard', body: Text('Inhalt')),
+            variant: variant,
+            wrapScaffold: false,
+          );
+          final region = tester.widget<AnnotatedRegion<SystemUiOverlayStyle>>(
+            find.byType(AnnotatedRegion<SystemUiOverlayStyle>),
+          );
+          final style = region.value;
+          expect(style.statusBarColor, Colors.transparent);
+          final dark = variant != AppThemeVariant.light;
+          expect(
+            style.statusBarIconBrightness,
+            dark ? Brightness.light : Brightness.dark,
+          );
+          // The system navigation bar is not touched.
+          expect(style.systemNavigationBarColor, isNull);
         },
       );
     }
