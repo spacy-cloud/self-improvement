@@ -173,10 +173,14 @@ Future<TasksUiEnv> createTasksUiEnv(
 
 /// The routes of the module plus what the app shell provides: the dashboard
 /// as `/` and the habits tab as `/habits` (with `?tab=tasks`).
-List<RouteBase> tasksUiRoutes() => <RouteBase>[
+///
+/// [home] replaces the dashboard stub, for example with a page that hosts the
+/// dashboard card.
+List<RouteBase> tasksUiRoutes({Widget? home}) => <RouteBase>[
   GoRoute(
     path: '/',
-    builder: (context, state) => const Scaffold(body: Text('Dashboard')),
+    builder: (context, state) =>
+        home ?? const Scaffold(body: Text('Dashboard')),
   ),
   GoRoute(
     path: '/habits',
@@ -205,10 +209,11 @@ Future<GoRouter> pumpTasksRouter(
   Size size = const Size(393, 852),
   double textScale = 1.0,
   EdgeInsets viewInsets = EdgeInsets.zero,
+  Widget? home,
 }) async {
   final router = await pumpRouterApp(
     tester,
-    routes: tasksUiRoutes(),
+    routes: tasksUiRoutes(home: home),
     initialLocation: initialLocation,
     container: env.container,
     size: size,
@@ -222,3 +227,15 @@ Future<GoRouter> pumpTasksRouter(
 /// The current location of [router], e.g. `/habits?tab=tasks`.
 String locationOf(GoRouter router) =>
     router.routerDelegate.currentConfiguration.uri.toString();
+
+/// A dashboard page that hosts only the `tasks` card, like the dashboard does
+/// (inside a scroll view, full width).
+Widget cardHost() {
+  final card = const TasksModule().dashboardCards.single;
+  return Scaffold(
+    body: SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Consumer(builder: (context, ref, _) => card.builder(context, ref)),
+    ),
+  );
+}

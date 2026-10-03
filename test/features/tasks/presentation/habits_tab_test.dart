@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/core/design/design.dart' hide HabitIcon;
 import 'package:self_improvement/features/tasks/application/habit_providers.dart';
@@ -50,7 +48,7 @@ void main() {
   ) async {
     final env = await envWithHabits(tester);
     final habits = await env.allHabits(tester);
-    final read = habits!.first.id;
+    final read = habits.first.id;
     for (var d = 28; d <= 30; d++) {
       env.moveTo(LocalDate(2026, 9, d));
       await env.checkHabit(tester, read, LocalDate(2026, 9, d));
@@ -203,7 +201,7 @@ void main() {
     tester,
   ) async {
     final env = await createTasksUiEnv(tester);
-    final router = await pumpTasksRouter(tester, env);
+    await pumpTasksRouter(tester, env);
 
     expect(find.text('Noch keine Gewohnheit'), findsOneWidget);
     expect(find.text('0 von 0 erledigt', findRichText: true), findsOneWidget);
