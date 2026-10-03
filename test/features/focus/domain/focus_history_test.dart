@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:self_improvement/core/goals/domain/goal_type.dart';
+import 'package:self_improvement/core/goals/domain/goal_version.dart';
 import 'package:self_improvement/core/time/clock_service.dart';
 import 'package:self_improvement/core/time/fake_clock.dart';
 import 'package:self_improvement/features/focus/domain/focus_category.dart';
@@ -239,6 +241,53 @@ void main() {
       expect(summary.goalFraction, 0.0);
       expect(summary.remainingGoalMinutes, 25);
       expect(summary.completedMinutes, 0);
+    });
+  });
+
+  group('focusGoalMinutesOn', () {
+    GoalVersion version(int? target, LocalDate from, {bool enabled = true}) =>
+        GoalVersion(
+          type: GoalType.focusMinutes,
+          target: target,
+          enabled: enabled,
+          effectiveFrom: from,
+        );
+
+    final day = LocalDate(2026, 10, 3);
+
+    test('defaults to 25 minutes without a stored version', () {
+      expect(focusGoalMinutesOn(const [], day), 25);
+    });
+
+    test('uses the version in effect on the day, later versions wait', () {
+      final versions = [
+        version(25, LocalDate(2026, 9, 1)),
+        version(60, LocalDate(2026, 10, 3)),
+        version(90, LocalDate(2026, 10, 4)),
+      ];
+      expect(focusGoalMinutesOn(versions, LocalDate(2026, 10, 2)), 25);
+      expect(focusGoalMinutesOn(versions, day), 60);
+      expect(focusGoalMinutesOn(versions, LocalDate(2026, 10, 4)), 90);
+    });
+
+    test('a switched off goal gives null', () {
+      expect(
+        focusGoalMinutesOn([
+          version(25, LocalDate(2026, 9, 1), enabled: false),
+        ], day),
+        isNull,
+      );
+    });
+
+    test('other goal types are ignored', () {
+      final versions = [
+        GoalVersion(
+          type: GoalType.water,
+          target: 3000,
+          effectiveFrom: LocalDate(2026, 9, 1),
+        ),
+      ];
+      expect(focusGoalMinutesOn(versions, day), 25);
     });
   });
 }
