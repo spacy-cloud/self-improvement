@@ -4,14 +4,12 @@ library;
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math' as math;
 
-import 'package:drift/drift.dart' hide isNotNull, isNull;
+import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/core/analysis/application/analysis_providers.dart';
 import 'package:self_improvement/core/backup/backup_exporter.dart';
-import 'package:self_improvement/core/database/app_database.dart';
 import 'package:self_improvement/core/goals/application/goal_providers.dart';
 import 'package:self_improvement/core/testing/data_harness.dart';
 import 'package:self_improvement/features/body/application/weight_providers.dart';
@@ -20,7 +18,7 @@ import 'package:self_improvement/features/body/steps/application/steps_providers
 import 'package:self_improvement/features/gamification/application/gamification_providers.dart';
 import 'package:self_improvement/shared/local_date.dart';
 
-import '../support/db_fixtures.dart';
+import '../support/synthetic_records.dart';
 
 /// Load test with synthetic data (BS-75, AT36/Q01/A01): more than ten thousand
 /// records over three years are written straight into an in-memory SQLite
@@ -73,7 +71,12 @@ void main() {
     container = harness.createContainer();
     recordCount = await timed(
       'insert_synthetic_records_ms',
-      () => _insertSynthetic(harness.database, firstDay, today),
+      () => insertSyntheticRecords(
+        harness.database,
+        harness.ids,
+        firstDay,
+        today,
+      ),
     );
     results['records'] = recordCount;
   });
@@ -208,132 +211,12 @@ void main() {
       results['backup_bytes'] = backup.bytes.length;
       log('backup size: ${backup.bytes.length} bytes');
       expect(backup.bytes.length, lessThan(10 * 1024 * 1024));
+      // The export checks its own file with the importer's validation.
+      expect(
+        backup.isRestorable,
+        isTrue,
+        reason: backup.importCheck.problems.take(3).join('; '),
+      );
     },
   );
-}
-
-/// Writes deterministic synthetic records and returns how many rows were
-/// inserted.
-Future<int> _insertSynthetic(
-  AppDatabase database,
-  LocalDate first,
-  LocalDate last,
-) async {
-  final random = math.Random(42);
-  var count = 0;
-  var id = 0;
-  String next(String prefix) => 'load-$prefix-${id++}';
-  final days = <LocalDate>[
-    for (var d = first; !d.isAfter(last); d = d.addDays(1)) d,
-  ];
-  DateTime at(LocalDate date, int hour) =>
-      DateTime.utc(date.year, date.month, date.day, hour);
-
-  await database.batch((batch) {
-    for (var h = 0; h < 3; h++) {
-      batch.insert(
-        database.habits,
-        habitRow(
-          id: 'load-habit-$h',
-          title: 'Gewohnheit ${h + 1}',
-        ).copyWith(startedLocalDate: Value(first)),
-      );
-      count++;
-    }
-    for (final day in days) {
-      if (random.nextInt(10) != 0) {
-        batch.insert(
-          database.weightEntries,
-          weightRow(
-            id: next('w'),
-            grams:
-                78000 -
-                ((day.year * 365 + day.month * 30 + day.day) % 90) * 100,
-            at: at(day, 6),
-          ).copyWith(localDate: Value(day)),
-        );
-        count++;
-      }
-      if (random.nextInt(100) < 85) {
-        batch.insert(
-          database.stepDays,
-          stepRow(
-            id: next('s'),
-            steps: 2000 + random.nextInt(14000),
-            date: day,
-          ),
-        );
-        count++;
-      }
-      if (random.nextInt(100) < 80) {
-        for (var i = 0; i < 4; i++) {
-          batch.insert(
-            database.waterEntries,
-            waterRow(id: next('wa'), ml: i == 0 ? 500 : 250).copyWith(
-              occurredAtUtc: Value(at(day, 8 + i * 3)),
-              localDate: Value(day),
-            ),
-          );
-          count++;
-        }
-      }
-      if (random.nextInt(100) < 60) {
-        for (var i = 0; i < 3; i++) {
-          batch.insert(
-            database.mealEntries,
-            mealRow(id: next('m'), name: 'Mahlzeit ${i + 1}').copyWith(
-              occurredAtUtc: Value(at(day, 7 + i * 5)),
-              localDate: Value(day),
-            ),
-          );
-          count++;
-        }
-      }
-      if (day.weekday == 2 || day.weekday == 5) {
-        batch.insert(
-          database.workoutEntries,
-          workoutRow(
-            id: next('wo'),
-            minutes: 30 + random.nextInt(60),
-          ).copyWith(occurredAtUtc: Value(at(day, 17)), localDate: Value(day)),
-        );
-        count++;
-      }
-      if (random.nextInt(100) < 50) {
-        batch.insert(
-          database.focusSessions,
-          focusRow(
-            id: next('f'),
-            status: 'completed',
-            accumulated: 1500,
-            completedDate: Value(day),
-          ).copyWith(startedAtUtc: Value(at(day, 9))),
-        );
-        count++;
-      }
-      if (random.nextInt(100) < 40) {
-        batch.insert(
-          database.tasks,
-          taskRow(
-            id: next('t'),
-            title: 'Aufgabe $count',
-            completedAt: Value(at(day, 12)),
-            completedDate: Value(day),
-            eligibility: const Value(true),
-          ).copyWith(createdAtUtc: Value(at(day, 8))),
-        );
-        count++;
-      }
-      for (var h = 0; h < 3; h++) {
-        if (random.nextInt(100) < 55) {
-          batch.insert(
-            database.habitChecks,
-            habitCheckRow(id: next('hc'), habitId: 'load-habit-$h', date: day),
-          );
-          count++;
-        }
-      }
-    }
-  });
-  return count;
 }
