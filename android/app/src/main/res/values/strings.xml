@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Synced from lib/core/config/app_config.dart by tool/sync_app_name.dart. -->
+    <string name="app_name">App-Name</string>
+</resources>
