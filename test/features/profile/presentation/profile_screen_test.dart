@@ -361,7 +361,7 @@ void main() {
     });
   });
 
-  testWidgets('every control has a spoken German label', (tester) async {
+  testWidgets('every control has a spoken German label (AT34)', (tester) async {
     final handle = tester.ensureSemantics();
     final env = await createScreenEnv(tester);
     await saveProfile(tester, env, name: 'Max Mustermann');

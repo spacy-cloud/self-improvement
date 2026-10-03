@@ -226,7 +226,7 @@ void main() {
     });
   });
 
-  testWidgets('the entries have spoken labels', (tester) async {
+  testWidgets('the entries have spoken labels (AT34)', (tester) async {
     final handle = tester.ensureSemantics();
     await open(tester);
     expect(

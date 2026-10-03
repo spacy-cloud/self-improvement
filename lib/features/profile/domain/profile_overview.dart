@@ -121,9 +121,6 @@ final class ProfileOverview {
   /// Whether at least one body value was entered.
   bool get hasBodyData =>
       heightCm != null || ageYears != null || startWeightGrams != null;
-
-  /// Whether the stat block has anything to show.
-  bool get hasStats => showGamification || sinceStartGrams != null;
 }
 
 /// Builds the profile page model.
