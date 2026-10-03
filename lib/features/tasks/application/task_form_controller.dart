@@ -202,6 +202,14 @@ class TaskFormController extends Notifier<TaskFormState> {
     return addition.result;
   }
 
+  /// Clears the hint of a rejected tag, for example when the user types the
+  /// next tag. The tags themselves stay as they are.
+  void clearTagError() {
+    if (state.fieldErrors.containsKey(TaskFields.tags)) {
+      state = state.copyWith(fieldErrors: _without(TaskFields.tags));
+    }
+  }
+
   /// Removes a tag (case-insensitive match).
   void removeTag(String tag) => _change(
     state.copyWith(

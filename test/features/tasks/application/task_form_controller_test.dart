@@ -259,6 +259,21 @@ void main() {
       expect(formState(create).fieldErrors, isEmpty);
     });
 
+    test('clearTagError drops the hint and keeps tags and other hints', () {
+      controller(create).addTag('ok');
+      controller(create).addTag('OK');
+      expect(formState(create).fieldErrors, contains(TaskFields.tags));
+
+      controller(create).clearTagError();
+      expect(formState(create).fieldErrors, isEmpty);
+      expect(formState(create).tags, ['ok']);
+      expect(formState(create).dirty, isTrue);
+
+      // Harmless without a hint.
+      controller(create).clearTagError();
+      expect(formState(create).fieldErrors, isEmpty);
+    });
+
     test(
       'at most five tags: the sixth is refused, a removal frees a place',
       () {
