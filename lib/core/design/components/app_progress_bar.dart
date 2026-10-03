@@ -62,7 +62,8 @@ class AppProgressBar extends StatelessWidget {
     final colors = context.tokens.colors;
     final motion = AppMotion.of(context);
     final fraction = clamp(value);
-    final percent = (fraction * 100).round();
+    // 100 % is spoken only when the bar is full: 99,6 rounds to 99.
+    final percent = fraction < 1 ? (fraction * 100).round().clamp(0, 99) : 100;
     return Semantics(
       container: true,
       label: semanticLabel ?? 'Fortschritt',

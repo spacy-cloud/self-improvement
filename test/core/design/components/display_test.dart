@@ -235,6 +235,8 @@ void main() {
                 semanticLabel: '75 % vom Tagesziel',
               ),
               AppProgressBar(key: ValueKey<String>('default'), value: 0.333),
+              AppProgressBar(key: ValueKey<String>('almost'), value: 0.996),
+              AppProgressBar(key: ValueKey<String>('full'), value: 1),
             ],
           ),
         );
@@ -248,6 +250,17 @@ void main() {
         );
         expect(plain.label, 'Fortschritt');
         expect(plain.value, '33 %');
+        expect(
+          tester
+              .getSemantics(find.byKey(const ValueKey<String>('almost')))
+              .value,
+          '99 %',
+          reason: '99,6 would round up to 100 before the bar is full',
+        );
+        expect(
+          tester.getSemantics(find.byKey(const ValueKey<String>('full'))).value,
+          '100 %',
+        );
       },
     );
 
