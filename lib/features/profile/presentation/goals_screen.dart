@@ -706,6 +706,9 @@ class _ValueFieldState extends State<_ValueField> {
                 inputFormatters: widget.formatters,
                 decoration: InputDecoration(
                   isDense: true,
+                  constraints: const BoxConstraints(
+                    minHeight: AppSizes.touchMin,
+                  ),
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 12,
                     vertical: 8,

@@ -184,6 +184,11 @@ class _IdentityCard extends StatelessWidget {
   }
 }
 
+/// One goal of the summary: icon, title and value, opening the goal editor.
+///
+/// Title and value share one line while the text is of normal size (as in the
+/// design); with large text the value moves below the title, so nothing is
+/// clipped and the row keeps its 56 px height at least.
 class _GoalTile extends StatelessWidget {
   const _GoalTile({required this.goal});
 
@@ -191,6 +196,7 @@ class _GoalTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.tokens.colors;
     final (icon, accent) = switch (goal.kind) {
       ProfileGoalKind.water => (AppIcon.water, AppAccent.water),
       ProfileGoalKind.steps => (AppIcon.steps, AppAccent.steps),
@@ -201,17 +207,82 @@ class _GoalTile extends StatelessWidget {
       ProfileGoalKind.targetWeight => (AppIcon.weight, AppAccent.weight),
     };
     final pending = goal.pending;
-    return EntryListTile.value(
-      title: goal.title,
-      subtitle: pending,
-      value: goal.value,
-      showChevron: true,
-      icon: icon.data,
-      accent: accent,
-      semanticLabel:
+    final stacked =
+        MediaQuery.textScalerOf(context).scale(1) > AppSizes.stackTextScale;
+    void open() => context.push(ProfileRoutes.goals);
+    return Semantics(
+      container: true,
+      button: true,
+      label:
           '${goal.title}, ${goal.value}${pending == null ? '' : ', $pending'}'
           ', bearbeiten',
-      onTap: () => context.push(ProfileRoutes.goals),
+      onTap: open,
+      excludeSemantics: true,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: AppSizes.listRowMinHeight),
+        child: InkWell(
+          onTap: open,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 8, 10, 8),
+            child: LayoutBuilder(
+              builder: (context, constraints) => Row(
+                children: [
+                  AppIconTile(icon: icon.data, accent: accent),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          goal.title,
+                          style: AppTextStyles.bodyDefault.copyWith(
+                            color: colors.textPrimary,
+                          ),
+                        ),
+                        if (stacked)
+                          Text(
+                            goal.value,
+                            style: AppTextStyles.bodyRegular.copyWith(
+                              color: colors.textSecondary,
+                            ),
+                          ),
+                        if (pending != null)
+                          Text(
+                            pending,
+                            style: AppTextStyles.captionDefault.copyWith(
+                              color: colors.textSecondary,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  if (!stacked) ...[
+                    const SizedBox(width: 8),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: constraints.maxWidth * 0.5,
+                      ),
+                      child: Text(
+                        goal.value,
+                        textAlign: TextAlign.end,
+                        style: AppTextStyles.bodyRegular.copyWith(
+                          color: colors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(width: 4),
+                  Icon(
+                    AppIcon.chevronRight.data,
+                    size: 20,
+                    color: colors.textSecondary,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
