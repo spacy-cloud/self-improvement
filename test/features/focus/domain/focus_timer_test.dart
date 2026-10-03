@@ -566,9 +566,9 @@ void main() {
     });
 
     test('the limit counts characters, not UTF-16 units', () {
-      expect(normalizeFocusNote('😀' * 500), '😀' * 500);
+      expect(normalizeFocusNote('\u{1F600}' * 500), '\u{1F600}' * 500);
       expect(
-        () => normalizeFocusNote('😀' * 501),
+        () => normalizeFocusNote('\u{1F600}' * 501),
         throwsA(isA<ValidationFailure>()),
       );
     });

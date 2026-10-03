@@ -187,8 +187,8 @@ void main() {
 
     test('title: the limit applies after trimming and counts characters', () {
       expect(validate(draft(title: ' ${'x' * 80} ')).title, 'x' * 80);
-      expect(validate(draft(title: '😀' * 80)).title, '😀' * 80);
-      expect(failure(draft(title: '😀' * 81)).fieldErrors.keys, [
+      expect(validate(draft(title: '\u{1F600}' * 80)).title, '\u{1F600}' * 80);
+      expect(failure(draft(title: '\u{1F600}' * 81)).fieldErrors.keys, [
         WorkoutFields.title,
       ]);
     });
