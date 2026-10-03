@@ -92,12 +92,15 @@ void main() {
       );
   });
 
-  test('the fixture holds more than ten thousand records over three years', () {
-    expect(recordCount, greaterThanOrEqualTo(10000));
-  });
+  test(
+    'the fixture holds more than ten thousand records over three years (AT36)',
+    () {
+      expect(recordCount, greaterThanOrEqualTo(10000));
+    },
+  );
 
   test(
-    'a full rebuild of the projections over three years stays usable',
+    'a full rebuild of the projections over three years stays usable (AT36)',
     () async {
       final days = {
         for (var d = firstDay; !d.isAfter(today); d = d.addDays(1)) d,
@@ -110,37 +113,40 @@ void main() {
     },
   );
 
-  test('a simple command commits fast at this size (target 300 ms)', () async {
-    container.listen(weightEntriesProvider, (_, _) {});
-    await container.read(weightEntriesProvider.future);
-    final repository = container.read(weightRepositoryProvider);
-    final times = <int>[];
-    for (var i = 0; i < 20; i++) {
-      harness.clock.advance(const Duration(minutes: 1));
-      final watch = Stopwatch()..start();
-      await repository.create(
-        commandId: harness.ids.newId(),
-        draft: WeightDraft(
-          weightGrams: 75000 + i * 100,
-          occurredAtUtc: harness.clock.nowUtc(),
-        ),
+  test(
+    'a simple command commits fast at this size (target 300 ms) (AT36)',
+    () async {
+      container.listen(weightEntriesProvider, (_, _) {});
+      await container.read(weightEntriesProvider.future);
+      final repository = container.read(weightRepositoryProvider);
+      final times = <int>[];
+      for (var i = 0; i < 20; i++) {
+        harness.clock.advance(const Duration(minutes: 1));
+        final watch = Stopwatch()..start();
+        await repository.create(
+          commandId: harness.ids.newId(),
+          draft: WeightDraft(
+            weightGrams: 75000 + i * 100,
+            occurredAtUtc: harness.clock.nowUtc(),
+          ),
+        );
+        watch.stop();
+        times.add(watch.elapsedMilliseconds);
+      }
+      times.sort();
+      results['weight_commit_median_ms'] = times[times.length ~/ 2];
+      results['weight_commit_max_ms'] = times.last;
+      log(
+        'weight commit median ${times[times.length ~/ 2]} ms, '
+        'max ${times.last} ms',
       );
-      watch.stop();
-      times.add(watch.elapsedMilliseconds);
-    }
-    times.sort();
-    results['weight_commit_median_ms'] = times[times.length ~/ 2];
-    results['weight_commit_max_ms'] = times.last;
-    log(
-      'weight commit median ${times[times.length ~/ 2]} ms, '
-      'max ${times.last} ms',
-    );
-    expect(times[times.length ~/ 2], lessThan(300));
-    expect(times.last, lessThan(2000));
-  });
+      expect(times[times.length ~/ 2], lessThan(300));
+      expect(times.last, lessThan(2000));
+    },
+  );
 
   test(
-    'the shared live projections answer quickly (start of the app)',
+    'the shared live projections answer quickly (start of the app) (AT36)',
     () async {
       container
         ..listen(totalXpProvider, (_, _) {})
@@ -180,7 +186,7 @@ void main() {
     },
   );
 
-  test('the screens read correct data at this size', () async {
+  test('the screens read correct data at this size (AT36)', () async {
     final entries = await container.read(weightEntriesProvider.future);
     expect(entries.length, greaterThan(900));
     final history = await container.read(stepsHistoryProvider(90).future);
@@ -188,19 +194,22 @@ void main() {
     expect(history.where((d) => d.recorded).length, greaterThan(50));
   });
 
-  test('a full backup of the records stays below the file limit', () async {
-    final exporter = BackupExporter(
-      database: harness.database,
-      clock: harness.clock,
-    );
-    final backup = await timed(
-      'backup_export_and_selfcheck_ms',
-      exporter.export,
-    );
-    results['backup_bytes'] = backup.bytes.length;
-    log('backup size: ${backup.bytes.length} bytes');
-    expect(backup.bytes.length, lessThan(10 * 1024 * 1024));
-  });
+  test(
+    'a full backup of the records stays below the file limit (AT36)',
+    () async {
+      final exporter = BackupExporter(
+        database: harness.database,
+        clock: harness.clock,
+      );
+      final backup = await timed(
+        'backup_export_and_selfcheck_ms',
+        exporter.export,
+      );
+      results['backup_bytes'] = backup.bytes.length;
+      log('backup size: ${backup.bytes.length} bytes');
+      expect(backup.bytes.length, lessThan(10 * 1024 * 1024));
+    },
+  );
 }
 
 /// Writes deterministic synthetic records and returns how many rows were
