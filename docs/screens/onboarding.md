@@ -82,7 +82,7 @@ Statusleiste, Dynamic Island und Home-Indikator sind nur Figma-Rahmen und werden
 - Zustände nie nur über Farbe: ausgewählte Karten haben Häkchen oder Schalterstellung, Fehler haben Symbol und Text, Fokus hat dickeren Rand.
 - Große Schrift bis 200 Prozent: Inhalt scrollt, der Primärbutton bleibt unten sichtbar und wächst mit; ab 160 Prozent entfallen dekorative Symbole, und Modul- und Schalterkarten setzen den Schalter unter den Text; Zielzeilen, Körperdatenzeilen und die obere Leiste stapeln, sobald die Breite nicht mehr reicht. Der Primärbutton liegt oberhalb der Tastatur.
 - Bewegung nur über `AppMotion` (150 bis 250 ms), sofort bei reduzierter Bewegung; keine Endlosanimation.
-- Farben nur aus den Tokens; Light, Dark und OLED rendern ohne Fehler.
+- Farben nur aus den Tokens, keine neue Farbkombination. Nachgerechnet für Light: Platzhalter „optional“ auf der Feldkarte 5,7 : 1, Hinweisbox 4,9 : 1, Untertitel 7,5 : 1 (jeweils mindestens 4,5 : 1); Light, Dark und OLED rendern ohne Fehler.
 
 ## 8. Tests
 
