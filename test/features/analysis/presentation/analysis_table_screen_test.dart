@@ -63,47 +63,51 @@ Future<void> _open(
 
 void main() {
   group('the period table has the same figures as the cards (A01)', () {
-    testWidgets('every figure of the cards is a row with its label and spoken '
-        'sentence (AT34)', (tester) async {
-      final handle = tester.ensureSemantics();
-      await _open(tester, _container());
-      final report = _report();
+    testWidgets(
+      'every figure of the cards is a row with its label and spoken sentence (AT34)',
+      (tester) async {
+        final handle = tester.ensureSemantics();
+        await _open(tester, _container());
+        final report = _report();
 
-      for (final figure in report.table.periodTable.rows) {
+        for (final figure in report.table.periodTable.rows) {
+          expect(
+            find.text(figure.tableLabel),
+            findsOneWidget,
+            reason: figure.key,
+          );
+          // The row is one block for screen readers: the sentence of the engine.
+          expect(
+            find.bySemanticsLabel(figure.spokenText),
+            findsOneWidget,
+            reason: figure.key,
+          );
+        }
+        // Every card figure of the report is in the table.
         expect(
-          find.text(figure.tableLabel),
-          findsOneWidget,
-          reason: figure.key,
+          report.table.periodTable.rows.map((figure) => figure.key),
+          report.cards.expand((card) => card.figures).map((f) => f.key),
         );
-        // The row is one block for screen readers: the sentence of the engine.
-        expect(
-          find.bySemanticsLabel(figure.spokenText),
-          findsOneWidget,
-          reason: figure.key,
-        );
-      }
-      // Every card figure of the report is in the table.
-      expect(
-        report.table.periodTable.rows.map((figure) => figure.key),
-        report.cards.expand((card) => card.figures).map((f) => f.key),
-      );
-      handle.dispose();
-    });
+        handle.dispose();
+      },
+    );
 
-    testWidgets('the columns name the periods and show current, previous and '
-        'change', (tester) async {
-      await _open(tester, _container());
+    testWidgets(
+      'the columns name the periods and show current, previous and change',
+      (tester) async {
+        await _open(tester, _container());
 
-      expect(find.text('Letzte 7 Tage'), findsOneWidget);
-      expect(find.text('Vorherige 7 Tage'), findsOneWidget);
-      // One header row for the periods and one for the workout week.
-      expect(find.text('Veränderung'), findsNWidgets(2));
-      expect(find.text('7.000'), findsOneWidget);
-      expect(find.text('5.000'), findsOneWidget);
-      expect(find.text(t('+40~% (+2.000)')), findsOneWidget);
-      // Figures that are not compared (totals) show a dash as the change.
-      expect(find.text('–'), findsWidgets);
-    });
+        expect(find.text('Letzte 7 Tage'), findsOneWidget);
+        expect(find.text('Vorherige 7 Tage'), findsOneWidget);
+        // One header row for the periods and one for the workout week.
+        expect(find.text('Veränderung'), findsNWidgets(2));
+        expect(find.text('7.000'), findsOneWidget);
+        expect(find.text('5.000'), findsOneWidget);
+        expect(find.text(t('+40~% (+2.000)')), findsOneWidget);
+        // Figures that are not compared (totals) show a dash as the change.
+        expect(find.text('–'), findsWidgets);
+      },
+    );
 
     testWidgets('the caption names both periods with their dates (A01)', (
       tester,
@@ -130,27 +134,31 @@ void main() {
       expect(find.text('Erfassung: 3/7 Tage gemessen'), findsWidgets);
     });
 
-    testWidgets('30 and 90 days: the headers and the caption follow the '
-        'length (A01)', (tester) async {
-      for (final length in [
-        AnalysisPeriodLength.days30,
-        AnalysisPeriodLength.days90,
-      ]) {
-        final container = _container(
-          length: length,
-          days: syntheticDays(today: refToday),
-        );
-        await _open(tester, container);
+    testWidgets(
+      '30 and 90 days: the headers and the caption follow the length (A01)',
+      (tester) async {
+        for (final length in [
+          AnalysisPeriodLength.days30,
+          AnalysisPeriodLength.days90,
+        ]) {
+          final container = _container(
+            length: length,
+            days: syntheticDays(today: refToday),
+          );
+          await _open(tester, container);
 
-        expect(find.text('Letzte ${length.days} Tage'), findsOneWidget);
-        expect(find.text('Vorherige ${length.days} Tage'), findsOneWidget);
-        expect(
-          find.textContaining('im Vergleich mit den vorherigen ${length.days}'),
-          findsOneWidget,
-        );
-        await tester.pumpWidget(const SizedBox());
-      }
-    });
+          expect(find.text('Letzte ${length.days} Tage'), findsOneWidget);
+          expect(find.text('Vorherige ${length.days} Tage'), findsOneWidget);
+          expect(
+            find.textContaining(
+              'im Vergleich mit den vorherigen ${length.days}',
+            ),
+            findsOneWidget,
+          );
+          await tester.pumpWidget(const SizedBox());
+        }
+      },
+    );
 
     testWidgets('a figure without a comparison says why, once per row (A01)', (
       tester,
@@ -172,84 +180,90 @@ void main() {
       );
     });
 
-    testWidgets('a new user: the note once above, the rows only say "Noch kein '
-        'Vergleich" (A01)', (tester) async {
-      await _open(tester, _container(usageStart: d2026(10, 1)));
+    testWidgets(
+      'a new user: the note once above, the rows only say "Noch kein Vergleich" (A01)',
+      (tester) async {
+        await _open(tester, _container(usageStart: d2026(10, 1)));
 
-      expect(
-        find.text(
-          'Ein Vergleich mit den vorherigen 7 Tagen ist ab dem 14.10.2026 '
-          'möglich.',
-        ),
-        findsOneWidget,
-      );
-      expect(find.textContaining('Nutzungszeit'), findsNothing);
-      expect(find.text('Noch kein Vergleich'), findsWidgets);
-    });
+        expect(
+          find.text(
+            'Ein Vergleich mit den vorherigen 7 Tagen ist ab dem 14.10.2026 '
+            'möglich.',
+          ),
+          findsOneWidget,
+        );
+        expect(find.textContaining('Nutzungszeit'), findsNothing);
+        expect(find.text('Noch kein Vergleich'), findsWidgets);
+      },
+    );
   });
 
   group('the workout week table and the values per day (AT20)', () {
-    testWidgets('the week table compares week to date with week to date '
-        '(AT20)', (tester) async {
-      await _open(tester, _container());
+    testWidgets(
+      'the week table compares week to date with week to date (AT20)',
+      (tester) async {
+        await _open(tester, _container());
 
-      expect(
-        find.text(
-          'Workouts diese Woche (28.09. bis 03.10.2026, bis heute) im '
-          'Vergleich mit der Vorwoche (Vorwoche: 21.09. bis 26.09.2026)',
-        ),
-        findsOneWidget,
-      );
-      expect(find.text('Diese Woche (Mo bis Sa)'), findsOneWidget);
-      expect(find.text('Vorwoche (Mo bis Sa)'), findsOneWidget);
-      expect(find.text('Workouts diese Woche, Anzahl'), findsOneWidget);
-      expect(find.text('Erfassung: Wochenziel erreicht'), findsNothing);
-      expect(find.text('Wochenziel: Wochenziel 3 erreicht'), findsOneWidget);
-    });
-
-    testWidgets('the days are behind a toggle and list every day with its '
-        'values (A01)', (tester) async {
-      final handle = tester.ensureSemantics();
-      await _open(tester, _container());
-
-      expect(find.text('Werte pro Tag'), findsOneWidget);
-      expect(find.text('Di, 29.09.'), findsNothing);
-      final toggle = find.bySemanticsLabel('Werte pro Tag anzeigen');
-      expect(
-        tester.getSemantics(toggle).flagsCollection.isExpanded,
-        Tristate.isFalse,
-      );
-
-      await tester.tap(find.text('Werte pro Tag anzeigen'));
-      await tester.pump(const Duration(milliseconds: 100));
-
-      expect(
-        tester
-            .getSemantics(find.bySemanticsLabel('Werte pro Tag ausblenden'))
-            .flagsCollection
-            .isExpanded,
-        Tristate.isTrue,
-      );
-      // Seven days, oldest first, each one block for screen readers.
-      final report = _report();
-      for (final row in report.table.dayTable.rows) {
-        expect(find.text(row.dayText), findsOneWidget, reason: row.dayText);
         expect(
-          find.bySemanticsLabel(row.semanticsLabel),
+          find.text(
+            'Workouts diese Woche (28.09. bis 03.10.2026, bis heute) im '
+            'Vergleich mit der Vorwoche (Vorwoche: 21.09. bis 26.09.2026)',
+          ),
           findsOneWidget,
-          reason: row.semanticsLabel,
         );
-      }
-      // A day without a record reads "Nicht erfasst", not 0.
-      expect(find.textContaining('Nicht erfasst'), findsWidgets);
-      expect(
-        find.bySemanticsLabel(
-          RegExp(r'Dienstag, 29\.09\.2026: Schritte nicht erfasst'),
-        ),
-        findsOneWidget,
-      );
-      handle.dispose();
-    });
+        expect(find.text('Diese Woche (Mo bis Sa)'), findsOneWidget);
+        expect(find.text('Vorwoche (Mo bis Sa)'), findsOneWidget);
+        expect(find.text('Workouts diese Woche, Anzahl'), findsOneWidget);
+        expect(find.text('Erfassung: Wochenziel erreicht'), findsNothing);
+        expect(find.text('Wochenziel: Wochenziel 3 erreicht'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'the days are behind a toggle and list every day with its values (A01)',
+      (tester) async {
+        final handle = tester.ensureSemantics();
+        await _open(tester, _container());
+
+        expect(find.text('Werte pro Tag'), findsOneWidget);
+        expect(find.text('Di, 29.09.'), findsNothing);
+        final toggle = find.bySemanticsLabel('Werte pro Tag anzeigen');
+        expect(
+          tester.getSemantics(toggle).flagsCollection.isExpanded,
+          Tristate.isFalse,
+        );
+
+        await tester.tap(find.text('Werte pro Tag anzeigen'));
+        await tester.pump(const Duration(milliseconds: 100));
+
+        expect(
+          tester
+              .getSemantics(find.bySemanticsLabel('Werte pro Tag ausblenden'))
+              .flagsCollection
+              .isExpanded,
+          Tristate.isTrue,
+        );
+        // Seven days, oldest first, each one block for screen readers.
+        final report = _report();
+        for (final row in report.table.dayTable.rows) {
+          expect(find.text(row.dayText), findsOneWidget, reason: row.dayText);
+          expect(
+            find.bySemanticsLabel(row.semanticsLabel),
+            findsOneWidget,
+            reason: row.semanticsLabel,
+          );
+        }
+        // A day without a record reads "Nicht erfasst", not 0.
+        expect(find.textContaining('Nicht erfasst'), findsWidgets);
+        expect(
+          find.bySemanticsLabel(
+            RegExp(r'Dienstag, 29\.09\.2026: Schritte nicht erfasst'),
+          ),
+          findsOneWidget,
+        );
+        handle.dispose();
+      },
+    );
 
     testWidgets('only the active modules have columns per day (AT03)', (
       tester,
@@ -279,13 +293,15 @@ void main() {
       expect(find.text(t('Veränderung: +40~% (+2.000)')), findsOneWidget);
     });
 
-    testWidgets('a 320 px phone switches to blocks before a word would '
-        'break (Q02)', (tester) async {
-      await _open(tester, _container(), size: const Size(320, 4200));
+    testWidgets(
+      'a 320 px phone switches to blocks before a word would break (Q02)',
+      (tester) async {
+        await _open(tester, _container(), size: const Size(320, 4200));
 
-      expect(tester.takeException(), isNull);
-      expect(find.text('Letzte 7 Tage: 7.000'), findsOneWidget);
-    });
+        expect(tester.takeException(), isNull);
+        expect(find.text('Letzte 7 Tage: 7.000'), findsOneWidget);
+      },
+    );
 
     testWidgets('a 360 px phone keeps the columns (Q02)', (tester) async {
       await _open(tester, _container(), size: const Size(360, 4200));

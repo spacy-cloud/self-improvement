@@ -163,22 +163,19 @@ class _GoalStrip extends StatelessWidget {
         'Tagesziele pro Tag: '
         '${days.map((day) => day.semanticsLabel).join('. ')}';
     final scale = textScaleOf(context).clamp(1.0, 1.6);
-    final painter = TextPainter(
-      text: TextSpan(
-        text: 'Heute',
-        style: AppTextStyles.captionDefault.copyWith(
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-      textScaler: MediaQuery.textScalerOf(context),
-      maxLines: 1,
-    )..layout();
-    // Every day gets the same width (the wider of marker and "Heute"), so the
-    // days sit evenly across the card on one row and pack to the left when
-    // large text needs more rows.
-    final itemWidth = math.max(_StripDay.marker * scale, painter.width) + 2;
-    painter.dispose();
+    final scaler = MediaQuery.textScalerOf(context);
+    // Every day is as wide as the wider of its marker and its label, so the
+    // days sit evenly across the card on one row (also on a 320 px phone) and
+    // pack to the left when large text needs more rows.
+    final widths = <double>[
+      for (final day in days)
+        math.max(
+              _StripDay.marker * scale,
+              _labelWidth(_StripDay.labelOf(day, day.date == today), scaler),
+            ) +
+            2,
+    ];
+    final total = widths.fold<double>(0, (sum, width) => sum + width);
     return Semantics(
       container: true,
       label: label,
@@ -186,22 +183,42 @@ class _GoalStrip extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final gaps = days.length - 1;
-          final free = constraints.maxWidth - days.length * itemWidth;
+          final free = constraints.maxWidth - total;
           final spacing = gaps > 0 && free / gaps >= 4 ? free / gaps : 8.0;
           return Wrap(
             spacing: spacing,
             runSpacing: 10,
             children: <Widget>[
-              for (final day in days)
+              for (var i = 0; i < days.length; i++)
                 SizedBox(
-                  width: itemWidth,
-                  child: _StripDay(day: day, isToday: day.date == today),
+                  width: widths[i],
+                  child: _StripDay(
+                    day: days[i],
+                    isToday: days[i].date == today,
+                  ),
                 ),
             ],
           );
         },
       ),
     );
+  }
+
+  static double _labelWidth(String text, TextScaler scaler) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: AppTextStyles.captionDefault.copyWith(
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      textScaler: scaler,
+      maxLines: 1,
+    )..layout();
+    final width = painter.width;
+    painter.dispose();
+    return width;
   }
 }
 
@@ -212,6 +229,10 @@ class _StripDay extends StatelessWidget {
   final bool isToday;
 
   static const double marker = 30;
+
+  /// The label under the marker: the weekday, `Heute` for today.
+  static String labelOf(GoalDay day, bool isToday) =>
+      isToday ? 'Heute' : weekdayTwoLetters(day.date);
 
   @override
   Widget build(BuildContext context) {
@@ -257,7 +278,7 @@ class _StripDay extends StatelessWidget {
         markerWidget,
         const SizedBox(height: 4),
         Text(
-          isToday ? 'Heute' : weekdayTwoLetters(day.date),
+          labelOf(day, isToday),
           maxLines: 1,
           style: AppTextStyles.captionDefault.copyWith(
             color: isToday ? colors.textPrimary : colors.textSecondary,

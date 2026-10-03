@@ -119,17 +119,25 @@ class AnalysisChartCard extends StatelessWidget {
 
   /// The visible explanation of what the dashed line, an empty slot or a
   /// missing point means; [average] is the text of the average line.
-  static String? _hint(AnalysisMetric metric, String? average) =>
-      switch (metric) {
-        AnalysisMetric.steps || AnalysisMetric.water =>
-          '${average == null ? '' : 'Gestrichelte Linie: $average pro '
-                        'erfasstem Tag. '}'
-              'Tage ohne Balken sind nicht erfasst. Ein schmaler Strich ist '
-              'eine erfasste 0.',
-        AnalysisMetric.weight => 'Nur Tage mit Messung sind eingezeichnet.',
-        AnalysisMetric.habits =>
-          'Balken: erfüllte Gewohnheiten. Schiene: Gewohnheiten, die an dem '
-              'Tag galten.',
-        _ => null,
-      };
+  static String? _hint(AnalysisMetric metric, String? average) {
+    switch (metric) {
+      case AnalysisMetric.steps || AnalysisMetric.water:
+        final line = average == null
+            ? ''
+            : 'Gestrichelte Linie: $average pro erfasstem Tag. ';
+        // Only steps can be recorded as 0; a day with water has at least one
+        // entry.
+        final zero = metric == AnalysisMetric.steps
+            ? ' Ein schmaler Strich ist eine erfasste 0.'
+            : '';
+        return '${line}Tage ohne Balken sind nicht erfasst.$zero';
+      case AnalysisMetric.weight:
+        return 'Nur Tage mit Messung sind eingezeichnet.';
+      case AnalysisMetric.habits:
+        return 'Balken: erfüllte Gewohnheiten. Schiene: Gewohnheiten, die an '
+            'dem Tag galten.';
+      case _:
+        return null;
+    }
+  }
 }

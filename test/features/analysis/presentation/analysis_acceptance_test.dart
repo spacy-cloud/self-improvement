@@ -138,151 +138,165 @@ void main() {
       },
     );
 
-    testWidgets('weight with none, one and several points: empty, marker, '
-        'real change (AT08)', (tester) async {
-      final env = await _env(tester);
-      await _setSteps(tester, env, LocalDate(2026, 10, 3), 5000);
-      await _open(tester, env);
+    testWidgets(
+      'weight with none, one and several points: empty, marker, real change (AT08)',
+      (tester) async {
+        final env = await _env(tester);
+        await _setSteps(tester, env, LocalDate(2026, 10, 3), 5000);
+        await _open(tester, env);
 
-      // Nothing measured: honest empty card, no chart for the weight.
-      expect(_inCard('Gewicht', find.text('Noch keine Daten')), findsOneWidget);
-      expect(find.text('Gewicht, letzter Wert des Tages'), findsNothing);
+        // Nothing measured: honest empty card, no chart for the weight.
+        expect(
+          _inCard('Gewicht', find.text('Noch keine Daten')),
+          findsOneWidget,
+        );
+        expect(find.text('Gewicht, letzter Wert des Tages'), findsNothing);
 
-      // One point: the value and no change yet.
-      await _weigh(tester, env, '2026-10-03T06:00:00Z', 71500);
-      expect(_inCard('Gewicht', find.text(t('71,5~kg'))), findsOneWidget);
-      expect(
-        _inCard('Gewicht', find.text('Eine Messung: ${t('71,5~kg')} (03.10.)')),
-        findsOneWidget,
-      );
-      expect(find.text('Gewicht, letzter Wert des Tages'), findsOneWidget);
-
-      // Several points: first to last day value.
-      await _weigh(tester, env, '2026-10-01T06:00:00Z', 71800);
-      expect(_inCard('Gewicht', find.text(t('−0,3~kg'))), findsOneWidget);
-      expect(
-        _inCard(
-          'Gewicht',
-          find.text(
-            'Von ${t('71,8~kg')} (01.10.) auf ${t('71,5~kg')} (03.10.)',
+        // One point: the value and no change yet.
+        await _weigh(tester, env, '2026-10-03T06:00:00Z', 71500);
+        expect(_inCard('Gewicht', find.text(t('71,5~kg'))), findsOneWidget);
+        expect(
+          _inCard(
+            'Gewicht',
+            find.text('Eine Messung: ${t('71,5~kg')} (03.10.)'),
           ),
-        ),
-        findsOneWidget,
-      );
-      expect(
-        _inCard('Gewicht', find.text('2/7 Tage gemessen')),
-        findsNWidgets(2),
-      );
-    });
+          findsOneWidget,
+        );
+        expect(find.text('Gewicht, letzter Wert des Tages'), findsOneWidget);
 
-    testWidgets('a meal without calories: "Kalorien unvollständig", no '
-        'invented zero (AT14)', (tester) async {
-      final env = await _env(tester);
-      await _open(tester, env);
-
-      await _eat(tester, env, '2026-10-03T07:00:00Z');
-      expect(
-        _inCard('Mahlzeiten', find.text('Kalorien unvollständig')),
-        findsOneWidget,
-      );
-      expect(_inCard('Mahlzeiten', find.text('1')), findsOneWidget);
-      expect(find.textContaining('kcal'), findsNothing);
-
-      await _eat(tester, env, '2026-10-03T08:00:00Z', kcal: 500);
-      expect(_inCard('Mahlzeiten', find.text(t('500~kcal'))), findsOneWidget);
-      expect(
-        _inCard('Mahlzeiten', find.text('Kalorien unvollständig')),
-        findsOneWidget,
-      );
-      expect(
-        _inCard(
-          'Mahlzeiten',
-          find.textContaining('1 von 2 Mahlzeiten ohne Kalorienangabe'),
-        ),
-        findsOneWidget,
-      );
-      expect(find.text(t('0~kcal')), findsNothing);
-    });
-
-    testWidgets('a workout: week count and minutes, and no focus time that '
-        'was never focused (AT20)', (tester) async {
-      final env = await _env(tester);
-      await _open(tester, env);
-      expect(find.text('Workouts diese Woche'), findsNothing);
-
-      await tester.runCommand(
-        () => env.container
-            .read(workoutRepositoryProvider)
-            .create(
-              commandId: env.id,
-              draft: WorkoutDraft(
-                category: TrainingCategory.cardio,
-                durationMinutes: 30,
-                occurredAtUtc: DateTime.utc(2026, 10, 3, 6),
-              ),
+        // Several points: first to last day value.
+        await _weigh(tester, env, '2026-10-01T06:00:00Z', 71800);
+        expect(_inCard('Gewicht', find.text(t('−0,3~kg'))), findsOneWidget);
+        expect(
+          _inCard(
+            'Gewicht',
+            find.text(
+              'Von ${t('71,8~kg')} (01.10.) auf ${t('71,5~kg')} (03.10.)',
             ),
-      );
+          ),
+          findsOneWidget,
+        );
+        expect(
+          _inCard('Gewicht', find.text('2/7 Tage gemessen')),
+          findsNWidgets(2),
+        );
+      },
+    );
 
-      expect(
-        _inCard('Workouts diese Woche', find.text('1 von 3 Workouts')),
-        findsOneWidget,
-      );
-      expect(
-        _inCard('Workouts diese Woche', find.text(t('30~min'))),
-        findsOneWidget,
-      );
-      expect(_inCard('Workouts', find.text('1')), findsOneWidget);
-      expect(_inCard('Workouts', find.text(t('30~min'))), findsOneWidget);
-      // A workout is no focus time: the card stays empty.
-      expect(
-        _inCard('Fokuszeit', find.text('Noch keine Daten')),
-        findsOneWidget,
-      );
-    });
+    testWidgets(
+      'a meal without calories: "Kalorien unvollständig", no invented zero (AT14)',
+      (tester) async {
+        final env = await _env(tester);
+        await _open(tester, env);
 
-    testWidgets('correcting the past changes the complete days and the strip '
-        'consistently (AT23)', (tester) async {
-      // Only the water goal applies (2.500 ml), so a complete day is a day
-      // with 2.500 ml.
-      final env = await _env(tester, modules: {'nutrition'});
-      await _open(tester, env);
+        await _eat(tester, env, '2026-10-03T07:00:00Z');
+        expect(
+          _inCard('Mahlzeiten', find.text('Kalorien unvollständig')),
+          findsOneWidget,
+        );
+        expect(_inCard('Mahlzeiten', find.text('1')), findsOneWidget);
+        expect(find.textContaining('kcal'), findsNothing);
 
-      Future<String> drink(int ml, String atUtc) async {
-        final outcome = await tester.runCommand(
+        await _eat(tester, env, '2026-10-03T08:00:00Z', kcal: 500);
+        expect(_inCard('Mahlzeiten', find.text(t('500~kcal'))), findsOneWidget);
+        expect(
+          _inCard('Mahlzeiten', find.text('Kalorien unvollständig')),
+          findsOneWidget,
+        );
+        expect(
+          _inCard(
+            'Mahlzeiten',
+            find.textContaining('1 von 2 Mahlzeiten ohne Kalorienangabe'),
+          ),
+          findsOneWidget,
+        );
+        expect(find.text(t('0~kcal')), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'a workout: week count and minutes, and no focus time that was never focused (AT20)',
+      (tester) async {
+        final env = await _env(tester);
+        await _open(tester, env);
+        expect(find.text('Workouts diese Woche'), findsNothing);
+
+        await tester.runCommand(
           () => env.container
-              .read(waterRepositoryProvider)
+              .read(workoutRepositoryProvider)
               .create(
                 commandId: env.id,
-                draft: WaterDraft(
-                  amountMl: ml,
-                  occurredAtUtc: DateTime.parse(atUtc).toUtc(),
+                draft: WorkoutDraft(
+                  category: TrainingCategory.cardio,
+                  durationMinutes: 30,
+                  occurredAtUtc: DateTime.utc(2026, 10, 3, 6),
                 ),
               ),
         );
-        return outcome.entityId!;
-      }
 
-      await drink(2000, '2026-10-01T08:00:00Z');
-      final second = await drink(500, '2026-10-01T09:00:00Z');
-      expect(find.text('1 von 7 Tagen', findRichText: true), findsOneWidget);
+        expect(
+          _inCard('Workouts diese Woche', find.text('1 von 3 Workouts')),
+          findsOneWidget,
+        );
+        expect(
+          _inCard('Workouts diese Woche', find.text(t('30~min'))),
+          findsOneWidget,
+        );
+        expect(_inCard('Workouts', find.text('1')), findsOneWidget);
+        expect(_inCard('Workouts', find.text(t('30~min'))), findsOneWidget);
+        // A workout is no focus time: the card stays empty.
+        expect(
+          _inCard('Fokuszeit', find.text('Noch keine Daten')),
+          findsOneWidget,
+        );
+      },
+    );
 
-      // The past entry is corrected from 500 to 100 ml: 2.100 < 2.500.
-      await tester.runCommand(
-        () => env.container
-            .read(waterRepositoryProvider)
-            .update(
-              commandId: env.id,
-              id: second,
-              draft: WaterDraft(
-                amountMl: 100,
-                occurredAtUtc: DateTime.utc(2026, 10, 1, 9),
+    testWidgets(
+      'correcting the past changes the complete days and the strip consistently (AT23)',
+      (tester) async {
+        // Only the water goal applies (2.500 ml), so a complete day is a day
+        // with 2.500 ml.
+        final env = await _env(tester, modules: {'nutrition'});
+        await _open(tester, env);
+
+        Future<String> drink(int ml, String atUtc) async {
+          final outcome = await tester.runCommand(
+            () => env.container
+                .read(waterRepositoryProvider)
+                .create(
+                  commandId: env.id,
+                  draft: WaterDraft(
+                    amountMl: ml,
+                    occurredAtUtc: DateTime.parse(atUtc).toUtc(),
+                  ),
+                ),
+          );
+          return outcome.entityId!;
+        }
+
+        await drink(2000, '2026-10-01T08:00:00Z');
+        final second = await drink(500, '2026-10-01T09:00:00Z');
+        expect(find.text('1 von 7 Tagen', findRichText: true), findsOneWidget);
+
+        // The past entry is corrected from 500 to 100 ml: 2.100 < 2.500.
+        await tester.runCommand(
+          () => env.container
+              .read(waterRepositoryProvider)
+              .update(
+                commandId: env.id,
+                id: second,
+                draft: WaterDraft(
+                  amountMl: 100,
+                  occurredAtUtc: DateTime.utc(2026, 10, 1, 9),
+                ),
+                expectedRowVersion: 1,
               ),
-              expectedRowVersion: 1,
-            ),
-      );
-      expect(find.text('0 von 7 Tagen', findRichText: true), findsOneWidget);
-      expect(find.text('1 von 7 Tagen', findRichText: true), findsNothing);
-    });
+        );
+        expect(find.text('0 von 7 Tagen', findRichText: true), findsOneWidget);
+        expect(find.text('1 von 7 Tagen', findRichText: true), findsNothing);
+      },
+    );
 
     testWidgets('the strip names the corrected day in words (AT23, AT34)', (
       tester,
@@ -326,112 +340,128 @@ void main() {
       handle.dispose();
     });
 
-    testWidgets('boundary days belong to the right period: first and last '
-        'day of both periods (A01)', (tester) async {
-      final env = await _env(tester);
-      await _open(tester, env);
+    testWidgets(
+      'boundary days belong to the right period: first and last day of both periods (A01)',
+      (tester) async {
+        final env = await _env(tester);
+        await _open(tester, env);
 
-      await _setSteps(tester, env, LocalDate(2026, 9, 19), 9999); // outside
-      await _setSteps(tester, env, LocalDate(2026, 9, 20), 3000); // prev first
-      await _setSteps(tester, env, LocalDate(2026, 9, 26), 5000); // prev last
-      await _setSteps(tester, env, LocalDate(2026, 9, 27), 7000); // curr first
+        await _setSteps(tester, env, LocalDate(2026, 9, 19), 9999); // outside
+        await _setSteps(
+          tester,
+          env,
+          LocalDate(2026, 9, 20),
+          3000,
+        ); // prev first
+        await _setSteps(tester, env, LocalDate(2026, 9, 26), 5000); // prev last
+        await _setSteps(
+          tester,
+          env,
+          LocalDate(2026, 9, 27),
+          7000,
+        ); // curr first
 
-      // Current: 27.09. only; previous: 20.09. and 26.09.
-      expect(_inCard('Schritte', find.text('7.000')), findsNWidgets(2));
-      expect(
-        _inCard(
-          'Schritte',
-          find.text(t('↑~+75~% (+3.000) gegenüber den vorherigen 7 Tagen')),
-        ),
-        findsOneWidget,
-      );
-      expect(find.text('9.999'), findsNothing);
+        // Current: 27.09. only; previous: 20.09. and 26.09.
+        expect(_inCard('Schritte', find.text('7.000')), findsNWidgets(2));
+        expect(
+          _inCard(
+            'Schritte',
+            find.text(t('↑~+75~% (+3.000) gegenüber den vorherigen 7 Tagen')),
+          ),
+          findsOneWidget,
+        );
+        expect(find.text('9.999'), findsNothing);
 
-      // 30 days: all four days are in the current period (09-04 .. 10-03).
-      env.container
-          .read(analysisPeriodProvider.notifier)
-          .select(AnalysisPeriodLength.days30);
-      await tester.pump(const Duration(milliseconds: 50));
-      await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 50)),
-      );
-      await tester.pump(const Duration(milliseconds: 100));
-      // (9999 + 3000 + 5000 + 7000) / 4 recorded days = 6.249,75
-      expect(_inCard('Schritte', find.text('6.250')), findsOneWidget);
-      expect(
-        _inCard('Schritte', find.text('4/30 Tage erfasst')),
-        findsNWidgets(2),
-      );
-    });
+        // 30 days: all four days are in the current period (09-04 .. 10-03).
+        env.container
+            .read(analysisPeriodProvider.notifier)
+            .select(AnalysisPeriodLength.days30);
+        await tester.pump(const Duration(milliseconds: 50));
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 50)),
+        );
+        await tester.pump(const Duration(milliseconds: 100));
+        // (9999 + 3000 + 5000 + 7000) / 4 recorded days = 6.249,75
+        expect(_inCard('Schritte', find.text('6.250')), findsOneWidget);
+        expect(
+          _inCard('Schritte', find.text('4/30 Tage erfasst')),
+          findsNWidgets(2),
+        );
+      },
+    );
 
-    testWidgets('a module that is switched off disappears, switched on again '
-        'its data is back (AT03)', (tester) async {
-      final env = await _env(tester);
-      await _setSteps(tester, env, LocalDate(2026, 10, 3), 8000);
-      await tester.runCommand(
-        () => env.container
-            .read(waterRepositoryProvider)
-            .quickAdd(commandId: env.id, amountMl: 250),
-      );
-      await _open(tester, env);
-      expect(find.text('Schritte'), findsOneWidget);
-      expect(find.text('Wasser'), findsOneWidget);
+    testWidgets(
+      'a module that is switched off disappears, switched on again its data is back (AT03)',
+      (tester) async {
+        final env = await _env(tester);
+        await _setSteps(tester, env, LocalDate(2026, 10, 3), 8000);
+        await tester.runCommand(
+          () => env.container
+              .read(waterRepositoryProvider)
+              .quickAdd(commandId: env.id, amountMl: 250),
+        );
+        await _open(tester, env);
+        expect(find.text('Schritte'), findsOneWidget);
+        expect(find.text('Wasser'), findsOneWidget);
 
-      await tester.runCommand(
-        () => env.container
-            .read(moduleManagerProvider)
-            .setEnabled(
-              commandId: env.id,
-              module: ModuleId.body,
-              enabled: false,
-            ),
-      );
-      expect(find.text('Schritte'), findsNothing);
-      expect(find.text('Gewicht'), findsNothing);
-      expect(find.text('Schritte pro Tag'), findsNothing);
-      expect(find.text('Wasser'), findsOneWidget);
-
-      await tester.runCommand(
-        () => env.container
-            .read(moduleManagerProvider)
-            .setEnabled(
-              commandId: env.id,
-              module: ModuleId.body,
-              enabled: true,
-            ),
-      );
-      expect(find.text('Schritte'), findsOneWidget);
-      expect(_inCard('Schritte', find.text('8.000')), findsNWidgets(2));
-    });
-
-    testWidgets('all modules off: the empty state, one module on again: the '
-        'analysis is back (AT04)', (tester) async {
-      final env = await _env(tester);
-      await _setSteps(tester, env, LocalDate(2026, 10, 3), 8000);
-      await _open(tester, env);
-
-      for (final module in ModuleId.values) {
         await tester.runCommand(
           () => env.container
               .read(moduleManagerProvider)
-              .setEnabled(commandId: env.id, module: module, enabled: false),
+              .setEnabled(
+                commandId: env.id,
+                module: ModuleId.body,
+                enabled: false,
+              ),
         );
-      }
-      expect(find.text('Kein Modul für die Analyse aktiv'), findsOneWidget);
-      expect(find.text('Schritte'), findsNothing);
+        expect(find.text('Schritte'), findsNothing);
+        expect(find.text('Gewicht'), findsNothing);
+        expect(find.text('Schritte pro Tag'), findsNothing);
+        expect(find.text('Wasser'), findsOneWidget);
 
-      await tester.runCommand(
-        () => env.container
-            .read(moduleManagerProvider)
-            .setEnabled(
-              commandId: env.id,
-              module: ModuleId.body,
-              enabled: true,
-            ),
-      );
-      expect(find.text('Kein Modul für die Analyse aktiv'), findsNothing);
-      expect(_inCard('Schritte', find.text('8.000')), findsNWidgets(2));
-    });
+        await tester.runCommand(
+          () => env.container
+              .read(moduleManagerProvider)
+              .setEnabled(
+                commandId: env.id,
+                module: ModuleId.body,
+                enabled: true,
+              ),
+        );
+        expect(find.text('Schritte'), findsOneWidget);
+        expect(_inCard('Schritte', find.text('8.000')), findsNWidgets(2));
+      },
+    );
+
+    testWidgets(
+      'all modules off: the empty state, one module on again: the analysis is back (AT04)',
+      (tester) async {
+        final env = await _env(tester);
+        await _setSteps(tester, env, LocalDate(2026, 10, 3), 8000);
+        await _open(tester, env);
+
+        for (final module in ModuleId.values) {
+          await tester.runCommand(
+            () => env.container
+                .read(moduleManagerProvider)
+                .setEnabled(commandId: env.id, module: module, enabled: false),
+          );
+        }
+        expect(find.text('Kein Modul für die Analyse aktiv'), findsOneWidget);
+        expect(find.text('Schritte'), findsNothing);
+
+        await tester.runCommand(
+          () => env.container
+              .read(moduleManagerProvider)
+              .setEnabled(
+                commandId: env.id,
+                module: ModuleId.body,
+                enabled: true,
+              ),
+        );
+        expect(find.text('Kein Modul für die Analyse aktiv'), findsNothing);
+        expect(_inCard('Schritte', find.text('8.000')), findsNWidgets(2));
+      },
+    );
 
     testWidgets('a new day moves the period and keeps the selection (A01)', (
       tester,
