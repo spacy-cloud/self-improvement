@@ -10,6 +10,7 @@ import 'package:self_improvement/core/analysis/domain/analysis_metric.dart';
 import 'package:self_improvement/core/analysis/domain/analysis_period.dart';
 import 'package:self_improvement/core/analysis/domain/analysis_table.dart';
 import 'package:self_improvement/core/analysis/domain/analysis_texts.dart';
+import 'package:self_improvement/core/analysis/domain/goal_days.dart';
 import 'package:self_improvement/core/analysis/domain/period_comparison.dart';
 import 'package:self_improvement/core/analysis/domain/period_stats.dart';
 import 'package:self_improvement/core/analysis/domain/workout_week.dart';
@@ -43,9 +44,11 @@ final class AnalysisReport {
     required this.table,
     required this.comparisonBaseProblem,
     required this.comparisonNote,
+    List<GoalDay> goalDays = const [],
   }) : activeModules = Set.unmodifiable(activeModules),
        cards = List.unmodifiable(cards),
-       charts = List.unmodifiable(charts);
+       charts = List.unmodifiable(charts),
+       goalDays = List.unmodifiable(goalDays);
 
   /// The period (length and today) this report is about.
   final AnalysisPeriodSpec period;
@@ -71,6 +74,10 @@ final class AnalysisReport {
 
   final AnalysisTable table;
 
+  /// One entry per day of the current period (oldest first, today last) with
+  /// the goals that applied and were fulfilled: the daily goals strip.
+  final List<GoalDay> goalDays;
+
   /// `null` when the previous period lies completely inside the usage window.
   /// Otherwise the reason why every comparison reads "Noch kein Vergleich".
   final NoComparisonReason? comparisonBaseProblem;
@@ -94,6 +101,12 @@ final class AnalysisReport {
 
   /// Whether no module is active at all.
   bool get noModuleActive => activeModules.isEmpty;
+
+  /// Whether at least one module that has analysis metrics is active. `false`
+  /// also when only the gamification module is on: there is nothing to
+  /// analyse then, and the screen points to the module manager.
+  bool get hasAnalysedModule =>
+      activeModules.any(AnalysisMetric.analysedModules.contains);
 
   /// Whether anything was recorded in the current period. `false` means the
   /// screen shows its honest empty state ("Noch keine Daten").
@@ -219,6 +232,7 @@ AnalysisReport buildAnalysisReport({
     table: table,
     comparisonBaseProblem: baseProblem,
     comparisonNote: _comparisonNote(period, baseProblem, usageStart),
+    goalDays: buildGoalDays(period: period, days: byDate),
   );
 }
 
