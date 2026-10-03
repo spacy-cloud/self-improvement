@@ -4,6 +4,9 @@ import 'package:self_improvement/core/testing/data_harness.dart';
 
 import '../../../integration_test/flows/first_start_flow.dart';
 import '../../../integration_test/flows/flow_context.dart';
+import '../../../integration_test/flows/tasks_flow.dart';
+import '../../../integration_test/flows/water_flow.dart';
+import '../../../integration_test/flows/weight_flow.dart';
 import '../support/app_harness.dart';
 
 /// The host side of the flows: the whole app on an in-memory database with a
@@ -66,6 +69,13 @@ void main() {
   ) async {
     await _runFlow(tester, firstStartFlow);
   });
+
+  testWidgets(
+    'AT02 and AT06 weight: saved, shown and still there after a restart',
+    (tester) async {
+      await _runFlow(tester, weightPersistsFlow);
+    },
+  );
 
   testWidgets('AT10 water: +250 ml from the home screen, undo once', (
     tester,
