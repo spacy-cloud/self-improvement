@@ -71,7 +71,7 @@ Code: `lib/features/profile/{domain,application,presentation}` und `lib/features
 
 ## 6. Tests
 
-Befehle: `flutter test test/features/profile test/features/settings` (295 Tests: profile/domain 53, profile/application 52, profile/presentation 103, settings/application 28, settings/presentation 57, Architekturtest 2) und die gesamte Suite mit `flutter test` (2900 Tests, grün). `flutter analyze` meldet keine Probleme, `dart format lib test tool integration_test` ändert nichts.
+Befehle: `flutter test test/features/profile test/features/settings` (297 Tests: profile/domain 53, profile/application 52, profile/presentation 104, settings/application 28, settings/presentation 58, Architekturtest 2) und die gesamte Suite mit `flutter test` (2902 Tests, grün). `flutter analyze` meldet keine Probleme, `dart format lib test tool integration_test` ändert nichts.
 
 | Datei | Inhalt | Akzeptanz |
 |---|---|---|
