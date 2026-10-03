@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:self_improvement/core/feedback/feedback_service.dart';
@@ -109,6 +110,14 @@ class TasksUiEnv {
     container.read(todayProvider.notifier).refresh();
   }
 
+  /// All habits of the database, oldest first.
+  Future<List<Habit>> allHabits(WidgetTester tester) async =>
+      (await tester.runAsync<List<Habit>>(() => habits.watchAll().first))!;
+
+  /// All active tasks of the database, oldest first.
+  Future<List<Task>> allTasks(WidgetTester tester) async =>
+      (await tester.runAsync<List<Task>>(() => tasks.watchActive().first))!;
+
   /// Reads a task from the database (null when it does not exist).
   Future<Task?> readTask(WidgetTester tester, String id) async =>
       tester.runAsync<Task?>(() => tasks.findById(id));
@@ -123,11 +132,18 @@ Future<TasksUiEnv> createTasksUiEnv(
   WidgetTester tester, {
   String nowIso = '2026-10-03T08:00:00Z',
   bool realProjection = true,
+  List<Override> extraOverrides = const [],
 }) async {
   final harness = await createTestHarness(
     tester,
     nowIso: nowIso,
     realProjection: realProjection,
+    onboarded: false,
+  );
+  // The profile started long before the days the tests touch, so every day
+  // counts for XP and goals.
+  await tester.runAsync(
+    () => harness.seedOnboarded(startedOn: LocalDate(2026, 9, 1)),
   );
   final feedback = RecordingFeedbackService();
   final tasks = ScriptedTaskRepository(
@@ -143,6 +159,7 @@ Future<TasksUiEnv> createTasksUiEnv(
       feedbackServiceProvider.overrideWithValue(feedback),
       taskRepositoryProvider.overrideWithValue(tasks),
       habitRepositoryProvider.overrideWithValue(habits),
+      ...extraOverrides,
     ],
   );
   return TasksUiEnv(
@@ -168,3 +185,40 @@ List<RouteBase> tasksUiRoutes() => <RouteBase>[
   ),
   ...const TasksModule().routes,
 ];
+
+/// Lets the first reads of the providers arrive (two rounds: the database
+/// stream and the derived providers).
+Future<void> pumpData(WidgetTester tester) async {
+  for (var round = 0; round < 2; round++) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+    await tester.pump(const Duration(milliseconds: 50));
+  }
+}
+
+/// Pumps the module routes like the app shell does and returns the router.
+Future<GoRouter> pumpTasksRouter(
+  WidgetTester tester,
+  TasksUiEnv env, {
+  String initialLocation = '/habits',
+  Size size = const Size(393, 852),
+  double textScale = 1.0,
+  EdgeInsets viewInsets = EdgeInsets.zero,
+}) async {
+  final router = await pumpRouterApp(
+    tester,
+    routes: tasksUiRoutes(),
+    initialLocation: initialLocation,
+    container: env.container,
+    size: size,
+    textScale: textScale,
+    viewInsets: viewInsets,
+  );
+  await pumpData(tester);
+  return router;
+}
+
+/// The current location of [router], e.g. `/habits?tab=tasks`.
+String locationOf(GoRouter router) =>
+    router.routerDelegate.currentConfiguration.uri.toString();
