@@ -43,9 +43,15 @@ flutter test integration_test/app_flows_test.dart -d <deviceId>   # nur die Flow
 dart run tool/at_coverage.dart                           # welche Abnahme-IDs ein Test nennt
 ```
 
-Die CI führt `flutter test integration_test` im Job `android-integration` auf einem Emulator mit API 34 aus.
+In Android Studio genügt es, `integration_test/app_flows_test.dart` zu öffnen, das Gerät zu wählen und die Datei auszuführen. Die CI führt `flutter test integration_test` im Job `android-integration` auf einem Emulator mit API 34 aus.
 
 **Warnung:** Die Flowtests löschen vor jedem Test die Datenbankdatei der App (`self_improvement*` im App-Support-Verzeichnis), damit jeder Test wie eine frische Installation startet. Nur auf einem Emulator oder Testgerät ausführen, dessen App-Daten verloren gehen dürfen, nie auf einem Gerät mit echten Einträgen.
+
+## Neuen Ablauf ergänzen
+
+1. Funktion `Future<void> xyzFlow(FlowContext ctx)` in `integration_test/flows/xyz_flow.dart` schreiben (Texte der App, `ctx.waitFor`, `ctx.tap`, kein `pumpAndSettle`).
+2. In `integration_test/app_flows_test.dart` und in `test/app/flows/app_flows_host_test.dart` je ein `testWidgets` mit demselben Namen und der Abnahme-ID anlegen, das `_runFlow(tester, xyzFlow)` aufruft.
+3. `flutter test test/app/flows/app_flows_host_test.dart` und `flutter test test/app/flows/flow_rules_test.dart` ausführen.
 
 ## Was Host und Emulator unterscheidet
 
