@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/app/bootstrap/app_services.dart';
@@ -11,6 +12,7 @@ import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/core/notifications/application/reminder_providers.dart';
 import 'package:self_improvement/core/providers/core_providers.dart';
 import 'package:self_improvement/core/testing/data_harness.dart';
+import 'package:self_improvement/features/focus/application/focus_providers.dart';
 import 'package:self_improvement/features/modules/application/data_epoch.dart';
 import 'package:self_improvement/shared/local_date.dart';
 
@@ -323,6 +325,47 @@ void main() {
         );
         await app.settle();
         expect(app.container.read(todayProvider), LocalDate(2026, 10, 5));
+      },
+    );
+
+    testWidgets(
+      'a running focus session is restored when the app comes back, also away '
+      'from the session screen (AT16, AT17)',
+      (tester) async {
+        final app = await pumpFullApp(
+          tester,
+          seed: (h) => h.database
+              .into(h.database.focusSessions)
+              .insert(
+                focusRow(
+                  status: 'running',
+                  accumulated: 0,
+                  segmentStartedAt: Value(h.clock.nowUtc()),
+                ),
+              ),
+        );
+        final epoch = app.container.read(focusForegroundEpochProvider);
+
+        // The device slept for 30 minutes: no tick ran, the clock moved on.
+        app.harness.clock.advance(const Duration(minutes: 30));
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        for (var i = 0; i < 4; i++) {
+          await app.settle();
+        }
+
+        expect(
+          app.container.read(focusForegroundEpochProvider),
+          greaterThan(epoch),
+          reason: 'the countdown starts a fresh phase',
+        );
+        final row = await tester.runAsync(
+          () => (app.harness.database.select(
+            app.harness.database.focusSessions,
+          )..where((s) => s.id.equals('f1'))).getSingle(),
+        );
+        expect(row!.status, 'awaiting_confirmation');
       },
     );
 

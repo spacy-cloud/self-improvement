@@ -38,8 +38,9 @@ final class FocusRestoreResult {
 /// Restores the open session after the process was closed or the app was
 /// resumed.
 ///
-/// The app shell calls [restore] on bootstrap and on every `resumed`
-/// lifecycle event. A running session whose planned time has passed is turned
+/// [restore] runs when the focus module starts (app start), on every `resumed`
+/// lifecycle event (`AppWiring`) and when the session screen comes back to the
+/// foreground. A running session whose planned time has passed is turned
 /// into `awaiting_confirmation` through the `markAwaitingConfirmation`
 /// command; paused and awaiting sessions stay untouched. Being closed never
 /// earns focus time or XP automatically. Afterwards the foreground countdown

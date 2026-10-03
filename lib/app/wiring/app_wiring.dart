@@ -10,6 +10,7 @@ import 'package:self_improvement/core/backup/backup_providers.dart';
 import 'package:self_improvement/core/notifications/application/reminder_providers.dart';
 import 'package:self_improvement/core/providers/core_providers.dart';
 import 'package:self_improvement/core/time/clock_service.dart';
+import 'package:self_improvement/features/focus/application/focus_providers.dart';
 import 'package:self_improvement/features/modules/application/module_lifecycle.dart';
 import 'package:self_improvement/shared/local_time.dart';
 
@@ -121,7 +122,12 @@ final class AppWiring {
 
 /// Keeps "today" right: re-reads the device zone and the date when the app
 /// comes back to the foreground and when the local day changes while the app
-/// runs (a timer to the next local midnight).
+/// runs (a timer to the next local midnight). On every return to the foreground
+/// an open focus session is restored as well: its countdown starts a fresh
+/// phase from the persisted segments (the monotonic clock may have stopped
+/// while the device slept), and a session that ran out meanwhile becomes
+/// "awaiting confirmation", also when the user lands on a screen other than the
+/// session screen.
 class _ClockLifecycle with WidgetsBindingObserver {
   _ClockLifecycle(this._container);
 
@@ -162,6 +168,12 @@ class _ClockLifecycle with WidgetsBindingObserver {
     }
     _container.read(todayProvider.notifier).refresh();
     _scheduleMidnight();
+    try {
+      await _container.read(focusRestorerProvider).restore();
+    } on Object catch (error) {
+      // The focus screens report a storage problem themselves.
+      debugPrint('focus session not restored: ${error.runtimeType}');
+    }
   }
 
   void _scheduleMidnight() {
