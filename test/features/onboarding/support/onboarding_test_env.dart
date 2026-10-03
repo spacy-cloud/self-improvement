@@ -8,6 +8,7 @@ import 'package:self_improvement/core/errors/app_failure.dart';
 import 'package:self_improvement/core/goals/data/goal_version_repository.dart';
 import 'package:self_improvement/core/goals/domain/goal_version.dart';
 import 'package:self_improvement/core/modules/module_id.dart';
+import 'package:self_improvement/core/notifications/data/reminder_preferences_repository.dart';
 import 'package:self_improvement/core/onboarding/onboarding_repository.dart';
 import 'package:self_improvement/core/profile/profile_repository.dart';
 import 'package:self_improvement/core/profile/user_profile.dart';
@@ -80,23 +81,50 @@ class OnboardingEnv {
   /// The router of a [pumpOnboarding] call with `withRouter`.
   final GoRouter? router;
 
+  /// Runs [action] (real database I/O) outside the fake clock of the test.
+  Future<T> read<T>(WidgetTester tester, Future<T> Function() action) async =>
+      (await tester.runAsync(action)) as T;
+
   /// Reads the profile row.
-  Future<UserProfile> profile() async =>
-      (await ProfileRepository(harness.database).get())!;
+  Future<UserProfile> profile(WidgetTester tester) => read(
+    tester,
+    () async => (await ProfileRepository(harness.database).get())!,
+  );
 
   /// Enabled flag per module as stored by the module history.
-  Future<Map<ModuleId, bool>> modules() => harness.moduleStatus.statuses();
+  Future<Map<ModuleId, bool>> modules(WidgetTester tester) =>
+      read(tester, harness.moduleStatus.statuses);
 
-  /// The goal version row of every goal type.
-  Future<Map<String, GoalVersion>> goals() async {
-    final all = await GoalVersionRepository(harness.database).all();
-    return <String, GoalVersion>{for (final goal in all) goal.type.key: goal};
-  }
+  /// The goal version row of every stored goal type.
+  Future<Map<String, GoalVersion>> goals(WidgetTester tester) => read(
+    tester,
+    () async {
+      final all = await GoalVersionRepository(harness.database).all();
+      return <String, GoalVersion>{for (final goal in all) goal.type.key: goal};
+    },
+  );
 
   /// Number of stored weight measurements (must stay 0 after onboarding).
-  Future<int> weightEntryCount() async =>
-      (await harness.database.select(harness.database.weightEntries).get())
-          .length;
+  Future<int> weightEntryCount(WidgetTester tester) => read(
+    tester,
+    () async =>
+        (await harness.database.select(harness.database.weightEntries).get())
+            .length,
+  );
+
+  /// Whether reminders are wanted (the master switch) and which water slots
+  /// are on. Both must stay off through the onboarding.
+  Future<({bool wanted, Set<int> waterHours})> reminders(WidgetTester tester) =>
+      read(tester, () async {
+        final repository = ReminderPreferencesRepository(
+          database: harness.database,
+          runner: harness.runner,
+        );
+        return (
+          wanted: await repository.notificationsWanted(),
+          waterHours: await repository.enabledWaterHours(),
+        );
+      });
 }
 
 /// A harness whose projection step can be made to fail: the real command runner
