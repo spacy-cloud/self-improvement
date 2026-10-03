@@ -528,6 +528,65 @@ void main() {
     });
   });
 
+  group('delete (AT12, AT27)', () {
+    test('removes the workout and the undo restores the same id', () async {
+      final entry = await seedEntry(title: 'Laufen', minutes: 40);
+      final args = WorkoutFormArgs.edit(entry);
+      final result = await controller(args).deleteEntry();
+      expect(result, isA<WorkoutDeleted>());
+      expect((result as WorkoutDeleted).message, 'Training gelöscht');
+      expect(await entries(), isEmpty);
+
+      await result.outcome.undo!.run(harness.ids.newId());
+      final restored = await entries();
+      expect(restored.single.id, entry.id);
+      expect(restored.single.durationMinutes, 40);
+    });
+
+    test(
+      'a storage failure keeps the workout, the retry reuses the command id',
+      () async {
+        final entry = await seedEntry();
+        final args = WorkoutFormArgs.edit(entry);
+        projection.failure = StateError('disk full');
+        final failed = await controller(args).deleteEntry();
+        expect(failed, isA<WorkoutDeleteFailed>());
+        expect((failed as WorkoutDeleteFailed).failure, isA<StorageFailure>());
+        expect(await entries(), hasLength(1), reason: 'nothing was deleted');
+        expect(formState(args).submitFailure, isA<StorageFailure>());
+        expect(formState(args).submitting, isFalse);
+
+        projection.failure = null;
+        expect(await controller(args).deleteEntry(), isA<WorkoutDeleted>());
+        expect(await entries(), isEmpty);
+        final receipts = await harness.database
+            .select(harness.database.commandReceipts)
+            .get();
+        expect(
+          receipts.where((r) => r.commandType == 'workout.delete'),
+          hasLength(1),
+          reason: 'one committed delete command',
+        );
+      },
+    );
+
+    test('a second tap while the delete runs is ignored', () async {
+      final entry = await seedEntry();
+      final args = WorkoutFormArgs.edit(entry);
+      final first = controller(args).deleteEntry();
+      final second = await controller(args).deleteEntry();
+      expect(second, isA<WorkoutDeleteBusy>());
+      expect(await first, isA<WorkoutDeleted>());
+    });
+
+    test('only an existing workout can be deleted', () async {
+      expect(
+        () => controller(create).deleteEntry(),
+        throwsA(isA<StateError>()),
+      );
+    });
+  });
+
   test('form arguments are equal for the same entry version', () async {
     final entry = await seedEntry();
     expect(WorkoutFormArgs.edit(entry), WorkoutFormArgs.edit(entry));
