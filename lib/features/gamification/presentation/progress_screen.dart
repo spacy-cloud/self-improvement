@@ -211,7 +211,7 @@ class _StreakLink extends ConsumerWidget {
       children: <Widget>[
         EntryListTile.chevron(
           title: title,
-          subtitle: 'Wochenübersicht und Meilensteine',
+          subtitle: 'Letzte sieben Tage und Meilensteine',
           icon: AppIcon.streak.data,
           accent: AppAccent.streak,
           onTap: () => context.push(DashboardRoutes.streak),

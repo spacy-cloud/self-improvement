@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/core/providers/core_providers.dart';
 import 'package:self_improvement/features/dashboard/application/level_up_notice.dart';
+import 'package:self_improvement/features/dashboard/presentation/widgets/text_scale.dart';
 import 'package:self_improvement/features/gamification/application/gamification_providers.dart';
 import 'package:self_improvement/features/gamification/domain/level.dart';
 import 'package:self_improvement/shared/number_format.dart';
@@ -36,51 +37,61 @@ class LevelUpNoticeCard extends ConsumerWidget {
     final subtitle =
         'Du hast jetzt ${formatThousands(notice.levelUp.xpAfter)} XP '
         'gesammelt.';
+    const tile = AppIconTile(
+      icon: Icons.bolt_rounded,
+      accent: AppAccent.gamification,
+    );
+    final texts = Semantics(
+      container: true,
+      liveRegion: true,
+      label: '$title. $subtitle',
+      excludeSemantics: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            title,
+            style: AppTextStyles.bodyStrong.copyWith(color: colors.textPrimary),
+          ),
+          Text(
+            subtitle,
+            style: AppTextStyles.bodyRegular.copyWith(
+              color: colors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+    final close = AppIconButton(
+      icon: AppIcon.close.data,
+      semanticLabel: 'Hinweis schließen',
+      onPressed: () => ref.read(levelUpNoticeProvider.notifier).dismiss(),
+    );
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.s12),
       child: AppCard(
         padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: <Widget>[
-            const AppIconTile(
-              icon: Icons.bolt_rounded,
-              accent: AppAccent.gamification,
-            ),
-            const SizedBox(width: AppSpacing.s12),
-            Expanded(
-              child: Semantics(
-                container: true,
-                liveRegion: true,
-                label: '$title. $subtitle',
-                excludeSemantics: true,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      title,
-                      style: AppTextStyles.bodyStrong.copyWith(
-                        color: colors.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      subtitle,
-                      style: AppTextStyles.bodyRegular.copyWith(
-                        color: colors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
+        child: context.isLargeText
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  Row(children: <Widget>[tile, const Spacer(), close]),
+                  const SizedBox(height: AppSpacing.s4),
+                  Padding(
+                    padding: const EdgeInsets.only(right: AppSpacing.s8),
+                    child: texts,
+                  ),
+                ],
+              )
+            : Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  tile,
+                  const SizedBox(width: AppSpacing.s12),
+                  Expanded(child: texts),
+                  close,
+                ],
               ),
-            ),
-            AppIconButton(
-              icon: AppIcon.close.data,
-              semanticLabel: 'Hinweis schließen',
-              onPressed: () =>
-                  ref.read(levelUpNoticeProvider.notifier).dismiss(),
-            ),
-          ],
-        ),
       ),
     );
   }
