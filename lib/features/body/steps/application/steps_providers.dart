@@ -131,3 +131,21 @@ final stepsHistoryProvider = StreamProvider.family<List<StepsHistoryDay>, int>((
     },
   );
 });
+
+/// Chart periods of the steps overview in days.
+const List<int> stepsPeriods = [7, 30, 90];
+
+/// Selected chart period in days (7, 30 or 90).
+final stepsPeriodProvider = NotifierProvider<StepsPeriodNotifier, int>(
+  StepsPeriodNotifier.new,
+);
+
+class StepsPeriodNotifier extends Notifier<int> {
+  @override
+  int build() => stepsPeriods.first;
+
+  void select(int days) {
+    assert(stepsPeriods.contains(days), 'unsupported period');
+    state = days;
+  }
+}
