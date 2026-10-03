@@ -68,4 +68,16 @@ void main() {
     expect(feedback.last!.kind, 'info');
     expect(feedback.events[1].undo, isNull);
   });
+
+  test('an error can carry a retry action that the recorder exposes', () {
+    final feedback = RecordingFeedbackService(ids: SequentialIdGenerator());
+    var retried = 0;
+    feedback
+      ..showError('Speichern fehlgeschlagen.', onRetry: () => retried++)
+      ..showError('Ohne Aktion');
+    expect(feedback.events.first.onRetry, isNotNull);
+    feedback.events.first.onRetry!();
+    expect(retried, 1);
+    expect(feedback.events.last.onRetry, isNull);
+  });
 }

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:self_improvement/core/commands/command_runner.dart';
 import 'package:self_improvement/core/commands/id_generator.dart';
@@ -61,8 +62,14 @@ abstract interface class FeedbackService {
   /// message replaces the previous one).
   void showSaved(String message, {UndoAction? undo});
 
-  /// A persistent-looking error message (e.g. save failed).
-  void showError(String message);
+  /// An error message (e.g. save failed). It stays until it is dismissed or
+  /// the user acts. With [onRetry] the snack bar offers the action
+  /// [retryLabel]; the typed input of the form is kept by the caller.
+  void showError(
+    String message, {
+    VoidCallback? onRetry,
+    String retryLabel = 'Erneut',
+  });
 
   /// A neutral information message.
   void showInfo(String message);
@@ -77,12 +84,15 @@ final feedbackServiceProvider = Provider<FeedbackService>(
 
 /// One recorded feedback call.
 class RecordedFeedback {
-  RecordedFeedback(this.kind, this.message, [this.undo]);
+  RecordedFeedback(this.kind, this.message, [this.undo, this.onRetry]);
 
   /// `saved`, `error` or `info`.
   final String kind;
   final String message;
   final UndoPresentation? undo;
+
+  /// The retry action of an error (null when none was offered).
+  final VoidCallback? onRetry;
 }
 
 /// Test double that records feedback calls and lets a test press "Rückgängig".
@@ -105,8 +115,11 @@ class RecordingFeedbackService implements FeedbackService {
   );
 
   @override
-  void showError(String message) =>
-      events.add(RecordedFeedback('error', message));
+  void showError(
+    String message, {
+    VoidCallback? onRetry,
+    String retryLabel = 'Erneut',
+  }) => events.add(RecordedFeedback('error', message, null, onRetry));
 
   @override
   void showInfo(String message) =>
