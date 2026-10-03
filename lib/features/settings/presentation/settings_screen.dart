@@ -134,6 +134,11 @@ class _SettingsContent extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.tokens.colors;
     final theme = AppThemeMode.tryParse(settings.themeModeKey);
+    final themeLabel = _themeTexts[theme ?? AppThemeMode.system]!.$1;
+    // With large text a value next to the title would leave the title no room;
+    // it moves into the second line.
+    final large =
+        MediaQuery.textScalerOf(context).scale(1) > AppSizes.stackTextScale;
     final enabledModules = modules.values.where((on) => on).length;
     final systemReducesMotion = MediaQuery.disableAnimationsOf(context);
     final bodyOn = modules[ModuleId.body] ?? true;
@@ -199,18 +204,26 @@ class _SettingsContent extends ConsumerWidget {
         const SizedBox(height: 8),
         AppListGroup(
           children: [
-            EntryListTile.value(
-              title: 'Design',
-              subtitle: 'Hell · Dunkel · OLED · System',
-              value: _themeTexts[theme ?? AppThemeMode.system]!.$1,
-              showChevron: true,
-              icon: AppIcon.theme.data,
-              accent: AppAccent.focus,
-              semanticLabel:
-                  'Design, ${_themeTexts[theme ?? AppThemeMode.system]!.$1}, '
-                  'ändern',
-              onTap: () => fireAndForget(() => _chooseTheme(context, ref)),
-            ),
+            if (large)
+              EntryListTile.chevron(
+                title: 'Design',
+                subtitle: 'Aktuell: $themeLabel',
+                icon: AppIcon.theme.data,
+                accent: AppAccent.focus,
+                semanticLabel: 'Design, $themeLabel, ändern',
+                onTap: () => fireAndForget(() => _chooseTheme(context, ref)),
+              )
+            else
+              EntryListTile.value(
+                title: 'Design',
+                subtitle: 'Hell · Dunkel · OLED · System',
+                value: themeLabel,
+                showChevron: true,
+                icon: AppIcon.theme.data,
+                accent: AppAccent.focus,
+                semanticLabel: 'Design, $themeLabel, ändern',
+                onTap: () => fireAndForget(() => _chooseTheme(context, ref)),
+              ),
             EntryListTile.toggle(
               title: 'Reduzierte Bewegung',
               subtitle: systemReducesMotion
@@ -250,15 +263,24 @@ class _SettingsContent extends ConsumerWidget {
         const SizedBox(height: 8),
         AppListGroup(
           children: [
-            EntryListTile.value(
-              title: 'Module verwalten',
-              subtitle: 'Bereiche ein- und ausblenden',
-              value: '$enabledModules von ${ModuleId.values.length}',
-              showChevron: true,
-              icon: AppIcon.modules.data,
-              accent: AppAccent.workout,
-              onTap: () => context.push(SettingsRoutes.modules),
-            ),
+            if (large)
+              EntryListTile.chevron(
+                title: 'Module verwalten',
+                subtitle: '$enabledModules von ${ModuleId.values.length} aktiv',
+                icon: AppIcon.modules.data,
+                accent: AppAccent.workout,
+                onTap: () => context.push(SettingsRoutes.modules),
+              )
+            else
+              EntryListTile.value(
+                title: 'Module verwalten',
+                subtitle: 'Bereiche ein- und ausblenden',
+                value: '$enabledModules von ${ModuleId.values.length}',
+                showChevron: true,
+                icon: AppIcon.modules.data,
+                accent: AppAccent.workout,
+                onTap: () => context.push(SettingsRoutes.modules),
+              ),
           ],
         ),
         const SizedBox(height: 16),
@@ -279,11 +301,18 @@ class _SettingsContent extends ConsumerWidget {
         const SizedBox(height: 8),
         AppListGroup(
           children: [
-            EntryListTile.value(
-              title: 'Version',
-              value: AppConfig.appVersion,
-              leading: neutralTile(AppIcon.info),
-            ),
+            if (large)
+              EntryListTile(
+                title: 'Version',
+                subtitle: AppConfig.appVersion,
+                leading: neutralTile(AppIcon.info),
+              )
+            else
+              EntryListTile.value(
+                title: 'Version',
+                value: AppConfig.appVersion,
+                leading: neutralTile(AppIcon.info),
+              ),
             EntryListTile.chevron(
               title: 'Lizenzen',
               subtitle: 'Schrift, Flutter und Pakete',

@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/core/goals/domain/goal_type.dart';
+import 'package:self_improvement/core/modules/module_id.dart';
 import 'package:self_improvement/core/onboarding/onboarding_repository.dart';
 import 'package:self_improvement/core/profile/user_profile.dart';
 import 'package:self_improvement/core/providers/command_providers.dart';
 import 'package:self_improvement/core/providers/core_providers.dart';
 import 'package:self_improvement/features/profile/presentation/profile_routes.dart';
+import 'package:self_improvement/shared/local_date.dart';
 
 import '../../../support/pump_app.dart';
 import '../support/screen_env.dart';
@@ -228,6 +230,59 @@ void main() {
       expect(find.text('Seite ${SettingsRoutes.modules}'), findsOneWidget);
       expect(router.canPop(), isTrue);
     });
+  });
+
+  group('gamification switched off and on again (AT26)', () {
+    testWidgets(
+      'hides streak and XP, never pays out the time off, keeps old XP',
+      (tester) async {
+        final env = await createScreenEnv(
+          tester,
+          realProjection: true,
+          startedOn: LocalDate(2026, 9, 1),
+        );
+        await openScreen(tester, env, ProfileRoutes.profile);
+        expect(find.text('Level 1 · 0 XP'), findsOneWidget);
+
+        await addWeight(tester, env, 71500, at: DateTime.utc(2026, 10, 3, 6));
+        expect(find.text('Level 1 · 10 XP'), findsOneWidget);
+
+        await tester.runCommand(
+          () => env.container
+              .read(moduleManagerProvider)
+              .setEnabled(
+                commandId: 'off',
+                module: ModuleId.gamification,
+                enabled: false,
+              ),
+        );
+        expect(find.text('Fortschritt'), findsNothing);
+        expect(find.text('Tage Streak'), findsNothing);
+        expect(find.text('Meine Ziele'), findsOneWidget, reason: 'goals stay');
+
+        // An activity while it is off earns nothing, not even later.
+        await addWeight(tester, env, 71000, at: DateTime.utc(2026, 10, 2, 6));
+        await tester.runCommand(
+          () => env.container
+              .read(moduleManagerProvider)
+              .setEnabled(
+                commandId: 'on',
+                module: ModuleId.gamification,
+                enabled: true,
+              ),
+        );
+        expect(find.text('Fortschritt'), findsOneWidget);
+        expect(
+          find.text('Level 1 · 10 XP'),
+          findsOneWidget,
+          reason: 'no payout',
+        );
+
+        // A new activity after switching it on counts as usual.
+        await addWeight(tester, env, 70500, at: DateTime.utc(2026, 10, 1, 6));
+        expect(find.text('Level 1 · 20 XP'), findsOneWidget);
+      },
+    );
   });
 
   group('links', () {

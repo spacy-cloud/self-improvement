@@ -19,6 +19,7 @@ import 'package:self_improvement/features/profile/presentation/profile_routes.da
 import 'package:self_improvement/features/profile/presentation/profile_screen.dart';
 import 'package:self_improvement/features/settings/presentation/licenses_screen.dart';
 import 'package:self_improvement/features/settings/presentation/settings_screen.dart';
+import 'package:self_improvement/shared/local_date.dart';
 
 import '../../../support/pump_app.dart';
 import 'flaky_projection.dart';
@@ -75,6 +76,7 @@ Future<ScreenEnv> createScreenEnv(
   bool onboarded = true,
   Set<String>? enabledModules,
   String nowIso = '2026-10-03T08:00:00Z',
+  LocalDate? startedOn,
   bool realProjection = false,
   List<Override> overrides = const [],
 }) async {
@@ -90,7 +92,10 @@ Future<ScreenEnv> createScreenEnv(
   });
   if (onboarded) {
     await tester.runAsync(
-      () => harness.seedOnboarded(enabledModules: enabledModules),
+      () => harness.seedOnboarded(
+        enabledModules: enabledModules,
+        startedOn: startedOn,
+      ),
     );
   }
   return ScreenEnv._(

@@ -138,42 +138,55 @@ class _IdentityCard extends StatelessWidget {
           spoken: '${formatSignedWeightKg(sinceStart)} Gewicht seit Start',
         ),
     ];
+    final stacked =
+        MediaQuery.textScalerOf(context).scale(1) > AppSizes.stackTextScale;
+    final editButton = AppIconButton(
+      icon: AppIcon.edit.data,
+      semanticLabel: 'Profil bearbeiten',
+      iconColor: colors.primaryText,
+      onPressed: () => context.push(ProfileRoutes.edit),
+    );
+    final names = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          overview.name,
+          style: AppTextStyles.titleSection.copyWith(color: colors.textPrimary),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          overview.memberSince,
+          style: AppTextStyles.captionDefault.copyWith(
+            color: colors.textSecondary,
+          ),
+        ),
+      ],
+    );
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              ProfileAvatar(initials: overview.initials),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      overview.name,
-                      style: AppTextStyles.titleSection.copyWith(
-                        color: colors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      overview.memberSince,
-                      style: AppTextStyles.captionDefault.copyWith(
-                        color: colors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              AppIconButton(
-                icon: AppIcon.edit.data,
-                semanticLabel: 'Profil bearbeiten',
-                iconColor: colors.primaryText,
-                onPressed: () => context.push(ProfileRoutes.edit),
-              ),
-            ],
-          ),
+          // With large text the name gets the full width below the picture,
+          // instead of a sliver between picture and edit button.
+          if (stacked) ...[
+            Row(
+              children: [
+                ProfileAvatar(initials: overview.initials),
+                const Spacer(),
+                editButton,
+              ],
+            ),
+            const SizedBox(height: 12),
+            names,
+          ] else
+            Row(
+              children: [
+                ProfileAvatar(initials: overview.initials),
+                const SizedBox(width: 16),
+                Expanded(child: names),
+                editButton,
+              ],
+            ),
           if (stats.isNotEmpty) ...[
             const SizedBox(height: 16),
             _StatBlock(stats: stats, muted: true),
