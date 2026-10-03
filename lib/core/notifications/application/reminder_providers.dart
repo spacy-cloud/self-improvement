@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:self_improvement/core/notifications/application/device_zone_tracker.dart';
 import 'package:self_improvement/core/notifications/application/notification_entry_resolver.dart';
 import 'package:self_improvement/core/notifications/application/reminder_auto_reconciler.dart';
+import 'package:self_improvement/core/notifications/application/reminder_lifecycle_observer.dart';
 import 'package:self_improvement/core/notifications/application/reminder_service.dart';
 import 'package:self_improvement/core/notifications/data/reminder_input_reader.dart';
 import 'package:self_improvement/core/notifications/data/reminder_preferences_repository.dart';
@@ -27,6 +29,12 @@ final reminderPlatformProvider = Provider<ReminderPlatform>((ref) {
 /// Reads the device time zone (for the app's clock and zone change detection).
 final deviceTimeZoneSourceProvider = Provider<DeviceTimeZoneSource>(
   (ref) => const FlutterTimezoneSource(),
+);
+
+/// The device zone as a synchronous getter plus change detection. The app root
+/// calls `refresh()` before the first frame (for `SystemClock`) and on resume.
+final deviceZoneTrackerProvider = Provider<DeviceZoneTracker>(
+  (ref) => DeviceZoneTracker(source: ref.watch(deviceTimeZoneSourceProvider)),
 );
 
 /// INJECTED: whether today's water goal is already reached. The default is
@@ -99,6 +107,17 @@ final reminderAutoReconcileProvider = Provider<ReminderAutoReconciler>((ref) {
   )..start();
   ref.onDispose(reconciler.dispose);
   return reconciler;
+});
+
+/// Reconciles on every resume from the background, after re-reading the
+/// device time zone. Read it once at the app root (needs the widgets binding).
+final reminderLifecycleProvider = Provider<ReminderLifecycleObserver>((ref) {
+  final observer = ReminderLifecycleObserver(
+    service: ref.watch(reminderServiceProvider),
+    zones: ref.watch(deviceZoneTrackerProvider),
+  )..attach();
+  ref.onDispose(observer.detach);
+  return observer;
 });
 
 /// Wish, permission, count and last error of the reminder feature; updated

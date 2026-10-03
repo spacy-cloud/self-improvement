@@ -10,6 +10,7 @@ import 'package:self_improvement/core/notifications/domain/reminder_inputs.dart'
 import 'package:self_improvement/core/notifications/domain/reminder_kind.dart';
 import 'package:self_improvement/core/notifications/domain/reminder_status.dart';
 import 'package:self_improvement/core/notifications/domain/scheduled_reminder.dart';
+import 'package:self_improvement/core/notifications/platform/device_time_zone.dart';
 import 'package:self_improvement/core/notifications/platform/fake_reminder_platform.dart';
 import 'package:self_improvement/core/notifications/platform/flutter_local_notifications_reminder_platform.dart';
 import 'package:self_improvement/core/testing/data_harness.dart';
@@ -306,6 +307,22 @@ void main() {
     });
   });
 
+  group('device zone', () {
+    test('the tracker reads the zone through the injected source', () async {
+      final c = container(
+        overrides: [
+          deviceTimeZoneSourceProvider.overrideWithValue(
+            _FixedZone('Europe/Berlin'),
+          ),
+        ],
+      );
+      final tracker = c.read(deviceZoneTrackerProvider);
+      expect(tracker.zoneId, 'UTC');
+      expect(await tracker.refresh(), isTrue);
+      expect(tracker.zoneId, 'Europe/Berlin');
+    });
+  });
+
   group('entry resolver', () {
     test('is wired with the module statuses and records', () async {
       final c = container();
@@ -316,4 +333,13 @@ void main() {
       expect(await resolver.resolve('/habits/$habit'), '/');
     });
   });
+}
+
+class _FixedZone implements DeviceTimeZoneSource {
+  _FixedZone(this.zone);
+
+  final String zone;
+
+  @override
+  Future<String?> currentZoneId() async => zone;
 }
