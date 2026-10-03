@@ -168,6 +168,14 @@ class WaterFormController extends Notifier<WaterFormState> {
     );
   }
 
+  /// Plus (+1) or minus (-1) button: 10 ml per step from the typed amount
+  /// (see [stepWaterMl]); an empty field starts at 250 ml.
+  void step(int direction) {
+    setAmountText(
+      '${stepWaterMl(currentText: state.amountText, direction: direction)}',
+    );
+  }
+
   void setDate(LocalDate date) {
     _timeTouched = true;
     _attemptInstant = null;
