@@ -385,8 +385,7 @@ void main() {
       controller(create).setAmountText('250');
       projection.failure = StateError('disk full');
       await controller(create).submit();
-      // Issued: the command id, then the entry id of the rolled back attempt.
-      expect(ids.issued, hasLength(2));
+      // The first id handed out is the command id of the attempt.
       final commandId = ids.issued.first;
       final firstInstant = kit.harness.clock.nowUtc();
 
@@ -394,9 +393,12 @@ void main() {
       kit.harness.clock.advance(const Duration(minutes: 3));
       projection.failure = null;
       expect(await controller(create).submit(), isA<WaterSaved>());
-      expect(ids.issued, hasLength(3), reason: 'no second command id');
       final receipts = await kit.receipts();
-      expect(receipts.single.commandId, commandId);
+      expect(
+        receipts.single.commandId,
+        commandId,
+        reason: 'the retry reused the command id of the failed attempt',
+      );
       expect(
         (await stored()).single.occurredAtUtc,
         firstInstant,

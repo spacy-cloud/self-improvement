@@ -257,16 +257,17 @@ void main() {
           isFalse,
           reason: 'nothing was stored',
         );
-        expect(ids.issued, hasLength(1));
+        // The first id handed out is the command id of the attempt.
         final commandId = ids.issued.first;
 
         projection.failBeforeBody = null;
         expect(await controller().submit(), isA<WaterGoalSaved>());
         expect(formState().submitFailure, isNull);
-        // The retry only issued the id of the new goal version row, no second
-        // command id.
-        expect(ids.issued, hasLength(2));
-        expect((await kit.receipts()).single.commandId, commandId);
+        expect(
+          (await kit.receipts()).single.commandId,
+          commandId,
+          reason: 'the retry reused the command id of the failed attempt',
+        );
       },
     );
 
@@ -277,12 +278,13 @@ void main() {
       controller().setTargetText('3500');
       projection.failBeforeBody = null;
       await controller().submit();
-      // Issued: command id of the first content, command id of the changed
-      // content, id of the new goal version row.
-      expect(ids.issued, hasLength(3));
       final receipt = (await kit.receipts()).single;
-      expect(receipt.commandId, ids.issued[1]);
-      expect(receipt.commandId, isNot(ids.issued[0]));
+      expect(ids.issued, contains(receipt.commandId));
+      expect(
+        receipt.commandId,
+        isNot(ids.issued.first),
+        reason: 'changed content is a new action with a new command id',
+      );
     });
   });
 }

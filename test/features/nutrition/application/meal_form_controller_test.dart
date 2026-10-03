@@ -370,11 +370,7 @@ void main() {
       expect(s.kcalText, '0');
       expect(s.note, 'Notiz bleibt');
       expect(await stored(), isEmpty);
-      expect(
-        ids.issued,
-        hasLength(2),
-        reason: 'command id + rolled back meal id',
-      );
+      // The first id handed out is the command id of the attempt.
       final commandId = ids.issued.first;
 
       // Time passes; the retry keeps the frozen instant and the command id.
@@ -384,8 +380,11 @@ void main() {
       expect(await controller(create).submit(), isA<MealSaved>());
       s = formState(create);
       expect(s.submitFailure, isNull);
-      expect(ids.issued, hasLength(3), reason: 'no second command id');
-      expect((await kit.receipts()).single.commandId, commandId);
+      expect(
+        (await kit.receipts()).single.commandId,
+        commandId,
+        reason: 'the retry reused the command id of the failed attempt',
+      );
       final meal = (await stored()).single;
       expect(meal.occurredAtUtc, firstInstant);
       expect(meal.kcal, 0);

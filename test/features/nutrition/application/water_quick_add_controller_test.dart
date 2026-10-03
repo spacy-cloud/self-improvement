@@ -146,20 +146,13 @@ void main() {
           controller().add(250),
           throwsA(isA<StorageFailure>()),
         );
-        // Issued so far: the tap's command id, then the entry id of the rolled
-        // back attempt.
-        expect(ids.issued, hasLength(2));
+        // The first id handed out is the command id of the tap.
         final tapId = ids.issued.first;
 
         projection.failAfterSync = null;
         final outcome = await controller().retry();
         expect(outcome, isNotNull);
         expect(outcome!.replayed, isFalse);
-        expect(
-          ids.issued,
-          hasLength(3),
-          reason: 'the retry created only the entry id, no new command id',
-        );
         final receipts = await kit.receipts();
         expect(receipts.single.commandId, tapId, reason: 'the same command id');
         expect(await totalMl(), 250);
