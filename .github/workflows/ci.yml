@@ -44,6 +44,16 @@ jobs:
         run: flutter analyze --no-pub
       - name: Unit, repository and widget tests
         run: flutter test --no-pub
+      - name: Load test numbers (CI runner with an in-memory database, not a device)
+        if: always()
+        run: cat build/load-test-results.json || true
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: load-test-results
+          path: build/load-test-results.json
+          retention-days: 14
+          if-no-files-found: warn
 
   android-debug-apk:
     name: Android debug APK
