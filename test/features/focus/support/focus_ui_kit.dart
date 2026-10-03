@@ -288,6 +288,36 @@ extension FocusUiTester on WidgetTester {
     await settleDb();
   }
 
+  /// Inserts [count] workouts directly (fast), one per day going back from
+  /// [newest]; the newest has the id `bulk-0`. For list tests.
+  Future<void> insertWorkouts(
+    FocusUi ui,
+    int count, {
+    required DateTime newest,
+  }) async {
+    await runAsync(() async {
+      for (var i = 0; i < count; i++) {
+        final at = newest.subtract(Duration(days: i));
+        await ui.database
+            .into(ui.database.workoutEntries)
+            .insert(
+              WorkoutEntriesCompanion.insert(
+                id: 'bulk-$i',
+                trainingCategory: 'cardio',
+                durationMinutes: 30,
+                occurredAtUtc: at,
+                localDate: ui.harness.clock.localDateOf(at),
+                timezoneId: 'Europe/Berlin',
+                gamificationEligible: false,
+                createdAtUtc: at,
+                updatedAtUtc: at,
+              ),
+            );
+      }
+    });
+    await settleDb();
+  }
+
   /// Rows of the focus sessions table (also discarded and deleted ones).
   Future<List<FocusSessionRow>> focusRows(FocusUi ui) async => (await runAsync(
     () => ui.database.select(ui.database.focusSessions).get(),
