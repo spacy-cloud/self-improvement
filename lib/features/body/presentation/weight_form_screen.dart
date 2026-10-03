@@ -573,7 +573,7 @@ class _WeightValueField extends StatelessWidget {
                       FilteringTextInputFormatter.allow(RegExp('[0-9.,]')),
                       LengthLimitingTextInputFormatter(8),
                     ],
-                    decoration: InputDecoration.collapsed(
+                    decoration: bareInputDecoration(
                       hintText: hint,
                       hintStyle: style.copyWith(color: colors.textTertiary),
                     ),

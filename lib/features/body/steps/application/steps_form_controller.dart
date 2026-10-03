@@ -91,6 +91,29 @@ final class StepsRejected extends StepsSubmitResult {
   const StepsRejected();
 }
 
+sealed class StepsDeleteResult {
+  const StepsDeleteResult();
+}
+
+final class StepsDeleted extends StepsDeleteResult {
+  const StepsDeleted(this.outcome);
+
+  final CommandOutcome outcome;
+
+  String get message => 'Tageswert gelöscht';
+}
+
+/// A save or delete is already running; this call did nothing.
+final class StepsDeleteBusy extends StepsDeleteResult {
+  const StepsDeleteBusy();
+}
+
+final class StepsDeleteFailed extends StepsDeleteResult {
+  const StepsDeleteFailed(this.failure);
+
+  final AppFailure failure;
+}
+
 class StepsFormController extends Notifier<StepsFormState> {
   StepsFormController(this.args);
 
@@ -175,6 +198,30 @@ class StepsFormController extends Notifier<StepsFormState> {
       state = state.copyWith(submitting: false, submitFailure: () => failure);
     }
     return const StepsRejected();
+  }
+
+  /// Removes the stored total of the selected date ("Nicht erfasst" again).
+  Future<StepsDeleteResult> deleteExisting() async {
+    if (state.submitting) {
+      return const StepsDeleteBusy();
+    }
+    final commandId = _tracker.idFor(('delete', state.date));
+    state = state.copyWith(submitting: true, submitFailure: () => null);
+    try {
+      final outcome = await ref
+          .read(stepsRepositoryProvider)
+          .deleteDay(commandId: commandId, date: state.date);
+      _tracker.completed();
+      state = state.copyWith(
+        submitting: false,
+        dirty: false,
+        existingSteps: () => null,
+      );
+      return StepsDeleted(outcome);
+    } on AppFailure catch (failure) {
+      state = state.copyWith(submitting: false);
+      return StepsDeleteFailed(failure);
+    }
   }
 
   Map<String, String> _without(String field) =>

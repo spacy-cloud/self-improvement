@@ -202,6 +202,7 @@ class EntryListTile extends StatelessWidget {
             value: toggleValue,
             onChanged: onToggle == null ? null : (_) {},
             semanticLabel: title,
+            squared: true,
           ),
         ),
       ),

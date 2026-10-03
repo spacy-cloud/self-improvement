@@ -20,6 +20,7 @@ export 'package:self_improvement/core/design/components/app_section_header.dart'
 export 'package:self_improvement/core/design/components/app_snack_bar.dart';
 export 'package:self_improvement/core/design/components/app_switch.dart';
 export 'package:self_improvement/core/design/components/app_text_field.dart';
+export 'package:self_improvement/core/design/components/bare_input_decoration.dart';
 export 'package:self_improvement/core/design/components/chart_summary.dart';
 export 'package:self_improvement/core/design/components/confirmation_sheet.dart';
 export 'package:self_improvement/core/design/components/empty_state.dart';
