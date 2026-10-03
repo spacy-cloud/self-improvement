@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -64,6 +66,32 @@ class AppFixture {
   /// widgets catch up.
   Future<T> run<T>(Future<T> Function() action) => tester.runCommand(action);
 
+  /// Runs [action] on the test's own (fake async) zone and pumps until it is
+  /// done. Use it for calls that wait for the app's own futures (providers,
+  /// the reminder engine): `runAsync` cannot complete those.
+  Future<T> runLive<T>(Future<T> Function() action) async {
+    T? result;
+    Object? failure;
+    var done = false;
+    unawaited(
+      action().then(
+        (value) {
+          result = value;
+          done = true;
+        },
+        onError: (Object error) {
+          failure = error;
+          done = true;
+        },
+      ),
+    );
+    await tester.pumpUntil(() => done, reason: 'the action did not finish');
+    if (failure != null) {
+      throw failure!;
+    }
+    return result as T;
+  }
+
   /// Lets pending streams and frames settle.
   Future<void> settle() async {
     for (var i = 0; i < 6; i++) {
@@ -120,6 +148,8 @@ Future<AppFixture> pumpFullApp(
   List<Override> overrides = const <Override>[],
   Future<AppServices> Function(DataHarness harness)? starter,
   bool waitForReady = true,
+  Future<void> Function(DataHarness harness)? seed,
+  void Function(FakeReminderPlatform platform)? preparePlatform,
 }) async {
   final harness = await createTestHarness(
     tester,
@@ -127,7 +157,11 @@ Future<AppFixture> pumpFullApp(
     enabledModules: enabledModules,
     nowIso: nowIso,
   );
+  if (seed != null) {
+    await tester.runAsync(() => seed(harness));
+  }
   final platform = FakeReminderPlatform(clock: harness.clock);
+  preparePlatform?.call(platform);
   final backupFiles = InMemoryBackupFileGateway();
   await tester.runAsync(loadInterFont);
   tester.view.physicalSize = size;

@@ -76,9 +76,11 @@ final class AppWiring {
 
   /// Opens the in-app route for a notification [payload] (launch or tap). The
   /// resolver turns anything unknown, a switched-off module or a missing
-  /// record into a safe route. The target is pushed on top of what is open,
-  /// so back returns to where the user was; an open form is never discarded.
-  /// Ignored before the start state is known and during onboarding.
+  /// record into a safe route (the dashboard, or the habit list). A screen
+  /// target is pushed on top of what is open, so back returns to where the
+  /// user was; a tab target selects the tab, but only while a tab is on top (an
+  /// open form is never discarded). Ignored before the start state is known and
+  /// during onboarding.
   Future<void> openFromNotification(String? payload) async {
     final state = guard();
     if (!state.ready || !state.onboardingCompleted) {
@@ -93,9 +95,11 @@ final class AppWiring {
       debugPrint('notification entry failed: ${error.runtimeType}');
       return;
     }
-    if (route == AppRoutes.home) {
+    if (AppRoutes.isTabRoot(route)) {
+      // A tab is selected, not pushed. Only from another tab: never take a
+      // screen away from the user (an open form keeps its input).
       if (AppRoutes.isTabRoot(currentPath(router))) {
-        router.go(AppRoutes.home);
+        router.go(route);
       }
       return;
     }
