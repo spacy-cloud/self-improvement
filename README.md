@@ -16,6 +16,7 @@ Der App-Name steht noch nicht fest und wird im Code als eine Konstante geführt 
 
 ## Dokumentation
 
+- [Erste Tests](docs/erste-tests.md): App starten (Android Studio, Handy, CI-APK), Demo-Daten, Rundgang
 - [Design-Handoff](docs/design-handoff.md): Screens, Routen, Komponenten, Tokens, Barrierefreiheit
 - [Implementierungsentscheidungen](docs/implementation-decisions.md): exakte Versionen, Entscheidungen, Umgebung
 - [Anforderungsmatrix](docs/requirements-matrix.md): Jira → Anforderung → Umsetzung → Test → Status
