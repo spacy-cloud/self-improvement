@@ -194,6 +194,11 @@ class _FocusSessionScreenState extends ConsumerState<FocusSessionScreen>
   @override
   Widget build(BuildContext context) {
     final async = ref.watch(focusCountdownProvider);
+    // Keep the inputs of the XP hint warm, so the "Beenden" sheet can read
+    // them right away.
+    ref
+      ..watch(focusGamificationEnabledProvider)
+      ..watch(focusSessionsTodayProvider);
     final busy = ref.watch(
       focusSessionControllerProvider.select((state) => state.busy),
     );

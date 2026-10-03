@@ -185,7 +185,10 @@ extension FocusUiTester on WidgetTester {
   /// shows the new value.
   Future<void> tick(FocusUi ui, int seconds) async {
     ui.tickBy(seconds);
-    await pump();
+    // The countdown stream delivers its value in a microtask: flush it, then
+    // build the frame that shows it.
+    await pump(Duration.zero);
+    await pump(Duration.zero);
   }
 
   /// Starts a focus session through the repository.
