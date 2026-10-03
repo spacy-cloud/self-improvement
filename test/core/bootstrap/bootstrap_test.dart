@@ -6,23 +6,11 @@ import 'package:self_improvement/core/database/app_database.dart';
 import 'package:self_improvement/core/errors/app_failure.dart';
 import 'package:self_improvement/core/profile/profile_repository.dart';
 import 'package:self_improvement/core/settings/app_settings_repository.dart';
+import 'package:self_improvement/core/testing/broken_executor.dart';
 import 'package:self_improvement/core/testing/test_database.dart';
 import 'package:self_improvement/core/time/clock_service.dart';
 import 'package:self_improvement/core/time/fake_clock.dart';
 import 'package:self_improvement/shared/local_date.dart';
-
-/// An executor that fails when opened, like a corrupt or unmigratable file.
-final class _BrokenExecutor extends QueryExecutor {
-  @override
-  SqlDialect get dialect => SqlDialect.sqlite;
-
-  @override
-  Future<bool> ensureOpen(QueryExecutorUser user) async =>
-      throw StateError('simulated open failure');
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
 
 void main() {
   setUpAll(() {
@@ -96,7 +84,7 @@ void main() {
   test(
     'an open/migration failure becomes MigrationFailure and deletes nothing',
     () async {
-      final broken = AppDatabase(_BrokenExecutor());
+      final broken = AppDatabase(BrokenQueryExecutor());
       addTearDown(() async {});
       await expectLater(
         AppBootstrap.run(database: broken, clock: clock),
