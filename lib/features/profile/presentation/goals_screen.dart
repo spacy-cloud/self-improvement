@@ -691,7 +691,7 @@ class _ValueFieldState extends State<_ValueField> {
       children: [
         IntrinsicWidth(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minWidth: 44),
+            constraints: const BoxConstraints(minWidth: 64),
             child: Semantics(
               label: widget.semanticLabel,
               textField: true,
@@ -704,7 +704,12 @@ class _ValueFieldState extends State<_ValueField> {
                 keyboardType: widget.keyboardType,
                 textInputAction: TextInputAction.done,
                 inputFormatters: widget.formatters,
-                decoration: InputDecoration.collapsed(
+                decoration: InputDecoration(
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   hintText: widget.hint,
                   hintStyle: style.copyWith(color: colors.textTertiary),
                 ),

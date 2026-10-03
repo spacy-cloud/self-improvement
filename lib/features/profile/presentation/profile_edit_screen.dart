@@ -285,13 +285,13 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
             const SizedBox(height: 14),
             if (_args.bodyVisible) ...[
               AdaptiveGrid(
+                minCellWidth: 156,
                 children: [
                   AppTextField(
-                    label: 'Größe',
+                    label: 'Größe in cm',
                     requirementLabel: 'optional',
                     controller: _height,
                     focusNode: _heightFocus,
-                    suffixText: 'cm',
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     maxLength: 3,
@@ -300,11 +300,10 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
                     onChanged: _controller.setHeight,
                   ),
                   AppTextField(
-                    label: 'Alter',
+                    label: 'Alter in Jahren',
                     requirementLabel: 'optional',
                     controller: _age,
                     focusNode: _ageFocus,
-                    suffixText: 'Jahre',
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     maxLength: 3,
@@ -316,11 +315,10 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
               ),
               const SizedBox(height: 14),
               AppTextField(
-                label: 'Startgewicht',
+                label: 'Startgewicht in kg',
                 requirementLabel: 'optional',
                 controller: _start,
                 focusNode: _startFocus,
-                suffixText: 'kg',
                 numeric: true,
                 maxLength: 6,
                 textInputAction: TextInputAction.next,
@@ -330,11 +328,10 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
               ),
               const SizedBox(height: 14),
               AppTextField(
-                label: 'Zielgewicht',
+                label: 'Zielgewicht in kg',
                 requirementLabel: 'optional',
                 controller: _target,
                 focusNode: _targetFocus,
-                suffixText: 'kg',
                 numeric: true,
                 maxLength: 6,
                 textInputAction: TextInputAction.done,

@@ -116,15 +116,19 @@ class _IdentityCard extends StatelessWidget {
       if (streak != null) ...[
         _Stat(
           value: '${streak.current}',
-          label: 'Tage Streak',
-          spoken: '${streak.current} Tage Streak, Details ansehen',
+          label: streak.current == 1 ? 'Tag Streak' : 'Tage Streak',
+          spoken:
+              '${streak.current} ${streak.current == 1 ? 'Tag' : 'Tage'} '
+              'Streak, Details ansehen',
           color: colors.streakText,
           onTap: () => context.push(ProfileRoutes.streak),
         ),
         _Stat(
           value: '${streak.activeDays}',
-          label: 'Aktive Tage',
-          spoken: '${streak.activeDays} aktive Tage',
+          label: streak.activeDays == 1 ? 'Aktiver Tag' : 'Aktive Tage',
+          spoken:
+              '${streak.activeDays} '
+              '${streak.activeDays == 1 ? 'aktiver Tag' : 'aktive Tage'}',
         ),
       ],
       if (sinceStart != null)

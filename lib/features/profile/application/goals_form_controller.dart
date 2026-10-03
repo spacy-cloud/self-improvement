@@ -366,8 +366,10 @@ class GoalsFormController extends Notifier<GoalsFormState> {
         _goalsTracker.completed();
         goalsSaved = true;
         _baseline = {
-          for (final entry in state.drafts.entries)
-            entry.key: _savedDraft(entry.key, entry.value, changes),
+          for (final entry in _baseline.entries)
+            entry.key: changes.containsKey(entry.key)
+                ? _savedDraft(entry.key, state.drafts[entry.key]!, changes)
+                : entry.value,
         };
       }
       if (profileChanged) {
