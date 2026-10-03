@@ -1,6 +1,8 @@
 # Flowtests auf dem Emulator (BS-76)
 
-Dieselben sieben Abläufe laufen zweimal: schnell auf dem Host (lokal, ohne Emulator) und auf einem Android-Emulator mit dem **echten Produktionsstart** der App (`SelfImprovementApp()` ohne Überschreibungen: echte SQLite-Datei, echte Gerätezeitzone, echtes Benachrichtigungs-Plugin, echte Uhr). Der alte Smoke-Test (`integration_test/app_smoke_test.dart`) startet dagegen auf einer In-Memory-Datenbank mit Fake-Plattform und bleibt als schneller Start-Check bestehen.
+Dieselben sieben Abläufe laufen an drei Stellen: schnell auf dem Host mit Fakes (lokal, ohne Emulator), im Host-Prozess mit dem Produktionsstart (echte SQLite-Datei, nachgebaute Plattformkanäle) und auf einem Android-Emulator mit dem **echten Produktionsstart** der App (`SelfImprovementApp()` ohne Überschreibungen: echte SQLite-Datei, echte Gerätezeitzone, echtes Benachrichtigungs-Plugin, echte Uhr). Der alte Smoke-Test (`integration_test/app_smoke_test.dart`) startet dagegen auf einer In-Memory-Datenbank mit Fake-Plattform und bleibt als schneller Start-Check bestehen.
+
+Die Abläufe F2 bis F6 beginnen mit „Überspringen“ im Onboarding (ein Tipp, Standardwerte); nur F1 geht alle fünf Screens ohne Eingabe durch.
 
 ## Aufbau
 
@@ -11,6 +13,7 @@ Dieselben sieben Abläufe laufen zweimal: schnell auf dem Host (lokal, ohne Emul
 | `integration_test/flows/flow_steps.dart` | Gemeinsame Schritte (Onboarding überspringen, Plus-Menü, Tabs, Zurück). |
 | `integration_test/app_flows_test.dart` | Emulator-Einstieg (eine Datei, damit die CI nur einmal nativ baut). |
 | `test/app/flows/app_flows_host_test.dart` | Host-Einstieg mit `pumpFullApp` (In-Memory-Datenbank, Fake-Uhr, Fake-Plattform). |
+| `test/app/flows/app_flows_production_start_host_test.dart` | Führt den Emulator-Einstieg im Host-Prozess aus: Produktionsstart, echte SQLite-Datei in einem Temp-Verzeichnis, echte Frames. Nur die nativen Seiten von `path_provider`, `flutter_timezone` und `flutter_local_notifications` fehlen und werden über ihre Plattformkanäle nachgebaut. Dauert etwa eine Minute. |
 | `test/app/flows/flow_rules_test.dart` | Wächter: beide Einstiege führen dieselben Abläufe unter denselben Namen aus; Flow-Dateien warten nie mit `pumpAndSettle` oder festen Pausen und kennen den Ort der Ausführung nicht. |
 
 Gewartet wird nie mit `pumpAndSettle` (ein blinkender Cursor oder ein Ladekreis hält es endlos offen), sondern mit `waitFor` und Verwandten: eine Schleife aus kurzen Pumps mit Echtzeit-Frist (30 s, beim ersten Start 90 s). Bei einem Fehler nennt die Meldung die erwartete Stelle und die Texte, die gerade auf dem Bildschirm stehen. Jede Flow-Zeile mit `ctx.log` erscheint mit Zeitstempel im Testlog.
@@ -32,7 +35,8 @@ F7 prüft nur, was auf einem frischen Emulator feststeht: der Berechtigungsstatu
 ## Ausführen
 
 ```bash
-flutter test test/app/flows                              # Host, etwa 15 Sekunden
+flutter test test/app/flows/app_flows_host_test.dart     # Host, schnelle Schleife, etwa 15 Sekunden
+flutter test test/app/flows                              # alle Host-Tests der Flows, etwa 1,5 Minuten
 flutter devices                                          # Geräte-ID ablesen
 flutter test integration_test -d <deviceId>              # Emulator: Flows und Smoke-Test
 flutter test integration_test/app_flows_test.dart -d <deviceId>   # nur die Flows
@@ -72,7 +76,7 @@ Alle Unterschiede stehen in den Einstiegen, nie in den Abläufen:
 - Die CI (Emulator API 34, x86_64, Google APIs) ist die einzige Geräteprüfung; es gibt keine Prüfung auf einem echten Gerät. Herstellerbesonderheiten (Akkusparer, andere Tastaturen, andere Bildschirme) sind nicht abgedeckt.
 - „App beenden“ heißt: Widget-Baum und Datenbankverbindung werden geschlossen, die App startet im selben Prozess neu. Ein hartes Beenden des Prozesses ist das nicht.
 - Auf dem Emulator vergehen Sekunden statt Minuten; die Erwartungen folgen der Zeit, die wirklich verging.
-- Der Emulator-Einstieg lief nie auf einem Gerät, nur Format und Analyse laufen lokal. Zusätzlich wurde er einmalig im Host-Prozess mit nachgebauten Plattformkanälen (Pfade, Zeitzone, Benachrichtigungs-Plugin) ausgeführt: Produktionsstart mit echter SQLite-Datei, alle sieben Abläufe grün. Das ersetzt keinen Emulatorlauf (native Seiten, Tastatur, Bildschirmgröße, echte Berechtigungen).
+- Der Emulator-Einstieg lief nie auf einem Gerät; lokal laufen Format, Analyse und der Host-Lauf des Einstiegs mit nachgebauten Plattformkanälen (`app_flows_production_start_host_test.dart`). Das prüft den Produktionsstart gegen eine echte Datei und echte Frames, ersetzt aber keinen Emulatorlauf: native Seiten der Plugins, die sqlite-Bibliothek der APK, Tastatur, Bildschirmgröße und echte Berechtigungen bleiben ungeprüft.
 - Die Flows prüfen Ergebnisse auf dem Bildschirm. Sie ersetzen weder die Domänentests noch die Widget-Tests der Features; sie weisen nach, dass Start, Datenbankdatei und die Kernabläufe zusammen funktionieren.
 
 ## Beobachtung zum Zurücksetzen (Stand BS-76)
