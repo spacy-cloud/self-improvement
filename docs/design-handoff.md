@@ -346,7 +346,8 @@ Modulfarben als Text und Icon (`AppColors.accent`) erreichen auf `surface` und `
 | Thema | Figma | Umsetzung |
 |---|---|---|
 | Undo-Dauer | Komponentenhinweis „Undo 5 s“ | 8 Sekunden (Vorgabe des Auftrags, `AppSnackBarDurations.undo`). Fehlermeldungen mit „Erneut“ bleiben bis zur Aktion oder zum Wegwischen stehen. |
-| Dark/OLED-Tokens gegen Frames | OLED-Frames: Rand und Spur `#2C2F34`, Tönung `#123222`; Dark-Toggle aus `#4A4F56`; Checkbox aus `#3A3E44`; Akzent-Checkbox `#20B65C` | Es gelten die Variablen (OLED `#24272B`, `#0C2418`; Toggle aus und Checkbox-Rand `border-input` mit 3,35:1 bzw. 3,82:1 gegen die Fläche; der Frame-Toggle `#4A4F56` erreicht nur 2,02:1). |
+| Dark/OLED-Tokens gegen Frames | Home-OLED-Frame `4044:344`: Rand und Spur `#2C2F34`; OLED-Frames (Home, Gewicht, Workout): Tönung `#123222` (der Dark-Wert); Dark/OLED-Einstellungen: Toggle aus `#4A4F56`; Dark/OLED-Gewicht: Checkbox aus `#3A3E44`, Checkbox an `#20B65C` | Es gelten die Variablen (OLED `#24272B`, `#0C2418`; Toggle aus und Checkbox-Rand `border-input` mit 3,35:1 bzw. 3,82:1 gegen die Fläche; der Frame-Toggle `#4A4F56` erreicht nur 2,02:1). |
+| Primärbutton-Schatten | Screens zeichnen den angehefteten Speichern-Button mit grünem Schatten (0, 6, Unschärfe 16, 28 %); die Komponente `4050:23` ist flach | Flach wie die Komponente. |
 | Radien | Token `radius/chip` 18; Chip-Komponente 24, Primärbutton 18, Sekundärbutton 16 | Chip als Pille (`StadiumBorder`), Button-Radien wie gemessen. |
 | Kartenschatten | Designkontext meldet Unschärfe 6, Knoteneigenschaft 12 | 12 (Knoteneigenschaft). Home-Karten und Schatten der Screens weichen leicht ab (Radius 17, Versatz 5); es gilt die Komponente. |
 | Tippflächen | Chip 46 bis 47 hoch, Segment 44, Aktionspille 32, Löschen-Symbol 28 | Chip und Segment mindestens 48 hoch, Aktionspille 36 mit 48 hoher Tippfläche, Symbol-Buttons 48 × 48. |

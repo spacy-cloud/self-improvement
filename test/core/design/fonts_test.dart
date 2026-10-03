@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_test/flutter_test.dart';
 
 /// Minimal sfnt reader: table directory and a few fields.
@@ -48,6 +50,8 @@ class _Font {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   const files = <String, int>{
     'Inter-Regular.ttf': 400,
     'Inter-Medium.ttf': 500,
@@ -97,6 +101,32 @@ void main() {
     expect('family: Inter'.allMatches(pubspec).length, 1);
     expect(pubspec, contains('- assets/fonts/OFL.txt'));
   });
+
+  test(
+    'the build tool turns the pubspec declaration into the font manifest',
+    () async {
+      final manifest = jsonDecode(
+        await rootBundle.loadString('FontManifest.json'),
+      ) as List<dynamic>;
+      final inter = manifest
+          .cast<Map<String, dynamic>>()
+          .where((family) => family['family'] == 'Inter')
+          .toList();
+      expect(inter, hasLength(1));
+      final fonts = (inter.single['fonts'] as List<dynamic>)
+          .cast<Map<String, dynamic>>();
+      expect(
+        <String, int>{
+          for (final font in fonts)
+            font['asset'] as String: font['weight'] as int,
+        },
+        <String, int>{
+          for (final entry in files.entries)
+            'assets/fonts/${entry.key}': entry.value,
+        },
+      );
+    },
+  );
 
   test('the licence is the SIL Open Font License 1.1 of the Inter project', () {
     final text = File('assets/fonts/OFL.txt').readAsStringSync();
