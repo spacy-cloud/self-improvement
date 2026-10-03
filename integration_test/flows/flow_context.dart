@@ -155,7 +155,9 @@ final class FlowContext {
   Future<void> tapText(String text) =>
       tap(find.text(text), reason: 'the text "$text"');
 
-  /// Types [text] into [field] (the first match).
+  /// Types [text] into [field] (the first match) and closes the keyboard again,
+  /// so the layout holds still for the taps that follow (on a phone the screen
+  /// keyboard moves the pinned buttons while it opens and closes).
   Future<void> enterText(Finder field, String text) async {
     await pumpUntil(
       () => field.evaluate().isNotEmpty,
@@ -163,7 +165,8 @@ final class FlowContext {
     );
     await tester.enterText(field.first, text);
     await tester.pump();
-    await settle(max: const Duration(seconds: 1));
+    FocusManager.instance.primaryFocus?.unfocus();
+    await settle(max: const Duration(seconds: 2));
   }
 
   /// Runs [action] and pumps until it has finished. The one way to wait for a

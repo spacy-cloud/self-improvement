@@ -40,6 +40,14 @@ Future<void> waterQuickAddFlow(FlowContext ctx) async {
     reason: 'one water entry earns 5 XP',
   );
 
+  // The undo offer of the first add (8 s) must be gone, so the next "Rückgängig"
+  // belongs to the next add and to nothing else.
+  ctx.log('F3: wait until the undo offer of the first add has run out');
+  await ctx.waitGone(
+    find.text('Rückgängig'),
+    reason: 'the undo offer of the first add should run out',
+  );
+
   ctx.log('F3: +250 ml again from the card, then undo it');
   await ctx.tap(
     _cardQuickAdd250(),

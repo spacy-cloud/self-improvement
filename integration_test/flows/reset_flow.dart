@@ -68,6 +68,9 @@ Future<void> resetFlow(FlowContext ctx) async {
   expect(find.byType(AppBottomNavBar), findsNothing);
 
   ctx.log('F6: still the onboarding after a restart');
+  // The reset still hands over to the system (cancels notifications, deletes
+  // temporary files) for a moment after the screen has changed.
+  await ctx.settle();
   await ctx.restart();
   await ctx.waitForText('Los geht’s');
   expect(find.byType(AppBottomNavBar), findsNothing);
