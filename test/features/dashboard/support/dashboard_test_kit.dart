@@ -10,6 +10,8 @@ import 'package:self_improvement/core/feedback/feedback_service.dart';
 import 'package:self_improvement/core/modules/module.dart';
 import 'package:self_improvement/core/modules/module_id.dart';
 import 'package:self_improvement/core/testing/data_harness.dart';
+import 'package:self_improvement/features/body/application/weight_providers.dart';
+import 'package:self_improvement/features/body/domain/weight_entry.dart';
 import 'package:self_improvement/features/body/presentation/weight_dashboard_card.dart';
 import 'package:self_improvement/features/dashboard/application/dashboard_providers.dart';
 import 'package:self_improvement/features/dashboard/presentation/home_screen.dart';
@@ -311,3 +313,31 @@ Future<void> settle(WidgetTester tester) async {
     await tester.pump(const Duration(milliseconds: 50));
   }
 }
+
+/// Makes every day of [days] an active day by saving one weight measurement
+/// on it (newest first, so the current weight stays recent).
+Future<void> seedActiveDays(
+  WidgetTester tester,
+  HomeFixture fixture,
+  List<LocalDate> days,
+) async {
+  final newestFirst = [...days]..sort((a, b) => b.compareTo(a));
+  final repository = fixture.container.read(weightRepositoryProvider);
+  var count = 0;
+  for (final day in newestFirst) {
+    await tester.runCommand(
+      () => repository.create(
+        commandId: 'seed-${count++}',
+        draft: WeightDraft(
+          weightGrams: 71500,
+          occurredAtUtc: DateTime.utc(day.year, day.month, day.day, 6),
+        ),
+      ),
+    );
+  }
+  await settle(tester);
+}
+
+/// The consecutive days from [from] to [to], both included.
+List<LocalDate> dayRange(LocalDate from, LocalDate to) =>
+    from.rangeTo(to).toList();
