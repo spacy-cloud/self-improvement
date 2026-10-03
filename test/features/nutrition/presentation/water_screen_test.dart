@@ -557,6 +557,11 @@ void main() {
         find.text('Bitte gib dein Tagesziel in Millilitern ein.'),
         findsOneWidget,
       );
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).focusNode!.hasFocus,
+        isTrue,
+        reason: 'the invalid field takes the focus after each rejection',
+      );
       expect(ui.feedback.events, isEmpty, reason: 'nothing was saved');
     });
   });

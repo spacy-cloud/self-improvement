@@ -14,6 +14,33 @@ import 'package:self_improvement/shared/number_format.dart';
 /// Key of the editable amount field (tests and focus handling).
 const Key waterAmountFieldKey = ValueKey<String>('water-amount-field');
 
+/// The focus nodes of the water form. The sheet or screen that hosts the
+/// [WaterFormBody] owns them (and disposes them), so it can move the focus
+/// after a rejected save.
+class WaterFormFocus {
+  /// The focus node of the amount field.
+  final FocusNode amount = FocusNode();
+
+  /// The focus node of the note field.
+  final FocusNode note = FocusNode();
+
+  /// The first invalid field takes the focus, so a screen reader reads its
+  /// label together with the hint.
+  void focusFirstInvalid(WaterFormState state) {
+    if (state.fieldErrors.containsKey(WaterFields.amount)) {
+      amount.requestFocus();
+    } else if (state.fieldErrors.containsKey(WaterFields.note)) {
+      note.requestFocus();
+    }
+  }
+
+  /// Releases both focus nodes.
+  void dispose() {
+    amount.dispose();
+    note.dispose();
+  }
+}
+
 /// The fields of a water entry: the amount with minus and plus, the time and
 /// the note. Used by the "Eigene Menge" sheet and by the edit screen; the
 /// state lives in [waterFormProvider] for [args].
@@ -21,12 +48,16 @@ class WaterFormBody extends ConsumerStatefulWidget {
   const WaterFormBody({
     required this.args,
     required this.onSubmit,
+    required this.focus,
     this.framed = false,
     this.inlineFailure = false,
     super.key,
   });
 
   final WaterFormArgs args;
+
+  /// The focus nodes of the fields, owned by the host.
+  final WaterFormFocus focus;
 
   /// Called when the keyboard action is pressed or "Erneut versuchen" is tapped.
   final VoidCallback onSubmit;
@@ -45,7 +76,6 @@ class WaterFormBody extends ConsumerStatefulWidget {
 class _WaterFormBodyState extends ConsumerState<WaterFormBody> {
   late final TextEditingController _amount;
   late final TextEditingController _note;
-  final FocusNode _amountFocus = FocusNode();
 
   WaterFormArgs get _args => widget.args;
 
@@ -61,7 +91,6 @@ class _WaterFormBodyState extends ConsumerState<WaterFormBody> {
   void dispose() {
     _amount.dispose();
     _note.dispose();
-    _amountFocus.dispose();
     super.dispose();
   }
 
@@ -126,7 +155,7 @@ class _WaterFormBodyState extends ConsumerState<WaterFormBody> {
           valueWidget: NumberDisplayField(
             fieldKey: waterAmountFieldKey,
             controller: _amount,
-            focusNode: _amountFocus,
+            focusNode: widget.focus.amount,
             semanticLabel: 'Menge in Millilitern',
             unit: 'ml',
             hint: '$waterAmountStartMl',
@@ -184,6 +213,7 @@ class _WaterFormBodyState extends ConsumerState<WaterFormBody> {
           label: 'Notiz',
           requirementLabel: 'optional',
           controller: _note,
+          focusNode: widget.focus.note,
           hint: 'Zum Beispiel: nach dem Training',
           maxLength: maxNutritionNoteLength,
           minLines: 1,

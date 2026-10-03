@@ -26,6 +26,13 @@ class WaterCustomSheet extends ConsumerStatefulWidget {
 
 class _WaterCustomSheetState extends ConsumerState<WaterCustomSheet> {
   static const WaterFormArgs _args = WaterFormArgs.create();
+  final WaterFormFocus _focus = WaterFormFocus();
+
+  @override
+  void dispose() {
+    _focus.dispose();
+    super.dispose();
+  }
 
   Future<void> _submit() async {
     FocusScope.of(context).unfocus();
@@ -37,7 +44,10 @@ class _WaterCustomSheetState extends ConsumerState<WaterCustomSheet> {
         navigator.pop();
         feedback.showSaved(result.message, undo: result.outcome.undo);
       case WaterRejected():
-        break; // Field errors and failures are shown inside the form.
+        // Field errors and failures are shown inside the form.
+        if (mounted) {
+          _focus.focusFirstInvalid(ref.read(waterFormProvider(_args)));
+        }
     }
   }
 
@@ -80,6 +90,7 @@ class _WaterCustomSheetState extends ConsumerState<WaterCustomSheet> {
         child: WaterFormBody(
           args: _args,
           onSubmit: _submit,
+          focus: _focus,
           inlineFailure: true,
         ),
       ),

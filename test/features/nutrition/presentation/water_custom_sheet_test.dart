@@ -326,6 +326,31 @@ void main() {
     });
   });
 
+  group('a rejected save', () {
+    testWidgets('puts the focus on the invalid amount field', (tester) async {
+      final ui = await NutritionUi.create(tester);
+      await ui.pumpRoute('/water');
+      await _openSheet(tester);
+      await _type(tester, '49');
+
+      _primary(tester).onPressed!();
+      await tester.pump();
+
+      expect(
+        find.text('Bitte gib eine Menge zwischen 50 und 2.000 ml ein.'),
+        findsOneWidget,
+      );
+      expect(
+        tester
+            .widget<TextField>(find.byKey(waterAmountFieldKey))
+            .focusNode!
+            .hasFocus,
+        isTrue,
+        reason: 'the first invalid field is read together with its hint',
+      );
+    });
+  });
+
   group('small screens', () {
     testWidgets(
       'with the keyboard open at 200 % text the button is reachable',

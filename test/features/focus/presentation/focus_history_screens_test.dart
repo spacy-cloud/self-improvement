@@ -317,6 +317,27 @@ void main() {
       expect((await tester.focusRows(ui)).single.note, 'x' * 500);
     });
 
+    testWidgets(
+      'a note the field accepts but the rules reject takes the focus',
+      (tester) async {
+        final (ui, _) = await openDetail(tester);
+        // 101 characters for the field, but 505 code points for the rule of 500.
+        await tester.enterText(
+          noteField,
+          '\u{1F468}\u200D\u{1F469}\u200D\u{1F467}' * 101,
+        );
+        await tester.pump();
+        await tester.tapAndSettleDb(saveChanges);
+
+        expect(
+          find.text('Die Notiz darf höchstens 500 Zeichen lang sein.'),
+          findsOneWidget,
+        );
+        expect(tester.widget<TextField>(noteField).focusNode!.hasFocus, isTrue);
+        expect((await tester.focusRows(ui)).single.note, isNull);
+      },
+    );
+
     testWidgets('an unchanged or blank note keeps the button disabled; '
         'clearing removes the note', (tester) async {
       final ui = await createFocusUi(tester);

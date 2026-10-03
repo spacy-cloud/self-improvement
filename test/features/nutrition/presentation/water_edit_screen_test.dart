@@ -77,6 +77,14 @@ void main() {
         findsOneWidget,
       );
       expect(_amountText(tester), '49');
+      expect(
+        tester
+            .widget<TextField>(find.byKey(waterAmountFieldKey))
+            .focusNode!
+            .hasFocus,
+        isTrue,
+        reason: 'the first invalid field takes the focus',
+      );
       expect(await ui.waterTotalMl(), 250);
       expect(ui.feedback.events, isEmpty);
     });

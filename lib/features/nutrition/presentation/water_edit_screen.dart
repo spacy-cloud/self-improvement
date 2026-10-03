@@ -76,7 +76,15 @@ class _WaterEditForm extends ConsumerStatefulWidget {
 }
 
 class _WaterEditFormState extends ConsumerState<_WaterEditForm> {
+  final WaterFormFocus _focus = WaterFormFocus();
+
   WaterFormArgs get _args => WaterFormArgs.edit(widget.entry);
+
+  @override
+  void dispose() {
+    _focus.dispose();
+    super.dispose();
+  }
 
   void _leave(GoRouter router) {
     if (router.canPop()) {
@@ -99,7 +107,9 @@ class _WaterEditFormState extends ConsumerState<_WaterEditForm> {
         if (!mounted) {
           return;
         }
-        final failure = ref.read(waterFormProvider(_args)).submitFailure;
+        final rejected = ref.read(waterFormProvider(_args));
+        _focus.focusFirstInvalid(rejected);
+        final failure = rejected.submitFailure;
         if (failure == null) {
           return;
         }
@@ -163,7 +173,12 @@ class _WaterEditFormState extends ConsumerState<_WaterEditForm> {
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            WaterFormBody(args: _args, onSubmit: _submit, framed: true),
+            WaterFormBody(
+              args: _args,
+              onSubmit: _submit,
+              focus: _focus,
+              framed: true,
+            ),
             const SizedBox(height: 16),
             Center(
               child: SecondaryButton(

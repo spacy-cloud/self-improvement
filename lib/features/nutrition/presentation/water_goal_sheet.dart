@@ -70,7 +70,13 @@ class _WaterGoalSheetState extends ConsumerState<WaterGoalSheet> {
         navigator.pop();
         feedback.showSaved(result.message, undo: result.outcome.undo);
       case WaterGoalRejected():
-        break; // The sheet shows the reason and keeps the input.
+        // The sheet shows the reason and keeps the input; the invalid field
+        // takes the focus, so a screen reader reads its label with the hint.
+        if (mounted &&
+            ref.read(waterGoalControllerProvider(_initial)).fieldError !=
+                null) {
+          _focus.requestFocus();
+        }
     }
   }
 

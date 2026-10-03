@@ -95,6 +95,7 @@ class _DetailForm extends ConsumerStatefulWidget {
 
 class _DetailFormState extends ConsumerState<_DetailForm> {
   late final TextEditingController _note;
+  final FocusNode _noteFocus = FocusNode();
   late final String _initialNote;
   String? _noteError;
 
@@ -110,6 +111,7 @@ class _DetailFormState extends ConsumerState<_DetailForm> {
   @override
   void dispose() {
     _note.dispose();
+    _noteFocus.dispose();
     super.dispose();
   }
 
@@ -139,6 +141,11 @@ class _DetailFormState extends ConsumerState<_DetailForm> {
       case FocusActionFailed(:final failure):
         if (failure is ValidationFailure && mounted) {
           setState(() => _noteError = failure.fieldErrors[FocusFields.note]);
+          // The invalid field takes the focus, so a screen reader reads its
+          // label together with the hint.
+          if (_noteError != null) {
+            _noteFocus.requestFocus();
+          }
         } else if (failure is StorageFailure) {
           feedback.showError(
             'Speichern fehlgeschlagen. Deine Notiz bleibt erhalten.',
@@ -279,6 +286,7 @@ class _DetailFormState extends ConsumerState<_DetailForm> {
                   label: 'Notiz',
                   requirementLabel: 'optional',
                   controller: _note,
+                  focusNode: _noteFocus,
                   hint: 'Zum Beispiel: Kapitel 3 gelesen',
                   maxLength: maxFocusNoteLength,
                   minLines: 3,
