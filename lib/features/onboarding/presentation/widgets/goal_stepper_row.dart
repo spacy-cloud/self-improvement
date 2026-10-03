@@ -37,6 +37,7 @@ class GoalStepperRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.tokens.colors;
     final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final showTile = showOnboardingIconTile(context);
     return DecoratedBox(
       decoration: BoxDecoration(
         color: colors.surfaceMuted,
@@ -48,10 +49,12 @@ class GoalStepperRow extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, constraints) {
             // 52: icon tile and gap, 72: the narrowest useful name column,
-            // 8: gap, then the stepper (two 48 px buttons and the value).
-            final stepperWidth = 104 + 58 * scale;
+            // 8: gap, then the stepper (two 48 px buttons and room for "10.000"
+            // or "25 Min.").
+            final stepperWidth = 104 + 70 * scale;
             final compact =
-                constraints.maxWidth < 52 + 72 * scale + 8 + stepperWidth;
+                constraints.maxWidth <
+                (showTile ? 52 : 0) + 72 * scale + 8 + stepperWidth;
             final label = Semantics(
               container: true,
               label: '${goalTitle(type)}, ${goalPeriod(type)}',
@@ -59,8 +62,10 @@ class GoalStepperRow extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  onboardingIconTile(icon, accent),
-                  const SizedBox(width: 12),
+                  if (showTile) ...<Widget>[
+                    onboardingIconTile(icon, accent),
+                    const SizedBox(width: 12),
+                  ],
                   Flexible(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

@@ -106,6 +106,7 @@ class _BodyStepState extends ConsumerState<BodyStep> {
         ),
         const SizedBox(height: AppSpacing.s16),
         ValueFieldRow(
+          key: const ValueKey<String>('onboarding-name'),
           label: 'Name',
           semanticLabel: 'Name, optional',
           controller: _name,
@@ -123,6 +124,7 @@ class _BodyStepState extends ConsumerState<BodyStep> {
         ),
         const SizedBox(height: AppSpacing.s12),
         ValueFieldRow(
+          key: const ValueKey<String>('onboarding-age'),
           label: 'Alter',
           semanticLabel: 'Alter in Jahren, optional',
           unit: 'Jahre',
@@ -136,6 +138,7 @@ class _BodyStepState extends ConsumerState<BodyStep> {
         ),
         const SizedBox(height: AppSpacing.s12),
         ValueFieldRow(
+          key: const ValueKey<String>('onboarding-height'),
           label: 'Größe',
           semanticLabel: 'Größe in Zentimetern, optional',
           unit: 'cm',
@@ -149,6 +152,7 @@ class _BodyStepState extends ConsumerState<BodyStep> {
         ),
         const SizedBox(height: AppSpacing.s12),
         ValueFieldRow(
+          key: const ValueKey<String>('onboarding-weight'),
           label: 'Startgewicht',
           semanticLabel: 'Startgewicht in Kilogramm, optional',
           unit: 'kg',

@@ -14,7 +14,7 @@ class WelcomeStep extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.tokens.colors;
     return StepPage(
-      topPadding: AppSpacing.s32,
+      topPadding: welcomeTopSpace(context),
       children: <Widget>[
         const Center(child: _AppMark()),
         const SizedBox(height: AppSpacing.s32),
@@ -60,41 +60,65 @@ class WelcomeStep extends StatelessWidget {
   }
 }
 
-/// The soft circle behind the welcome screen (the design's hero background).
-/// Decorative: no semantics, no taps, no influence on the layout.
+/// Space above the app mark: roomy on tall screens like the design, tight on
+/// short ones so the cards stay in reach.
+double welcomeTopSpace(BuildContext context) =>
+    MediaQuery.sizeOf(context).height >= 760 ? 96 : AppSpacing.s32;
+
+/// The soft circle behind the welcome screen (the design's hero background): a
+/// large, pale green disc whose lower edge curves below the app mark. It starts
+/// behind the status bar. Decorative: no semantics, no taps, no influence on
+/// the layout.
 class HeroBackdrop extends StatelessWidget {
   const HeroBackdrop({super.key});
+
+  /// Height of the app mark and the gap between its bottom and the disc edge.
+  static const double _markHeight = 96;
+  static const double _edgeGap = 16;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.tokens.colors;
+    final edge =
+        MediaQuery.paddingOf(context).top +
+        welcomeTopSpace(context) +
+        _markHeight +
+        _edgeGap;
     return IgnorePointer(
       child: ExcludeSemantics(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final diameter = math.max(520.0, constraints.maxWidth * 1.3);
-            return ClipRect(
-              child: OverflowBox(
-                alignment: Alignment.topCenter,
-                maxWidth: diameter,
-                maxHeight: diameter,
-                child: Transform.translate(
-                  offset: const Offset(0, -210),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: colors.primaryTint.withValues(alpha: 0.55),
-                    ),
-                    child: SizedBox.square(dimension: diameter),
-                  ),
-                ),
-              ),
-            );
-          },
+        child: CustomPaint(
+          size: Size.infinite,
+          painter: _BackdropPainter(
+            color: colors.primaryTint.withValues(alpha: 0.55),
+            edge: edge,
+          ),
         ),
       ),
     );
   }
+}
+
+class _BackdropPainter extends CustomPainter {
+  const _BackdropPainter({required this.color, required this.edge});
+
+  final Color color;
+
+  /// Distance from the top of the screen to the lowest point of the disc.
+  final double edge;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final radius = math.max(size.width * 0.8, 260.0);
+    canvas.drawCircle(
+      Offset(size.width / 2, edge - radius),
+      radius,
+      Paint()..color = color,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_BackdropPainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.edge != edge;
 }
 
 /// The app mark: a green rounded square with a rising arrow, 96 px. Drawn

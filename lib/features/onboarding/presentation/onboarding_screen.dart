@@ -184,6 +184,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           duration: motion.standard,
                           switchInCurve: motion.curve,
                           switchOutCurve: motion.curve,
+                          // Tight constraints: every step fills the area and
+                          // its scroll view starts at the top.
+                          layoutBuilder: (current, previous) => Stack(
+                            fit: StackFit.expand,
+                            children: <Widget>[...previous, ?current],
+                          ),
                           transitionBuilder: (child, animation) {
                             // A short push in the direction of travel, 6 % of
                             // the width, together with the fade.

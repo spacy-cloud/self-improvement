@@ -40,6 +40,12 @@ class OptionCardFrame extends StatelessWidget {
 Widget onboardingIconTile(IconData icon, AppAccent accent) =>
     AppIconTile(icon: icon, accent: accent, size: 40, iconSize: 22);
 
+/// Whether the decorative icon tiles are drawn. From 160 % text size on they
+/// are dropped, so the text keeps the room: long words such as "Gamification"
+/// would otherwise break inside the word on a narrow screen.
+bool showOnboardingIconTile(BuildContext context) =>
+    MediaQuery.textScalerOf(context).scale(16) / 16 < 1.6;
+
 /// A selectable goal card: icon tile, title, one line and a check box on the
 /// right. The whole card is one multi-select control; screen readers hear
 /// "ausgewählt" or "nicht ausgewählt" (and the platform checked state).
@@ -66,6 +72,7 @@ class GoalOptionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.tokens.colors;
+    final showTile = showOnboardingIconTile(context);
     void toggle() => onChanged(!selected);
     return Semantics(
       container: true,
@@ -84,8 +91,10 @@ class GoalOptionCard extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
               child: Row(
                 children: <Widget>[
-                  onboardingIconTile(icon, accent),
-                  const SizedBox(width: 14),
+                  if (showTile) ...<Widget>[
+                    onboardingIconTile(icon, accent),
+                    const SizedBox(width: 14),
+                  ],
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -157,7 +166,9 @@ class ToggleOptionCard extends StatelessWidget {
         subtitle: subtitle,
         value: enabled,
         onToggle: onChanged,
-        leading: onboardingIconTile(icon, accent),
+        leading: showOnboardingIconTile(context)
+            ? onboardingIconTile(icon, accent)
+            : null,
       ),
     );
   }
