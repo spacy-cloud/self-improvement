@@ -2,6 +2,7 @@
 /// no Flutter import, trivially unit-testable).
 library;
 
+import 'package:self_improvement/core/time/clock_service.dart';
 import 'package:self_improvement/features/body/domain/weight_calculations.dart';
 import 'package:self_improvement/features/body/domain/weight_entry.dart';
 import 'package:self_improvement/shared/german_date.dart';
@@ -93,3 +94,10 @@ String weightChartSummary(
       'zuletzt ${formatKilograms(last.grams)} kg '
       '(${formatSignedKilograms(last.grams - first.grams)} kg).';
 }
+
+/// Wall clock time of a measurement in the zone it was taken in (`08:32`);
+/// the frozen zone keeps old entries stable after a trip.
+String weightEntryTime(ClockService clock, WeightEntry entry) => clock
+    .toLocal(entry.occurredAtUtc, timeZoneId: entry.timezoneId)
+    .time
+    .toIso();
