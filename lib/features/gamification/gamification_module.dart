@@ -23,13 +23,13 @@ final class GamificationModule extends SelfImprovementModule {
   ModuleId get id => ModuleId.gamification;
 
   @override
-  String get title => 'Fortschritt';
+  String get title => 'Gamification';
 
   @override
-  String get description => 'XP, Level, Abzeichen und Streak';
+  String get description => 'XP, Level und Badges';
 
   @override
-  IconData get icon => Icons.local_fire_department_outlined;
+  IconData get icon => Icons.star_border_rounded;
 
   @override
   List<RouteBase> get routes => <RouteBase>[

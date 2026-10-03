@@ -11,8 +11,8 @@ void main() {
 
   test('identifies itself as the nutrition module', () {
     expect(module.id, ModuleId.nutrition);
-    expect(module.title, 'Ernährung');
-    expect(module.description, 'Wasser und Mahlzeiten');
+    expect(module.title, 'Wasser & Ernährung');
+    expect(module.description, 'Trinkmenge und Mahlzeiten');
   });
 
   test('registers one shared water screen and the meal screens, static paths '

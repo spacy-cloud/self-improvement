@@ -12,9 +12,9 @@ import '../../dashboard/support/dashboard_test_kit.dart';
 void main() {
   const module = GamificationModule();
 
-  test('is the bundled "Fortschritt" module without a plus menu entry', () {
+  test('is the bundled "Gamification" module without a plus menu entry', () {
     expect(module.id, ModuleId.gamification);
-    expect(module.title, 'Fortschritt');
+    expect(module.title, 'Gamification');
     expect(moduleFor(ModuleId.gamification), isA<GamificationModule>());
     expect(module.quickActions, isEmpty);
   });

@@ -31,13 +31,13 @@ final class FocusModule extends SelfImprovementModule {
   ModuleId get id => ModuleId.focus;
 
   @override
-  String get title => 'Fokus';
+  String get title => 'Fokus & Workouts';
 
   @override
-  String get description => 'Fokus-Timer und Workouts';
+  String get description => 'Fokus-Timer und Trainings';
 
   @override
-  IconData get icon => Icons.timer_outlined;
+  IconData get icon => Icons.schedule_rounded;
 
   /// Static paths come before the parametric ones (`/workouts/new` and
   /// `/workouts/all` before `/workouts/:id`).

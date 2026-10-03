@@ -21,10 +21,10 @@ final class BodyModule extends SelfImprovementModule {
   ModuleId get id => ModuleId.body;
 
   @override
-  String get title => 'Körper';
+  String get title => 'Gewicht & Körper';
 
   @override
-  String get description => 'Gewicht und manuelle Schritte';
+  String get description => 'Gewicht, Zielgewicht, Schritte';
 
   @override
   IconData get icon => Icons.monitor_weight_outlined;

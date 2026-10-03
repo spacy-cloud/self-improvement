@@ -16,8 +16,8 @@ void main() {
 
   test('is the tasks module with German texts', () {
     expect(module.id, ModuleId.tasks);
-    expect(module.title, 'Aufgaben');
-    expect(module.description, 'Aufgaben und tägliche Gewohnheiten');
+    expect(module.title, 'Aufgaben & Gewohnheiten');
+    expect(module.description, 'To-dos und tägliche Habits');
   });
 
   test(

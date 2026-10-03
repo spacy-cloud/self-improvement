@@ -26,13 +26,13 @@ final class TasksModule extends SelfImprovementModule {
   ModuleId get id => ModuleId.tasks;
 
   @override
-  String get title => 'Aufgaben';
+  String get title => 'Aufgaben & Gewohnheiten';
 
   @override
-  String get description => 'Aufgaben und tägliche Gewohnheiten';
+  String get description => 'To-dos und tägliche Habits';
 
   @override
-  IconData get icon => Icons.task_alt_outlined;
+  IconData get icon => Icons.checklist_rounded;
 
   @override
   List<RouteBase> get routes => <RouteBase>[

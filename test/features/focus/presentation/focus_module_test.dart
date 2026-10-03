@@ -42,9 +42,9 @@ void main() {
 
   test('describes itself', () {
     expect(module.id, ModuleId.focus);
-    expect(module.title, 'Fokus');
-    expect(module.description, 'Fokus-Timer und Workouts');
-    expect(module.icon, Icons.timer_outlined);
+    expect(module.title, 'Fokus & Workouts');
+    expect(module.description, 'Fokus-Timer und Trainings');
+    expect(module.icon, Icons.schedule_rounded);
   });
 
   group('routes', () {
