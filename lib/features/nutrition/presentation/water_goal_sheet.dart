@@ -116,6 +116,11 @@ class _WaterGoalSheetState extends ConsumerState<WaterGoalSheet> {
       child: FormSheetFrame(
         title: 'Tagesziel ändern',
         onClose: _close,
+        action: PrimaryButton(
+          label: 'Tagesziel speichern',
+          loading: state.submitting,
+          onPressed: state.submitting ? null : _submit,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -188,12 +193,6 @@ class _WaterGoalSheetState extends ConsumerState<WaterGoalSheet> {
                 onRetry: failure is ConflictFailure ? null : _submit,
               ),
             ],
-            const SizedBox(height: 16),
-            PrimaryButton(
-              label: 'Tagesziel speichern',
-              loading: state.submitting,
-              onPressed: state.submitting ? null : _submit,
-            ),
           ],
         ),
       ),

@@ -167,14 +167,15 @@ class _TopSection extends ConsumerWidget {
                 semanticLabel: waterQuickSemanticLabel(amount),
                 onTap: () => runWaterQuickAdd(ref, amount),
               ),
-            _QuickTile(
-              title: 'Eigene Menge',
-              subtitle: 'frei wählen',
-              icon: AppIcon.plus.data,
-              semanticLabel: 'Eigene Menge, frei wählen',
-              onTap: () => showWaterCustomSheet(context),
-            ),
           ],
+        ),
+        const SizedBox(height: 12),
+        _QuickTile(
+          title: 'Eigene Menge',
+          subtitle: 'frei wählen',
+          icon: AppIcon.plus.data,
+          semanticLabel: 'Eigene Menge, frei wählen',
+          onTap: () => showWaterCustomSheet(context),
         ),
         if (settings != null) ...[
           const SizedBox(height: 12),

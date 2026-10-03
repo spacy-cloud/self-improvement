@@ -1,10 +1,8 @@
-import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:self_improvement/core/commands/projection_synchronizer.dart';
 import 'package:self_improvement/core/database/app_database.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/core/feedback/feedback_service.dart';
@@ -15,7 +13,6 @@ import 'package:self_improvement/features/nutrition/application/water_providers.
 import 'package:self_improvement/features/nutrition/data/meal_repository.dart';
 import 'package:self_improvement/features/nutrition/data/water_repository.dart';
 import 'package:self_improvement/features/nutrition/domain/meal_entry.dart';
-import 'package:self_improvement/features/nutrition/domain/meal_input.dart';
 import 'package:self_improvement/features/nutrition/domain/water_entry.dart';
 import 'package:self_improvement/features/nutrition/nutrition_module.dart';
 import 'package:self_improvement/shared/local_date.dart';

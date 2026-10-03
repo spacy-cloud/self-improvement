@@ -255,29 +255,32 @@ class _SummaryCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 6,
               children: [
-                AppIconTile(
-                  icon: AppIcon.meal.data,
-                  accent: AppAccent.nutrition,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Heute',
-                    style: AppTextStyles.titleCard.copyWith(
-                      color: colors.textPrimary,
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AppIconTile(
+                      icon: AppIcon.meal.data,
+                      accent: AppAccent.nutrition,
                     ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    formatMealCount(summary.mealCount),
-                    textAlign: TextAlign.end,
-                    style: AppTextStyles.captionDefault.copyWith(
-                      color: colors.textSecondary,
+                    const SizedBox(width: 12),
+                    Text(
+                      'Heute',
+                      style: AppTextStyles.titleCard.copyWith(
+                        color: colors.textPrimary,
+                      ),
                     ),
+                  ],
+                ),
+                Text(
+                  formatMealCount(summary.mealCount),
+                  style: AppTextStyles.captionDefault.copyWith(
+                    color: colors.textSecondary,
                   ),
                 ),
               ],

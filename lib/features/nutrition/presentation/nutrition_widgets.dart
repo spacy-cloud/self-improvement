@@ -143,7 +143,15 @@ class NumberDisplayField extends StatelessWidget {
                       FilteringTextInputFormatter.digitsOnly,
                       LengthLimitingTextInputFormatter(maxDigits),
                     ],
-                    decoration: InputDecoration.collapsed(
+                    decoration: InputDecoration(
+                      isCollapsed: true,
+                      contentPadding: EdgeInsets.zero,
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      disabledBorder: InputBorder.none,
+                      errorBorder: InputBorder.none,
+                      focusedErrorBorder: InputBorder.none,
                       hintText: hint,
                       hintStyle: style.copyWith(color: colors.textTertiary),
                     ),
@@ -225,20 +233,26 @@ class SubmitFailureNotice extends StatelessWidget {
   }
 }
 
-/// A floating form sheet (the style of the confirmation sheet): handle, title
-/// with its own close button, scrolling content that keeps clear of the
-/// keyboard.
+/// A floating form sheet (the style of the confirmation sheet): handle and title
+/// with its own close button stay on top, the content scrolls and keeps clear
+/// of the keyboard, the optional [action] stays pinned below so it is always
+/// reachable.
 class FormSheetFrame extends StatelessWidget {
   const FormSheetFrame({
     required this.title,
     required this.onClose,
     required this.child,
+    this.action,
     super.key,
   });
 
   final String title;
   final VoidCallback onClose;
   final Widget child;
+
+  /// The primary action (for example the save button), pinned below the
+  /// scrolling content.
+  final Widget? action;
 
   @override
   Widget build(BuildContext context) {
@@ -257,52 +271,68 @@ class FormSheetFrame extends StatelessWidget {
               color: colors.surface,
               borderRadius: AppRadii.sheetBorder,
             ),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: ExcludeSemantics(
-                      child: Container(
-                        width: AppSizes.sheetHandleWidth,
-                        height: AppSizes.sheetHandleHeight,
-                        decoration: BoxDecoration(
-                          color: colors.borderInput,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Expanded(
-                        child: Semantics(
-                          container: true,
-                          header: true,
-                          child: Text(
-                            title,
-                            style: AppTextStyles.titleSection.copyWith(
-                              color: colors.textPrimary,
+                      Center(
+                        child: ExcludeSemantics(
+                          child: Container(
+                            width: AppSizes.sheetHandleWidth,
+                            height: AppSizes.sheetHandleHeight,
+                            decoration: BoxDecoration(
+                              color: colors.borderInput,
+                              borderRadius: BorderRadius.circular(2),
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      AppIconButton(
-                        icon: AppIcon.close.data,
-                        filled: true,
-                        semanticLabel: 'Schließen',
-                        onPressed: onClose,
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Semantics(
+                              container: true,
+                              header: true,
+                              child: Text(
+                                title,
+                                style: AppTextStyles.titleSection.copyWith(
+                                  color: colors.textPrimary,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          AppIconButton(
+                            icon: AppIcon.close.data,
+                            filled: true,
+                            semanticLabel: 'Schließen',
+                            onPressed: onClose,
+                          ),
+                        ],
                       ),
                     ],
                   ),
+                ),
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                    child: child,
+                  ),
+                ),
+                if (action != null)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                    child: action,
+                  )
+                else
                   const SizedBox(height: 8),
-                  child,
-                ],
-              ),
+              ],
             ),
           ),
         ),

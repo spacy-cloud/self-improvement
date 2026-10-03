@@ -70,19 +70,17 @@ class _WaterCustomSheetState extends ConsumerState<WaterCustomSheet> {
       child: FormSheetFrame(
         title: 'Eigene Menge',
         onClose: _close,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            WaterFormBody(args: _args, onSubmit: _submit, inlineFailure: true),
-            const SizedBox(height: 16),
-            PrimaryButton(
-              label: typed == null
-                  ? 'Menge hinzufügen'
-                  : '${formatWaterMl(typed)} hinzufügen',
-              loading: state.submitting,
-              onPressed: state.submitting ? null : _submit,
-            ),
-          ],
+        action: PrimaryButton(
+          label: typed == null
+              ? 'Menge hinzufügen'
+              : '${formatWaterMl(typed)} hinzufügen',
+          loading: state.submitting,
+          onPressed: state.submitting ? null : _submit,
+        ),
+        child: WaterFormBody(
+          args: _args,
+          onSubmit: _submit,
+          inlineFailure: true,
         ),
       ),
     );
