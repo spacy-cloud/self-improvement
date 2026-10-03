@@ -13,7 +13,8 @@ final class LicenseText {
   String get plainText => paragraphs.map((p) => p.text).join('\n');
 
   /// Identity of the text (paragraph text and indentation).
-  String get _identity => paragraphs.map((p) => '${p.indent}:${p.text}').join('\n');
+  String get _identity =>
+      paragraphs.map((p) => '${p.indent}:${p.text}').join('\n');
 }
 
 /// All licence texts of one package.
@@ -44,7 +45,8 @@ final class LicenseGroup {
 
   /// Second line in the list.
   String get subtitle =>
-      licenseName ?? (texts.length == 1 ? '1 Lizenztext' : '${texts.length} Lizenztexte');
+      licenseName ??
+      (texts.length == 1 ? '1 Lizenztext' : '${texts.length} Lizenztexte');
 
   /// The font and the SDK are listed before the other packages.
   bool get isPinned => packageName == 'Inter' || packageName == 'flutter';
