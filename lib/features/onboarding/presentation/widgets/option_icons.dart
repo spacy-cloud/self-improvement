@@ -40,9 +40,14 @@ OptionLook moduleLook(ModuleId module) => switch (module) {
 OptionLook goalLook(GoalType type) => switch (type) {
   GoalType.steps => (icon: AppIcon.steps.data, accent: AppAccent.steps),
   GoalType.water => (icon: AppIcon.water.data, accent: AppAccent.water),
+  GoalType.focusMinutes => (icon: AppIcon.focus.data, accent: AppAccent.focus),
   GoalType.workoutWeekly => (
     icon: AppIcon.workout.data,
     accent: AppAccent.workout,
   ),
-  _ => (icon: AppIcon.check.data, accent: AppAccent.primary),
+  GoalType.taskCompletion => (
+    icon: AppIcon.task.data,
+    accent: AppAccent.habits,
+  ),
+  GoalType.weightEntry => (icon: AppIcon.weight.data, accent: AppAccent.weight),
 };

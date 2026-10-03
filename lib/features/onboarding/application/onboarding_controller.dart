@@ -85,6 +85,18 @@ class OnboardingController extends Notifier<OnboardingState> {
     state = _edited(state.copyWith(enabledModules: next));
   }
 
+  void setNameText(String text) {
+    if (state.busy) {
+      return;
+    }
+    state = _edited(
+      state.copyWith(
+        nameText: text,
+        fieldErrors: _without(ProfileFields.displayName),
+      ),
+    );
+  }
+
   void setHeightText(String text) {
     if (state.busy) {
       return;
@@ -121,7 +133,21 @@ class OnboardingController extends Notifier<OnboardingState> {
     );
   }
 
-  /// Plus ([direction] > 0) or minus ([direction] < 0) on a daily goal.
+  /// Switches an on/off goal (task, weight entry) on or off. Other goal types
+  /// are ignored: their target is edited with [adjustGoalTarget].
+  void setGoalEnabled(GoalType type, {required bool enabled}) {
+    if (state.busy || !onboardingSwitchGoals.contains(type)) {
+      return;
+    }
+    final next = Set<GoalType>.of(state.goalsOff);
+    final changed = enabled ? next.remove(type) : next.add(type);
+    if (!changed) {
+      return;
+    }
+    state = _edited(state.copyWith(goalsOff: next));
+  }
+
+  /// Plus ([direction] > 0) or minus ([direction] < 0) on a stepper goal.
   void adjustGoalTarget(GoalType type, int direction) {
     if (state.busy) {
       return;
@@ -204,6 +230,7 @@ class OnboardingController extends Notifier<OnboardingState> {
       return const OnboardingRejected();
     }
     final draft = OnboardingDraft(
+      displayName: body.displayName,
       heightCm: body.heightCm,
       ageYears: body.ageYears,
       startWeightGrams: body.startWeightGrams,
@@ -215,6 +242,8 @@ class OnboardingController extends Notifier<OnboardingState> {
       goals: <GoalType, GoalSetting>{
         for (final entry in state.goalTargets.entries)
           entry.key: GoalSetting(target: entry.value),
+        for (final type in onboardingSwitchGoals)
+          type: GoalSetting(enabled: !state.goalsOff.contains(type)),
       },
     );
     return _submit(
@@ -275,7 +304,10 @@ class OnboardingController extends Notifier<OnboardingState> {
       return _failed(failure, kind);
     } catch (error) {
       // Never leave the button stuck: unknown errors count as storage errors.
-      return _failed(StorageFailure(causeType: error.runtimeType.toString()), kind);
+      return _failed(
+        StorageFailure(causeType: error.runtimeType.toString()),
+        kind,
+      );
     }
   }
 
@@ -289,7 +321,9 @@ class OnboardingController extends Notifier<OnboardingState> {
 
   OnboardingSubmitResult _invalid(ValidationFailure failure) {
     if (ref.mounted) {
-      final goalKeys = <String>{for (final type in onboardingGoalTypes) type.key};
+      final goalKeys = <String>{
+        for (final type in onboardingGoalTypes) type.key,
+      };
       final onGoals = failure.fieldErrors.keys.any(goalKeys.contains);
       state = state.copyWith(
         submitting: false,
@@ -302,7 +336,10 @@ class OnboardingController extends Notifier<OnboardingState> {
     return const OnboardingRejected();
   }
 
-  OnboardingSubmitResult _failed(AppFailure failure, OnboardingSubmitKind kind) {
+  OnboardingSubmitResult _failed(
+    AppFailure failure,
+    OnboardingSubmitKind kind,
+  ) {
     if (ref.mounted) {
       state = state.copyWith(
         submitting: false,
@@ -316,16 +353,15 @@ class OnboardingController extends Notifier<OnboardingState> {
   // ---- helpers ------------------------------------------------------------
 
   BodyValuesInput _parseBody() => parseBodyValues(
+    nameText: state.nameText,
     heightText: state.heightText,
     ageText: state.ageText,
     weightText: state.weightText,
   );
 
   /// An edit makes an earlier failed attempt obsolete.
-  OnboardingState _edited(OnboardingState next) => next.copyWith(
-    submitFailure: () => null,
-    failedSubmit: () => null,
-  );
+  OnboardingState _edited(OnboardingState next) =>
+      next.copyWith(submitFailure: () => null, failedSubmit: () => null);
 
   Map<String, String> _without(String field) {
     return Map<String, String>.of(state.fieldErrors)..remove(field);

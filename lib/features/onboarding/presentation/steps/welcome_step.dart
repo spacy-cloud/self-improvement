@@ -123,7 +123,11 @@ class _AppMark extends StatelessWidget {
             ),
           ],
         ),
-        child: Icon(Icons.trending_up_rounded, size: 52, color: colors.onPrimary),
+        child: Icon(
+          Icons.trending_up_rounded,
+          size: 52,
+          color: colors.onPrimary,
+        ),
       ),
     );
   }

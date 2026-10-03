@@ -127,11 +127,11 @@ class GoalOptionCard extends StatelessWidget {
   }
 }
 
-/// A module card with a switch: the whole card switches the module. Uses the
-/// design system's list row, so the semantics are the usual toggle ("ein",
-/// "aus") with the module name and what it offers.
-class ModuleOptionCard extends StatelessWidget {
-  const ModuleOptionCard({
+/// A card with a switch (a module, an on/off goal): the whole card switches
+/// the option. Uses the design system's list row, so the semantics are the
+/// usual toggle ("ein", "aus") with the name and what it offers.
+class ToggleOptionCard extends StatelessWidget {
+  const ToggleOptionCard({
     required this.title,
     required this.subtitle,
     required this.icon,

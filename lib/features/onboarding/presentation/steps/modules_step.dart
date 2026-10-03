@@ -32,7 +32,7 @@ class ModulesStep extends ConsumerWidget {
         ),
         const SizedBox(height: AppSpacing.s16),
         for (final option in OnboardingOptions.modules) ...<Widget>[
-          ModuleOptionCard(
+          ToggleOptionCard(
             title: option.title,
             subtitle: option.subtitle,
             icon: moduleLook(option.module).icon,

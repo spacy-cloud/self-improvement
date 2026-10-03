@@ -99,7 +99,10 @@ class GoalStepperRow extends StatelessWidget {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  Align(alignment: AlignmentDirectional.centerStart, child: label),
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: label,
+                  ),
                   const SizedBox(height: AppSpacing.s8),
                   stepper,
                 ],

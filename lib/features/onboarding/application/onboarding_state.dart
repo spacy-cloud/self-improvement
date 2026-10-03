@@ -44,10 +44,12 @@ final class OnboardingState {
     required this.movedBackward,
     required this.motivationGoals,
     required this.enabledModules,
+    required this.nameText,
     required this.heightText,
     required this.ageText,
     required this.weightText,
     required this.goalTargets,
+    required this.goalsOff,
     required this.fieldErrors,
     required this.focusRequest,
     required this.submitting,
@@ -57,16 +59,18 @@ final class OnboardingState {
   });
 
   /// The fresh state: welcome screen, nothing selected, all five modules on,
-  /// the default daily goals, empty body fields.
+  /// the default daily goals (all switched on), empty personal fields.
   factory OnboardingState.initial() => OnboardingState(
     step: OnboardingStep.welcome,
     movedBackward: false,
     motivationGoals: const <String>{},
     enabledModules: Set<ModuleId>.unmodifiable(ModuleId.values),
+    nameText: '',
     heightText: '',
     ageText: '',
     weightText: '',
     goalTargets: Map<GoalType, int>.unmodifiable(defaultGoalTargets()),
+    goalsOff: const <GoalType>{},
     fieldErrors: const <String, String>{},
     focusRequest: 0,
     submitting: false,
@@ -84,13 +88,19 @@ final class OnboardingState {
   /// Modules that stay on. May become empty.
   final Set<ModuleId> enabledModules;
 
-  /// What the user typed (comma or period for the weight).
+  /// What the user typed (comma or period for the weight). Blank means "not
+  /// given" for every one of them.
+  final String nameText;
   final String heightText;
   final String ageText;
   final String weightText;
 
-  /// Current value of every adjustable daily goal.
+  /// Current value of every stepper goal (steps, water, focus, workouts).
   final Map<GoalType, int> goalTargets;
+
+  /// The on/off goals (task, weight entry) the user switched off. Empty by
+  /// default: every suggested goal starts on.
+  final Set<GoalType> goalsOff;
 
   /// Field key (`ProfileFields`, `GoalType.key`) to German hint.
   final Map<String, String> fieldErrors;
@@ -116,9 +126,11 @@ final class OnboardingState {
   bool get hasUserInput =>
       motivationGoals.isNotEmpty ||
       enabledModules.length != ModuleId.values.length ||
+      nameText.trim().isNotEmpty ||
       heightText.trim().isNotEmpty ||
       ageText.trim().isNotEmpty ||
       weightText.trim().isNotEmpty ||
+      goalsOff.isNotEmpty ||
       !mapEquals(goalTargets, defaultGoalTargets());
 
   /// Whether any action must be ignored right now.
@@ -129,10 +141,12 @@ final class OnboardingState {
     bool? movedBackward,
     Set<String>? motivationGoals,
     Set<ModuleId>? enabledModules,
+    String? nameText,
     String? heightText,
     String? ageText,
     String? weightText,
     Map<GoalType, int>? goalTargets,
+    Set<GoalType>? goalsOff,
     Map<String, String>? fieldErrors,
     int? focusRequest,
     bool? submitting,
@@ -144,10 +158,12 @@ final class OnboardingState {
     movedBackward: movedBackward ?? this.movedBackward,
     motivationGoals: motivationGoals ?? this.motivationGoals,
     enabledModules: enabledModules ?? this.enabledModules,
+    nameText: nameText ?? this.nameText,
     heightText: heightText ?? this.heightText,
     ageText: ageText ?? this.ageText,
     weightText: weightText ?? this.weightText,
     goalTargets: goalTargets ?? this.goalTargets,
+    goalsOff: goalsOff ?? this.goalsOff,
     fieldErrors: fieldErrors ?? this.fieldErrors,
     focusRequest: focusRequest ?? this.focusRequest,
     submitting: submitting ?? this.submitting,
