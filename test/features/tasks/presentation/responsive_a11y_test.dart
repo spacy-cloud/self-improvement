@@ -358,11 +358,12 @@ void main() {
       await tester.tap(find.text('Aufgabe speichern'));
       await tester.pump(const Duration(milliseconds: 300));
 
+      final field = tester.getSemantics(find.byType(TextField).first);
+      expect(field.getSemanticsData().label, contains('Titel'));
       expect(
-        find.bySemanticsLabel(
-          RegExp('Titel.*Bitte gib einen Titel ein', dotAll: true),
-        ),
-        findsOneWidget,
+        field.getSemanticsData().hint,
+        contains('Bitte gib einen Titel ein'),
+        reason: 'the error is the hint of the field itself',
       );
       handle.dispose();
     });
