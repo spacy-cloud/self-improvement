@@ -11,7 +11,7 @@ import 'package:self_improvement/shared/local_date.dart';
 import '../../core/analysis/analysis_fixtures.dart';
 
 export '../../core/analysis/analysis_fixtures.dart'
-    show d2026, referenceDays, refToday, refUsageStart;
+    show d2026, nb, referenceDays, refPeriod, refToday, refUsageStart;
 
 /// Today of the pure screen tests: Saturday 2026-10-03, 10:00 Europe/Berlin.
 const String analysisNowIso = '2026-10-03T08:00:00Z';

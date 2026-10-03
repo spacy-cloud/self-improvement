@@ -773,4 +773,256 @@ void main() {
       expect(find.text('Module verwalten'), findsOneWidget);
     });
   });
+
+  group('loading, error with retry and a changing period', () {
+    testWidgets('while the report loads a neutral text shows, no numbers', (
+      tester,
+    ) async {
+      final never = StreamController<AnalysisReport>();
+      addTearDown(() => unawaited(never.close()));
+      await _open(tester, _container(stream: (call, report) => never.stream));
+
+      expect(find.text('Wird geladen …'), findsOneWidget);
+      expect(find.text('7 Tage'), findsOneWidget);
+      expect(find.text('Schritte'), findsNothing);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    });
+
+    testWidgets('an error shows the error state, retry reads again and the '
+        'data appears (AT34)', (tester) async {
+      final handle = tester.ensureSemantics();
+      final container = _container(
+        stream: (call, report) => call == 1
+            ? Stream<AnalysisReport>.error(StateError('database failed'))
+            : Stream<AnalysisReport>.value(report),
+      );
+      await _open(tester, container);
+
+      expect(find.text('Daten konnten nicht geladen werden'), findsOneWidget);
+      expect(find.textContaining('database failed'), findsNothing);
+      expect(find.text('Schritte'), findsNothing);
+      // The error is announced as soon as it appears.
+      expect(
+        tester
+            .getSemantics(find.text('Daten konnten nicht geladen werden'))
+            .flagsCollection
+            .isLiveRegion,
+        isTrue,
+      );
+      // The selector stays usable.
+      expect(find.text('30 Tage'), findsOneWidget);
+
+      await tester.tap(find.text('Erneut versuchen'));
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.text('Daten konnten nicht geladen werden'), findsNothing);
+      expect(_inCard('Schritte', find.text('7.000')), findsOneWidget);
+      handle.dispose();
+    });
+
+    testWidgets('while another period loads the previous report stays, marked '
+        'as updating (Q02)', (tester) async {
+      late StreamController<AnalysisReport> pending;
+      AnalysisReport? next;
+      final container = _container(
+        stream: (call, report) {
+          if (call == 1) {
+            return Stream<AnalysisReport>.value(report);
+          }
+          next = report;
+          pending = StreamController<AnalysisReport>();
+          addTearDown(() => unawaited(pending.close()));
+          return pending.stream;
+        },
+      );
+      await _open(tester, container);
+      await _selectPeriod(tester, '30 Tage');
+
+      // The selector already shows 30 days, the content is still the old one,
+      // honestly labelled.
+      expect(find.text('Wird aktualisiert …'), findsOneWidget);
+      expect(find.text('27.09. bis 03.10.2026, inklusive heute'), findsWidgets);
+      expect(_inCard('Schritte', find.text('7.000')), findsOneWidget);
+
+      pending.add(next!);
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(find.text('Wird aktualisiert …'), findsNothing);
+      expect(find.text('04.09. bis 03.10.2026, inklusive heute'), findsWidgets);
+    });
+  });
+
+  group('charts with a text summary and a table alternative (AT34)', () {
+    testWidgets('every chart has its summary and a table of the same days '
+        '(AT34)', (tester) async {
+      await _open(tester, _container());
+
+      const summary =
+          'Schritte pro Tag, 27.09. bis 03.10.2026, inklusive heute. An 5 '
+          'von 7 Tagen erfasst.';
+      expect(find.textContaining(summary), findsOneWidget);
+      // Each of the seven series has a summary and a toggle for its table.
+      expect(find.text('Als Tabelle anzeigen'), findsNWidgets(7));
+
+      final steps = find
+          .ancestor(
+            of: find.text('Schritte pro Tag'),
+            matching: find.byType(ChartSummary),
+          )
+          .first;
+      await tester.tap(
+        find.descendant(of: steps, matching: find.text('Als Tabelle anzeigen')),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+
+      // One row per day, oldest first; a day without a record reads "Nicht
+      // erfasst", a recorded zero reads 0.
+      expect(
+        find.descendant(of: steps, matching: find.text('So, 27.09.')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: steps, matching: find.text('Sa, 03.10.')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: steps, matching: find.text('Nicht erfasst')),
+        findsNWidgets(2),
+      );
+      expect(
+        find.descendant(of: steps, matching: find.text('8.000')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: steps, matching: find.text('0')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a chart is hidden from screen readers, summary and table '
+        'carry the meaning (AT34)', (tester) async {
+      final handle = tester.ensureSemantics();
+      await _open(tester, _container());
+
+      for (final chart in tester.widgetList(find.byType(BarChart))) {
+        expect(chart, isA<BarChart>());
+      }
+      expect(
+        find.ancestor(
+          of: find.byType(BarChart).first,
+          matching: find.byType(ExcludeSemantics),
+        ),
+        findsWidgets,
+      );
+      expect(
+        find.ancestor(
+          of: find.byType(LineChart),
+          matching: find.byType(ExcludeSemantics),
+        ),
+        findsWidgets,
+      );
+      handle.dispose();
+    });
+
+    testWidgets('steps and water: not recorded is an empty slot, a recorded '
+        'zero a thin stub (A01)', (tester) async {
+      await _open(tester, _container());
+
+      final steps = tester.widget<BarChart>(find.byType(BarChart).first).data;
+      double heightOf(int day) => steps.barGroups[day].barRods.first.toY;
+      expect(steps.barGroups, hasLength(7));
+      expect(heightOf(0), 8000); // Sunday 27.09.
+      expect(heightOf(1), greaterThan(0)); // Monday: a recorded 0
+      expect(heightOf(1), lessThan(steps.maxY * 0.05));
+      expect(heightOf(2), 0); // Tuesday: not recorded, no bar
+      expect(heightOf(3), 12000);
+      // The dashed line is the average per recorded day.
+      expect(steps.extraLinesData.horizontalLines.single.y, 7000);
+    });
+
+    testWidgets('weight: only measured days are points, no zero fill (AT08)', (
+      tester,
+    ) async {
+      await _open(tester, _container());
+
+      final line = tester.widget<LineChart>(find.byType(LineChart)).data;
+      final spots = line.lineBarsData.single.spots;
+      expect(
+        [for (final spot in spots) (spot.x, spot.y)],
+        [(0.0, 71.8), (3.0, 71.6), (6.0, 71.5)],
+      );
+    });
+
+    testWidgets('a 90 day period draws 90 days and keeps its tables '
+        '(Q03)', (tester) async {
+      await _open(tester, _container(days: syntheticDays(today: refToday)));
+      await _selectPeriod(tester, '90 Tage');
+
+      final steps = tester.widget<BarChart>(find.byType(BarChart).first).data;
+      expect(steps.barGroups, hasLength(90));
+      expect(find.text('Als Tabelle anzeigen'), findsNWidgets(7));
+    });
+
+    testWidgets('the expanded table of a chart survives a period change', (
+      tester,
+    ) async {
+      await _open(tester, _container(days: syntheticDays(today: refToday)));
+      final steps = find
+          .ancestor(
+            of: find.text('Schritte pro Tag'),
+            matching: find.byType(ChartSummary),
+          )
+          .first;
+      await tester.tap(
+        find.descendant(of: steps, matching: find.text('Als Tabelle anzeigen')),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Tabelle ausblenden'), findsOneWidget);
+
+      await _selectPeriod(tester, '30 Tage');
+      expect(find.text('Tabelle ausblenden'), findsOneWidget);
+    });
+  });
+
+  group('the table alternative opens and closes', () {
+    testWidgets('"Als Tabelle" opens the table page, back returns', (
+      tester,
+    ) async {
+      await _open(tester, _container());
+
+      await tester.tap(find.text('Als Tabelle'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AnalysisTableScreen), findsOneWidget);
+      expect(find.text('Analyse als Tabelle'), findsOneWidget);
+
+      await tester.tap(find.byIcon(AppIcon.back.data));
+      await tester.pumpAndSettle();
+      expect(find.byType(AnalysisTableScreen), findsNothing);
+      expect(find.text('Als Tabelle'), findsOneWidget);
+    });
+
+    testWidgets('Android back closes the table page', (tester) async {
+      await _open(tester, _container());
+      await tester.tap(find.text('Als Tabelle'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AnalysisTableScreen), findsOneWidget);
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.byType(AnalysisTableScreen), findsNothing);
+    });
+
+    testWidgets('the table shows the period that is selected', (tester) async {
+      await _open(tester, _container(days: syntheticDays(today: refToday)));
+      await _selectPeriod(tester, '30 Tage');
+
+      await tester.tap(find.text('Als Tabelle'));
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('Kennzahlen der letzten 30 Tage'),
+        findsOneWidget,
+      );
+    });
+  });
 }

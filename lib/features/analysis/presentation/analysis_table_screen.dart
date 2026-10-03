@@ -75,7 +75,7 @@ class _TableContent extends StatelessWidget {
       color: colors.textSecondary,
     );
     final table = report.table;
-    if (!report.hasCards) {
+    if (!report.hasAnalysedModule || !report.hasCards) {
       return EmptyState(
         title: 'Noch keine Tabelle',
         message:
