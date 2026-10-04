@@ -5,7 +5,7 @@ Wird bis zur Abnahme laufend ergänzt. Offene Anforderungen stehen zusätzlich i
 ## Umgebung und Verifikation
 
 - **Kein lokales Android-SDK** im Entwicklungslauf (Lizenzen nicht akzeptiert). Debug-APK und Emulator-Integrationstests entstehen in der CI (GitHub Actions), nicht lokal. Prüfungen mit realem Gerät (TalkBack, echte Benachrichtigungszustellung, Force-Stop, Systemschrift, Performance) sind **nicht prüfbar** und in der Matrix als solche gekennzeichnet.
-- **iOS** ist nur vorbereitet (Projektdateien, plattformunabhängige Domain, Adapter-Schnittstellen). Es gibt keinen iOS-Build und keine iOS-Prüfung; dafür sind macOS, Xcode, Signierung, VoiceOver- und Berechtigungsprüfung nötig.
+- **iOS** ist vorbereitet (Projektdateien, plattformunabhängige Domain, Adapter-Schnittstellen). Ein CI-Workflow auf einem macOS-Runner (`.github/workflows/ios-ipa.yml`, BS-95) baut eine unsignierte IPA; der erste Lauf am 2026-10-04 war grün. Auf einem iPhone wurde laut Screenshot nur der Start mit der Willkommensseite des Onboardings gesehen (Gerät und iOS-Version nicht angegeben). Nicht geprüft: Benachrichtigungen, Teilen-Menü, Dateiauswahl, VoiceOver, Layout bei Notch und Dynamic Island, Hintergrund und Neustart. Das Projekt signiert nichts und veröffentlicht nichts im App Store; die Signatur übernimmt beim Tester SideStore.
 
 ## Formale offene Punkte (kein Implementierungsblocker)
 

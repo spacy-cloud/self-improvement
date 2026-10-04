@@ -128,7 +128,7 @@ Nicht auf einem Gerät oder mit der echten Plattform geprüft (in der automatisc
 - **Echte Seitenübergänge in den meisten Widget-Tests:** Das Test-Hilfsmittel der App-Schale schaltet die Animationen standardmäßig aus (`animations: false`, das Systemflag), damit die rund 90 Tests mit der vollständigen App schnell und stabil laufen. Echte Übergänge prüfen nur `test/app/motion_test.dart`, einige Tests der Einstellungen und die Emulator-Abläufe; auf dem Emulator sind sie in der CI ebenfalls ausgeschaltet.
 - **Android-Systemzurück** und der Opt-out aus dem vorhersagenden Zurück (`android:enableOnBackInvokedCallback="false"`, Android 16 mit targetSdk 36).
 - **Zeitzonen- und Sommerzeitwechsel des Betriebssystems** (im Host mit `FakeClock` und Fake-Zonenquelle nachgestellt).
-- **iOS:** Projektdateien vorbereitet, nicht gebaut und nicht getestet.
+- **iOS:** Die CI baut eine unsignierte IPA (Workflow `ios-ipa.yml`, erster Lauf am 2026-10-04 grün, macOS-Runner). Laut Screenshot startet die App auf einem iPhone und zeigt die Willkommensseite des Onboardings; weiter wurde nichts getestet.
 
 ## 7. Reproduktion
 

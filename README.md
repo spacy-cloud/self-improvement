@@ -14,7 +14,7 @@ Der App-Name steht noch nicht fest und wird im Code als eine Konstante geführt 
 | Umsetzung | Android V1 im Jira-Epic [BS-51](https://spacy-cloud.atlassian.net/browse/BS-51): Kern und alle fünf Module sind umgesetzt, der Integrationsbranch `feature/BS-51-android-v1` liegt als Pull Request (PR 2) gegen `main`. Stand der Anforderungen und Abnahmefälle mit Nachweisen und offenen Punkten: [docs/requirements-matrix.md](docs/requirements-matrix.md) |
 | Tests | 6485 Host-Tests lokal bestanden (Stand 2026-10-04, Code-Stand `93ee81f`), Analyse und Format ohne Befund; das CI-Ergebnis steht im Pull Request. Auf einem Gerät (Samsung S25) wurde bisher nur der Start eines Debug-Builds gesehen, kein Funktionstest: Details und Grenzen in [docs/test-report.md](docs/test-report.md) |
 | Abnahme | Nicht abgenommen: Die Abnahme entscheidet das Team, kein Umsetzungsticket der V1 (BS-52 bis BS-92) ist auf „Erledigt“ |
-| iOS | Projektdateien vorbereitet, nicht gebaut und nicht getestet |
+| iOS | Projektdateien vorbereitet; ein CI-Workflow (`ios-ipa.yml`, BS-95) baut eine unsignierte IPA, die der Tester per SideStore selbst signiert. Laut Screenshot startet die App auf einem iPhone (Willkommensseite des Onboardings), sonst ist nichts getestet |
 
 ## Dokumentation
 

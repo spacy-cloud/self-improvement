@@ -146,7 +146,7 @@ Regeln für jede Mutation: erst `validate...` (wirft `ValidationFailure` mit Fel
 
 ## 10. iOS-Vorbereitung
 
-Keine Android-Imports in Domain und Daten; Benachrichtigungen und Dateien liegen hinter Schnittstellen; Projektdateien für iOS sind vorhanden. Es gibt keinen iOS-Build und keine iOS-Prüfung (siehe [known-limitations.md](known-limitations.md)).
+Keine Android-Imports in Domain und Daten; Benachrichtigungen und Dateien liegen hinter Schnittstellen; Projektdateien für iOS sind vorhanden. Ein CI-Workflow baut eine unsignierte IPA (BS-95); eine Prüfung auf dem Gerät steht fast vollständig aus (siehe [known-limitations.md](known-limitations.md)).
 
 ## 11. Start der App
 

@@ -16,7 +16,7 @@ Diese Anleitung ist für die ersten eigenen Tests auf einem Emulator oder einem 
 | Zustellung von Erinnerungen, System-Berechtigungsdialog | auf dem Gerät prüfen (Abschnitt „Rundgang“) |
 | Teilen-Menü und Dateiauswahl für Export und Import | auf dem Gerät prüfen |
 | TalkBack, 200 % Schriftgröße, echte Tastatur | im Rundgang kurz anschauen |
-| Release-Build, iOS | nicht geprüft; iOS ist nur vorbereitet |
+| Release-Build, iOS | Release-Build nicht geprüft; iOS: unsignierte IPA aus der CI (BS-95), auf einem iPhone nur der Start gesehen |
 
 ## Weg A: fertiges APK aus der CI auf das Handy (am schnellsten)
 

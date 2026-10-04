@@ -186,7 +186,7 @@ Auf einem Gerät ist bisher nur der Start eines Debug-Builds gesehen worden (Sam
 - **Zeitzonen- und Sommerzeitwechsel des Betriebssystems** (AT25).
 - **Android-Systemzurück** und der ausdrückliche Opt-out aus dem vorhersagenden Zurück (BS-85) auf Android 16.
 - **Release-Build:** Die CI baut ihn (mit Debug-Signatur), gestartet wurde er nirgends.
-- **iOS:** nicht gebaut, nicht getestet.
+- **iOS:** unsignierte IPA aus der CI (BS-95), auf einem iPhone nur der Start gesehen, sonst nicht getestet.
 
 Offene Arbeit und Entscheidungen:
 
