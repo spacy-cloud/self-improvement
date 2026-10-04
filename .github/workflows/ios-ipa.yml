@@ -1,0 +1,58 @@
+name: iOS IPA (unsigned)
+
+# Builds an UNSIGNED .ipa for sideloading tools that sign it themselves (for example
+# SideStore with the tester's Apple ID). No certificates and no secrets are used.
+# A successful build is not a device test: the iOS app has never been run on a device (BS-95).
+on:
+  push:
+    branches: ["feature/BS-95-ios-ipa-ci"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-ipa-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Same toolchain as ci.yml (see docs/implementation-decisions.md).
+  FLUTTER_VERSION: "3.47.6"
+
+jobs:
+  ios-ipa:
+    name: iOS unsigned IPA
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Toolchain versions
+        run: |
+          flutter --version
+          xcodebuild -version
+      - run: flutter pub get --enforce-lockfile
+      - run: dart run build_runner build
+      - name: Build the iOS app without code signing
+        run: flutter build ios --release --no-codesign
+      - name: Package the unsigned IPA
+        run: |
+          set -euo pipefail
+          app="build/ios/iphoneos/Runner.app"
+          test -d "$app"
+          rm -rf build/ipa
+          mkdir -p build/ipa/Payload
+          cp -R "$app" build/ipa/Payload/
+          (cd build/ipa && zip -qry ../self-improvement-unsigned.ipa Payload)
+          ls -l build/self-improvement-unsigned.ipa
+          shasum -a 256 build/self-improvement-unsigned.ipa
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ios-ipa-unsigned
+          path: build/self-improvement-unsigned.ipa
+          retention-days: 14
+          if-no-files-found: error
