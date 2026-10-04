@@ -1,6 +1,6 @@
 # Bekannte Grenzen
 
-Wird bis zur Abnahme laufend ergänzt. Offene Anforderungen stehen zusätzlich in [requirements-matrix.md](requirements-matrix.md).
+Wird laufend ergänzt. Offene Anforderungen stehen zusätzlich in [requirements-matrix.md](requirements-matrix.md).
 
 ## Umgebung und Verifikation
 
