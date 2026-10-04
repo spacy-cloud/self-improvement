@@ -74,7 +74,7 @@ APK-Dateien und Build-Ordner werden nicht eingecheckt. Eine Store-Veröffentlich
 
 ## Mitwirken
 
-- `main` ist der stabile Stand; Änderungen über Feature-Branches und Pull Requests.
+- `main` ist die Produktion, `dev` die Entwicklung; Änderungen laufen über Feature-Branches und Pull Requests gegen `dev` (Entscheidung D-013 in [docs/implementation-decisions.md](docs/implementation-decisions.md)).
 - Branch-Namen mit Jira-Key, z. B. `feature/BS-61-weight-flow` (BS-61 ist das Gewichtsticket).
 - Code, Kommentare und Commit-Messages auf Englisch; Oberfläche und Dokumentation auf Deutsch.
 - Keine echten Gesundheitsdaten, Zugangsdaten oder privaten Notizen in Code, Tests oder Dokumentation; Testdaten sind synthetisch.
