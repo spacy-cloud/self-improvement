@@ -409,6 +409,7 @@ class _StepsField extends StatelessWidget {
             ),
             onChanged: onChanged,
             onSubmitted: onSubmitted,
+            onTapOutside: dismissKeyboardOnTapOutside,
           ),
         ),
       ),

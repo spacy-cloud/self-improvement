@@ -50,6 +50,7 @@ class _TasksListViewState extends ConsumerState<TasksListView> {
     // would silently shorten the list.
     final panelOpen = _searchOpen || filter.isNarrowed;
     return CustomScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       slivers: <Widget>[
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(
