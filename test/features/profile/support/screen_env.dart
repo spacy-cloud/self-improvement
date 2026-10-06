@@ -79,6 +79,10 @@ Future<ScreenEnv> createScreenEnv(
   LocalDate? startedOn,
   bool realProjection = false,
   List<Override> overrides = const [],
+
+  /// Switches the optional daily goal "Workout heute" on from the profile
+  /// start (BS-99); off by default, like in the app.
+  bool workoutDailyGoal = false,
 }) async {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
   final projection = FlakyProjection();
@@ -95,6 +99,7 @@ Future<ScreenEnv> createScreenEnv(
       () => harness.seedOnboarded(
         enabledModules: enabledModules,
         startedOn: startedOn,
+        workoutDailyGoal: workoutDailyGoal,
       ),
     );
   }
