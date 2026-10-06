@@ -148,6 +148,139 @@ class FieldMessage extends StatelessWidget {
   }
 }
 
+/// A field that shows a chosen value and opens a picker when tapped (the due
+/// day, the moment of a reminder): the look of a text field, a trailing icon,
+/// at least 56 high. [text] is greyed while it only says that nothing is chosen
+/// ([empty]). The screen reader hears [semanticLabel] as one button.
+class PickerField extends StatelessWidget {
+  const PickerField({
+    required this.text,
+    required this.icon,
+    required this.semanticLabel,
+    required this.onTap,
+    this.empty = false,
+    super.key,
+  });
+
+  final String text;
+  final IconData icon;
+  final String semanticLabel;
+  final VoidCallback onTap;
+
+  /// Whether [text] says that no value is chosen yet.
+  final bool empty;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.tokens.colors;
+    return Semantics(
+      container: true,
+      button: true,
+      label: semanticLabel,
+      onTap: onTap,
+      excludeSemantics: true,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 56),
+        child: Material(
+          color: colors.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppRadii.controlBorder,
+            side: BorderSide(color: colors.borderInput, width: 1.5),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            focusColor: colors.focus.withValues(alpha: 0.2),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      text,
+                      style: AppTextStyles.bodyDefault.copyWith(
+                        color: empty
+                            ? colors.textSecondary
+                            : colors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(icon, size: 20, color: colors.textSecondary),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A plain text action (no outline), at least 48 by 48: "Erinnerung
+/// entfernen". [danger] colours it like a destructive action. The text sits
+/// flush with the edge of its box ([horizontalPadding] 0) so it lines up with
+/// the text above it or with the field next to it; the target is the whole
+/// box, at least 48 high.
+class TextActionButton extends StatelessWidget {
+  const TextActionButton({
+    required this.label,
+    required this.onPressed,
+    this.semanticLabel,
+    this.danger = false,
+    this.horizontalPadding = 0,
+    super.key,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+  final String? semanticLabel;
+  final bool danger;
+
+  /// Space between the text and the edge of the target on both sides.
+  final double horizontalPadding;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.tokens.colors;
+    return Semantics(
+      container: true,
+      button: true,
+      enabled: true,
+      label: semanticLabel ?? label,
+      onTap: onPressed,
+      excludeSemantics: true,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          minHeight: AppSizes.touchMin,
+          minWidth: AppSizes.touchMin,
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: onPressed,
+            borderRadius: BorderRadius.circular(8),
+            focusColor: colors.focus.withValues(alpha: 0.2),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: horizontalPadding,
+                vertical: 12,
+              ),
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodyStrong.copyWith(
+                  color: danger ? colors.error : colors.primaryText,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// One option of a [SegmentedChoice].
 class SegmentOption<T> {
   const SegmentOption({
