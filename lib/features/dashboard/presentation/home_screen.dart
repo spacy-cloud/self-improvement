@@ -122,7 +122,11 @@ class _Overview extends StatelessWidget {
           DayOverviewCard(
             fulfilled: day!.fulfilledCount,
             applicable: day.applicableCount,
-            motivation: motivationTextFor(view.today),
+            motivation: motivationTextFor(
+              view.today,
+              fulfilled: day.fulfilledCount,
+              applicable: day.applicableCount,
+            ),
           )
         else
           NoGoalsCard(onSetGoals: () => context.push(DashboardRoutes.goals)),
