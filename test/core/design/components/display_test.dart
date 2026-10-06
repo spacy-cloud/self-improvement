@@ -621,6 +621,116 @@ void main() {
       );
     });
 
+    /// The style of the span of [rich] that holds [text].
+    TextStyle? styleOfSpan(RichText rich, String text) {
+      TextStyle? found;
+      rich.text.visitChildren((span) {
+        if (span is TextSpan && span.text == text) {
+          found = span.style;
+          return false;
+        }
+        return true;
+      });
+      return found;
+    }
+
+    Finder valueText(String plain) => find.descendant(
+      of: find.byType(MetricCard),
+      matching: find.byWidgetPredicate(
+        (w) => w is RichText && w.text.toPlainText() == plain,
+      ),
+    );
+
+    for (final variant in allVariants) {
+      testWidgets(
+        '(BS-99) ${variant.name}: a text value takes a smaller style and a glyph in the accent colour',
+        (tester) async {
+          await pumpDesign(
+            tester,
+            const MetricCard(
+              title: 'Workout',
+              value: 'Ruhetag',
+              valueStyle: AppTextStyles.titleCard,
+              valueIcon: Icons.bedtime_rounded,
+              accent: AppAccent.workout,
+              subtitle: 'Zählt als erreicht',
+            ),
+            variant: variant,
+          );
+          final style = styleOfSpan(
+            tester.widget<RichText>(valueText('Ruhetag')),
+            'Ruhetag',
+          )!;
+          expect(style.fontSize, AppTextStyles.titleCard.fontSize);
+          expect(style.fontWeight, AppTextStyles.titleCard.fontWeight);
+          expect(style.color, variant.colors.textPrimary);
+          expect(
+            tester.widget<Icon>(find.byIcon(Icons.bedtime_rounded)).color,
+            variant.colors.moduleWorkout,
+          );
+        },
+      );
+    }
+
+    testWidgets(
+      '(BS-99) without valueStyle the value keeps the big number style and no glyph',
+      (tester) async {
+        await pumpDesign(
+          tester,
+          const MetricCard(title: 'Workout', value: '3', target: '/ 5'),
+        );
+        final style = styleOfSpan(
+          tester.widget<RichText>(valueText('3 / 5')),
+          '3',
+        )!;
+        expect(style.fontSize, AppTextStyles.titleScreen.fontSize);
+        expect(find.byType(Wrap), findsNothing, reason: 'no glyph, no wrap');
+      },
+    );
+
+    testWidgets(
+      '(BS-99) a long word moves below the glyph instead of breaking inside the word',
+      (tester) async {
+        const card = MetricCard(
+          title: 'Workout',
+          value: 'Übersprungen',
+          valueStyle: AppTextStyles.titleCard,
+          valueIcon: Icons.skip_next_rounded,
+          accent: AppAccent.workout,
+        );
+        // Measure the word, then give the card 12 px more than the word needs:
+        // enough for the word alone, not enough beside the glyph (18 + 6).
+        await pumpDesign(tester, card);
+        final wordWidth = tester.getSize(valueText('Übersprungen')).width;
+        await pumpDesign(tester, card, width: wordWidth + 12 + 64);
+
+        expect(tester.takeException(), isNull);
+        expect(
+          tester.getSize(valueText('Übersprungen')).height,
+          lessThan(AppTextStyles.titleCard.fontSize! * 1.5),
+          reason: 'one line: the word was not broken',
+        );
+        expect(
+          tester.getTopLeft(valueText('Übersprungen')).dy,
+          greaterThan(
+            tester.getBottomLeft(find.byIcon(Icons.skip_next_rounded)).dy - 1,
+          ),
+          reason:
+              'the word sits below the glyph when it does not fit next to it',
+        );
+
+        // With room for both, the glyph and the word share a line.
+        await pumpDesign(tester, card, width: wordWidth + 40 + 64);
+        expect(
+          (tester.getCenter(valueText('Übersprungen')).dy -
+                  tester.getCenter(find.byIcon(Icons.skip_next_rounded)).dy)
+              .abs(),
+          lessThan(4),
+          reason: 'one line when both fit',
+        );
+      },
+    );
+
     testWidgets('the card grows with large text and shows its child slot', (
       tester,
     ) async {
