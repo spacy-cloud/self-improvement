@@ -8,6 +8,10 @@ import 'package:self_improvement/features/body/steps/presentation/steps_routes.d
 
 /// The `steps` card of the dashboard: today's total against the goal. Before a
 /// total was entered it shows no number, only the way to enter one.
+///
+/// The action below the card stays after the first entry of the day (BS-108):
+/// the total is a sum that changes during the day and saving replaces it, so
+/// the card keeps the way to update it (see [_stepsAction]).
 class StepsDashboardCard extends ConsumerWidget {
   const StepsDashboardCard({super.key});
 
@@ -33,12 +37,7 @@ class StepsDashboardCard extends ConsumerWidget {
             accent: AppAccent.steps,
             onTap: () => context.push(StepsRoutes.overview),
             semanticLabel: 'Schritte, heute noch nicht eingetragen',
-            quickAction: MetricCardAction(
-              label: 'Schritte eintragen',
-              icon: AppIcon.plus.data,
-              accent: AppAccent.steps,
-              onPressed: () => context.push(StepsRoutes.create),
-            ),
+            quickAction: _stepsAction(context, recorded: false),
           );
         }
         final progress = state.progress;
@@ -59,8 +58,22 @@ class StepsDashboardCard extends ConsumerWidget {
           icon: AppIcon.steps.data,
           accent: AppAccent.steps,
           onTap: () => context.push(StepsRoutes.overview),
+          quickAction: _stepsAction(context, recorded: true),
         );
       },
     );
   }
 }
+
+/// The quick action of the card. Both states open the form for today: it
+/// already knows an existing total, says so and replaces it on saving (it never
+/// adds). Before the first entry the action enters the total ("+ Schritte
+/// eintragen"); afterwards it updates it ("Schritte aktualisieren", without a
+/// plus, because nothing is added).
+MetricCardAction _stepsAction(BuildContext context, {required bool recorded}) =>
+    MetricCardAction(
+      label: recorded ? 'Schritte aktualisieren' : 'Schritte eintragen',
+      icon: recorded ? null : AppIcon.plus.data,
+      accent: AppAccent.steps,
+      onPressed: () => context.push(StepsRoutes.create),
+    );
