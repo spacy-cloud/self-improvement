@@ -80,6 +80,42 @@ class SettingsCommands {
     ),
   );
 
+  /// Sets the wish "Schritte aus Health übernehmen" (BS-97). Like
+  /// [setNotificationsEnabled] it is a DESIRED state; the access of the health
+  /// interface is asked from the device.
+  Future<CommandOutcome> setHealthStepsSyncEnabled({
+    required String commandId,
+    required bool value,
+  }) => _write(
+    commandId,
+    (nowUtc, version) => AppSettingsCompanion(
+      healthStepsSyncEnabled: Value(value),
+      updatedAtUtc: Value(nowUtc),
+      rowVersion: Value(version),
+    ),
+  );
+
+  /// Stores when the last comparison with the health interface finished
+  /// (BS-97). The instant is cut to the minute, the precision the app shows.
+  Future<CommandOutcome> setHealthStepsLastSyncAt({
+    required String commandId,
+    required DateTime atUtc,
+  }) => _write(
+    commandId,
+    (nowUtc, version) => AppSettingsCompanion(
+      healthStepsLastSyncAtUtc: Value(minuteOf(atUtc)),
+      updatedAtUtc: Value(nowUtc),
+      rowVersion: Value(version),
+    ),
+  );
+
+  /// [instant] without seconds and milliseconds (UTC): the precision of the
+  /// time of the last comparison.
+  static DateTime minuteOf(DateTime instant) {
+    final utc = instant.toUtc();
+    return DateTime.utc(utc.year, utc.month, utc.day, utc.hour, utc.minute);
+  }
+
   Future<CommandOutcome> _write(
     String commandId,
     AppSettingsCompanion Function(DateTime nowUtc, int newVersion) build,
