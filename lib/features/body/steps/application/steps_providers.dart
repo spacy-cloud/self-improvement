@@ -6,6 +6,7 @@ import 'package:self_improvement/core/goals/domain/goal_type.dart';
 import 'package:self_improvement/core/providers/core_providers.dart';
 import 'package:self_improvement/features/body/steps/data/steps_repository.dart';
 import 'package:self_improvement/features/body/steps/domain/step_day.dart';
+import 'package:self_improvement/features/body/steps/domain/step_source.dart';
 import 'package:self_improvement/shared/local_date.dart';
 
 final stepsRepositoryProvider = Provider<StepsRepository>(
@@ -28,6 +29,7 @@ final class StepsHistoryDay {
     required this.date,
     required this.progress,
     required this.recorded,
+    this.source,
   });
 
   final LocalDate date;
@@ -37,6 +39,9 @@ final class StepsHistoryDay {
 
   /// False means "Nicht erfasst" (no record), which is not the same as 0.
   final bool recorded;
+
+  /// Where the total comes from; null when the day has no record.
+  final StepSource? source;
 
   int? get steps => recorded ? progress.steps : null;
 }
@@ -48,13 +53,17 @@ final class StepsToday {
     required this.date,
     required this.progress,
     required this.recorded,
+    this.source,
   });
 
   final LocalDate date;
   final StepsProgress progress;
 
-  /// False before any total was entered for today.
+  /// False before any total was entered or taken over for today.
   final bool recorded;
+
+  /// Where today's total comes from; null before there is one.
+  final StepSource? source;
 }
 
 /// Today's total with the target applying today (frozen in today's snapshot).
@@ -79,6 +88,7 @@ final stepsTodayProvider = StreamProvider<StepsToday>((ref) {
       return StepsToday(
         date: today,
         recorded: day != null,
+        source: day?.source,
         progress: StepsProgress(
           steps: day?.steps ?? 0,
           target: snapshot?.applicableTargetFor(GoalType.steps.key),
@@ -121,6 +131,7 @@ final stepsHistoryProvider = StreamProvider.family<List<StepsHistoryDay>, int>((
             return StepsHistoryDay(
               date: date,
               recorded: day != null,
+              source: day?.source,
               progress: StepsProgress(
                 steps: day?.steps ?? 0,
                 target: stored[date]?.applicableTargetFor(GoalType.steps.key),
