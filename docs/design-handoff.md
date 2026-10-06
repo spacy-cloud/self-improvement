@@ -285,6 +285,7 @@ Die Figma-Icons sind eigene Vektorpfade. Eingesetzt werden gleichwertige Materia
 | Ladefehler (Wolke mit Ausrufezeichen) | `Icons.cloud_off_rounded` | `cloudOff` |
 | Erneut versuchen (Kreispfeil) | `Icons.refresh_rounded` | `retry` |
 | Leerer Zustand (Pflanze, eigene Illustration) | `Icons.eco_outlined` | `sprout` |
+| Leerzustand des Plus-Menüs bei ausgeblendeten Zielen (`icon/target`, Zielscheibe; Entwurf `4118:4444`, BS-117) | `Icons.track_changes_rounded` | `target` |
 | „Nur lokal“ (Schloss) | `Icons.lock_outline_rounded` | `lock` |
 | Info (Version) | `Icons.info_outline_rounded` | `info` |
 | Einstellungen: Design (Halbkreis), Reduzierte Bewegung, Haptik, Erinnerung | `Icons.contrast_rounded`, `Icons.motion_photos_off_outlined`, `Icons.vibration_rounded`, `Icons.notifications_none_rounded` | `theme`, `reducedMotion`, `haptics`, `reminder` |
