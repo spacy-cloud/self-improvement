@@ -55,6 +55,37 @@ void main() {
     expect(match!.group(1), AppConfig.appVersion);
   });
 
+  test(
+    'buildNumber equals the build number of the pubspec version (BS-118)',
+    () {
+      final pubspec = File('${Directory.current.path}/pubspec.yaml')
+          .readAsStringSync();
+      final match = RegExp(
+        r'^version:\s*[0-9]+\.[0-9]+\.[0-9]+\+([0-9]+)\s*$',
+        multiLine: true,
+      ).firstMatch(pubspec);
+      expect(
+        match,
+        isNotNull,
+        reason: 'the pubspec version has the form MAJOR.MINOR.PATCH+BUILD',
+      );
+      expect(int.parse(match!.group(1)!), AppConfig.buildNumber);
+    },
+  );
+
+  test('the version shown in the app is the one of the pubspec (BS-118)', () {
+    // Android versionName and the iOS CFBundleShortVersionString come from the
+    // pubspec; the page "Über die App" and the settings row show the same
+    // numbers through the constants, so one version is the only source.
+    final pubspec = File('${Directory.current.path}/pubspec.yaml')
+        .readAsStringSync();
+    final version = RegExp(
+      r'^version:\s*(\S+)\s*$',
+      multiLine: true,
+    ).firstMatch(pubspec)!.group(1);
+    expect(version, '${AppConfig.appVersion}+${AppConfig.buildNumber}');
+  });
+
   test('backup format contract stays stable', () {
     expect(AppConfig.backupFormat, 'levelup_life_backup');
     expect(AppConfig.backupSchemaVersion, 1);
