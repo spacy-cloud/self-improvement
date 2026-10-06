@@ -51,9 +51,9 @@ class Tasks extends Table with AuditColumns, SoftDeleteColumn {
   /// notification is due (UTC). The three `reminder_*` columns are all set or
   /// all null; they follow the time model of the facts (UTC instant plus the
   /// local date and zone frozen when the reminder was set) and are independent
-  /// of the completion fields. The reminder engine plans the notification
-  /// under the semantic key `task:<id>`; a reminder is not a row of
-  /// `reminder_rules`.
+  /// of the completion fields. The reminder engine (BS-111) is meant to plan
+  /// the notification under the semantic key `task:<id>`; a reminder is not a
+  /// row of `reminder_rules`.
   IntColumn get reminderAtUtc =>
       integer().map(const UtcMillisConverter()).nullable()();
 

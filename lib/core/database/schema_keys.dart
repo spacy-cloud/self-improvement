@@ -144,8 +144,8 @@ abstract final class SchemaKeys {
   ];
 
   /// Kinds of `reminder_rules.kind`. A task reminder (schema 2, BS-111) is not
-  /// a rule: it is a property of the task (`tasks.reminder_at_utc`), planned
-  /// by the reminder engine under the semantic key prefix `task`.
+  /// a rule: it is a property of the task (`tasks.reminder_at_utc`), meant to
+  /// be planned by the reminder engine under the semantic key prefix `task`.
   static const List<String> reminderKinds = ['water', 'habit', 'focus_end'];
 
   static const List<String> notificationStates = ['scheduled', 'cancelled'];
