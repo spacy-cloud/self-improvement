@@ -15,7 +15,7 @@ Wird laufend ergänzt. Offene Anforderungen stehen zusätzlich in [requirements-
 
 ## Oberfläche und Bedienung
 
-- iOS, Tastatur ([BS-112](https://spacy-cloud.atlassian.net/browse/BS-112)): Die Tastatur lässt sich in Formularen nicht einklappen (kein Tippen daneben, kein Ziehen; die iOS-Zifferntastatur hat keine Eingabetaste). Alle Schaltflächen blieben laut Tyler erreichbar. Folgeticket, geplant für v0.2.0.
+- iOS, Tastatur ([BS-112](https://spacy-cloud.atlassian.net/browse/BS-112)): In allen Formularen schließen Tippen neben das Feld und Ziehen der Seite die Tastatur (D-018, [docs/screens/forms-keyboard.md](screens/forms-keyboard.md)); eine „Fertig“-Leiste über der Zifferntastatur gibt es nicht. Ziehen wirkt nur, wenn die Seite scrollt. Unter TalkBack und VoiceOver schließt Tippen die Tastatur voraussichtlich nicht (das Aktivieren kommt als Semantik-Aktion, aus Flutter abgeleitet, nicht gesehen). Auf einem iPhone (Tyler, [BS-96](https://spacy-cloud.atlassian.net/browse/BS-96)) und auf einem Android-Gerät nicht geprüft.
 - iOS, Texte ([BS-113](https://spacy-cloud.atlassian.net/browse/BS-113)): Der Erinnerungs-Ablauf nennt „Android“ in rund einem Dutzend Texten (zum Beispiel „Android-Abfrage anzeigen“), auch unter iOS. Folgeticket, geplant für v0.2.0.
 - Querformat ([BS-114](https://spacy-cloud.atlassian.net/browse/BS-114)): Weder die Vorlage noch das Manifest sperren das Querformat; Entwurf und Routen-Durchlauf sind Hochformat. Auf dem iPhone ist die Darstellung laut Tyler wenig sinnvoll und schwer lesbar. Die Entscheidung (belassen, sperren oder gestalten) steht aus.
 - Sehr lange einzelne Wörter in Titeln können bei 320 px Breite und 200 % Schrift mitten im Wort umbrechen.
