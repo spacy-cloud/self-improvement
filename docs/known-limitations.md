@@ -13,6 +13,15 @@ Wird laufend ergänzt. Offene Anforderungen stehen zusätzlich in [requirements-
 - **Die Migration ist nur auf dem Host geprüft.** Die Tests migrieren eine mit dem Code von v0.1.0 erzeugte Datenbank mit synthetischen Daten (SQLite im Prozess des Testrechners, auch über den Produktionsstart `AppRuntime.create()` mit einer Datei). Das Update einer echten Datenbank auf einem Telefon ist nicht geprüft; ein Fehlschlag lässt die Datei auf Schema 1 und zeigt die Startfehlerseite mit „Erneut versuchen“.
 - **Neue Felder haben nach dem Update Standardwerte, keine Geschichte.** Vorhandene Schrittwerte gelten als von Hand eingetragen (`manual`), der Abgleich mit der Health-App ist aus, keine Aufgabe hat eine Erinnerung, kein Tag ist als Ruhetag oder übersprungen markiert.
 
+## Schritte aus Health (BS-97)
+
+- **Nur Android, Health Connect.** iOS (HealthKit) ist nicht Teil von v0.2.0: Erst ein positiver Spike mit Tyler zeigt, ob SideStore das Entitlement beim Neusignieren setzt (der CI-Build ohne Signatur bettet voraussichtlich keine Entitlements ein); ein Ticket dafür gibt es noch nicht. Auf iOS und auf jedem Gerät ohne Schnittstelle bleibt der Schalter ausgeblendet.
+- **Nicht auf einem Gerät geprüft.** Die Host-Tests laufen mit einer Fake-Quelle und einem nachgebauten Kanal. Die Kotlin-Seite (`HealthStepsPlugin`) wurde lokal mit dem Kotlin-Compiler gegen die echten Klassen übersetzt, die Gradle-Integration prüft nur die CI, ein Emulator hat keine Schrittdaten. Ob die Tagessumme der Summe in Health Connect gleicht, ob mehrere Quellen nicht doppelt zählen und wie der Berechtigungsdialog sich auf einem echten Telefon verhält, steht als Checkliste in [screens/body-weight-steps.md](screens/body-weight-steps.md), Ergebnis „nicht geprüft“.
+- **Nur lesen, nur Schritte, kein Hintergrundabgleich.** Der Abgleich läuft beim Start, beim Fortsetzen und per Aktion und liest die letzten sieben Tage; Schritte, die nur während der App-Pause anfallen, erscheinen beim nächsten Fortsetzen. Es gibt weder Schreibrechte noch Hintergrundlesen noch erweiterte Historie.
+- **„Keine Daten“ entfernt nichts** (D-032). Meldet Health für einen Tag nichts (etwa nach einer Neuinstallation von Health Connect), bleibt ein früherer Wert dieses Tages stehen. Nach einem Zeitzonenwechsel kann ein Health-Wert rund um Mitternacht des Wechsels deshalb an zwei Tagen stehen. Ein Tag, den jemand löscht, wird beim nächsten Abgleich wieder gefüllt, solange der Schalter an ist und Health Daten hat.
+- **Rückwirkende Änderungen** (D-032): Ein Health-Wert für einen vergangenen Tag kann XP dieses Tages nachträglich vergeben oder zurücknehmen und den Streak verändern; ein Level-Aufstieg durch einen Abgleich wird wie jeder andere angezeigt.
+- Die Datenschutz-Erklärung, auf die der Dialog von Health Connect verweist, ist eine eigene Textseite (`HealthRationaleActivity`) ohne Flutter; sie folgt dem Hell-Dunkel-Modus des Systems, nicht dem Theme der App.
+
 ## Formale offene Punkte (kein Implementierungsblocker)
 
 - **App-Name** ([BS-47](https://spacy-cloud.atlassian.net/browse/BS-47)): sichtbarer Platzhalter „App-Name“ (`AppConfig.appName`).
