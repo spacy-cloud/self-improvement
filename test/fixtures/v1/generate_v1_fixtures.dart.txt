@@ -1,0 +1,530 @@
+// One-off generator of the schema 1 fixtures (BS-98, data contract v2).
+//
+// Run it ONLY on code of schema 1 (the tag v0.1.0, or any commit before the
+// schema 2 change): it builds ten days of synthetic data over all modules
+// with the real repositories and commands of the app (`DataHarness` with the
+// real projection, a fixed clock, deterministic ids, the fake notification
+// platform), then writes
+//
+//   build/fixtures/v1/v1-database.sql            SQL text dump of the database
+//   build/fixtures/v1/v1-database-backup.json    backup of the same database,
+//                                                exported by the v1 exporter
+//   build/fixtures/v1/rich-backup-v1.json        every field with a non-default
+//                                                value (`richBackupJson()`)
+//   build/fixtures/v1/fresh-install-backup-v1.json
+//                                                backup of a fresh installation
+//
+// The 90 day sample backup `demo-backup-v1-90-tage.json` comes from the
+// existing generator instead:
+//   DEMO_TODAY=2026-03-31 flutter test test/tool/demo_backup_test.dart
+// and the file `build/demo-backup/demo-daten-90-tage.json`.
+//
+// The fixtures were made on commit 26243de (`lib/`, `test/` and `pubspec.*` are
+// identical to the tag v0.1.0). Usage: copy this file to `test/` of a schema 1
+// checkout, remove the `.txt` ending and run
+//   flutter test test/gen_v1_fixtures_test.dart
+// The output is deterministic: a second run gives identical bytes.
+//
+// Everything is synthetic ("Mia Muster" does not exist).
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:drift/drift.dart' show driftRuntimeOptions;
+import 'package:flutter_test/flutter_test.dart';
+import 'package:self_improvement/core/backup/backup_exporter.dart';
+import 'package:self_improvement/core/database/app_database.dart';
+import 'package:self_improvement/core/goals/domain/goal_type.dart';
+import 'package:self_improvement/core/modules/module_id.dart';
+import 'package:self_improvement/core/notifications/application/reminder_providers.dart';
+import 'package:self_improvement/core/notifications/domain/reminder_status.dart';
+import 'package:self_improvement/core/notifications/platform/fake_reminder_platform.dart';
+import 'package:self_improvement/core/onboarding/onboarding_repository.dart';
+import 'package:self_improvement/core/providers/command_providers.dart';
+import 'package:self_improvement/core/testing/data_harness.dart';
+import 'package:self_improvement/features/body/application/weight_providers.dart';
+import 'package:self_improvement/features/body/domain/weight_entry.dart';
+import 'package:self_improvement/features/body/steps/application/steps_providers.dart';
+import 'package:self_improvement/features/focus/application/focus_providers.dart';
+import 'package:self_improvement/features/focus/application/workout_providers.dart';
+import 'package:self_improvement/features/focus/domain/focus_category.dart';
+import 'package:self_improvement/features/focus/domain/muscle_group.dart';
+import 'package:self_improvement/features/focus/domain/training_category.dart';
+import 'package:self_improvement/features/focus/domain/workout_intensity.dart';
+import 'package:self_improvement/features/focus/domain/workout_entry.dart';
+import 'package:self_improvement/features/nutrition/application/meal_providers.dart';
+import 'package:self_improvement/features/nutrition/application/water_providers.dart';
+import 'package:self_improvement/features/nutrition/domain/meal_entry.dart';
+import 'package:self_improvement/features/nutrition/domain/water_entry.dart';
+import 'package:self_improvement/features/tasks/application/habit_providers.dart';
+import 'package:self_improvement/features/tasks/application/task_providers.dart';
+import 'package:self_improvement/features/tasks/domain/habit.dart';
+import 'package:self_improvement/features/tasks/domain/habit_icon.dart';
+import 'package:self_improvement/features/tasks/domain/task.dart';
+import 'package:self_improvement/features/tasks/domain/task_priority.dart';
+import 'package:self_improvement/shared/local_date.dart';
+import 'package:self_improvement/shared/local_time.dart';
+
+import 'core/backup/support/backup_fixtures.dart';
+
+void main() {
+  test('build the schema 1 fixtures', () async {
+    driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+    expect(
+      AppDatabase.currentSchemaVersion,
+      1,
+      reason: 'this generator is only valid on schema 1 code',
+    );
+
+    // Monday 2026-03-30 06:00 UTC = 08:00 in Berlin (summer time since 03-29).
+    final h = await DataHarness.create(
+      nowIso: '2026-03-30T06:00:00Z',
+      realProjection: true,
+    );
+    addTearDown(h.dispose);
+    final platform = FakeReminderPlatform(
+      permission: NotificationPermission.granted,
+      clock: h.clock,
+    );
+    addTearDown(platform.dispose);
+    final c = h.createContainer(
+      overrides: [reminderPlatformProvider.overrideWithValue(platform)],
+    );
+
+    String id() => h.ids.newId();
+    DateTime now() => h.clock.nowUtc();
+    DateTime at(int day, int hour, [int minute = 0]) =>
+        DateTime.utc(2026, 3, 30 + day, hour, minute);
+    void setTime(DateTime utc) => h.clock.setNow(utc);
+
+    final onboarding = c.read(onboardingRepositoryProvider);
+    final profile = c.read(profileCommandsProvider);
+    final settings = c.read(settingsCommandsProvider);
+    final modules = c.read(moduleManagerProvider);
+    final cards = c.read(dashboardCardRepositoryProvider);
+    final goals = c.read(goalsCommandsProvider);
+    final weights = c.read(weightRepositoryProvider);
+    final steps = c.read(stepsRepositoryProvider);
+    final water = c.read(waterRepositoryProvider);
+    final meals = c.read(mealRepositoryProvider);
+    final workouts = c.read(workoutRepositoryProvider);
+    final focus = c.read(focusRepositoryProvider);
+    final tasks = c.read(taskRepositoryProvider);
+    final habits = c.read(habitRepositoryProvider);
+    final reminderPrefs = c.read(reminderPreferencesRepositoryProvider);
+
+    // ------------------------------------------------------------ day 0
+    await onboarding.complete(
+      commandId: id(),
+      draft: const OnboardingDraft(
+        displayName: 'Mia Muster',
+        heightCm: 168,
+        ageYears: 34,
+        startWeightGrams: 78000,
+        motivationGoals: ['move_more', 'build_habits'],
+        goals: {
+          GoalType.water: GoalSetting(target: 2500),
+          GoalType.steps: GoalSetting(target: 8000),
+          GoalType.focusMinutes: GoalSetting(target: 30),
+          GoalType.workoutWeekly: GoalSetting(target: 4),
+        },
+      ),
+    );
+    await profile.update(
+      commandId: id(),
+      displayName: 'Mia Muster',
+      heightCm: 168,
+      ageYears: 34,
+      startWeightGrams: 78000,
+      targetWeightGrams: 70000,
+      motivationGoals: const ['move_more', 'build_habits'],
+    );
+    await settings.setThemeMode(commandId: id(), themeModeKey: 'oled');
+    await settings.setReduceMotion(commandId: id(), value: true);
+    await settings.setHaptics(commandId: id(), value: false);
+    await cards.setVisible(commandId: id(), cardId: 'nutrition', visible: false);
+    await cards.moveBy(commandId: id(), cardId: 'xp', delta: -3);
+
+    // Habits (day 0): a daily one with a reminder, one without, one that is
+    // archived later, one that is deleted later.
+    final habitRead = (await habits.create(
+      commandId: id(),
+      draft: HabitDraft.withIcon(
+        title: 'Lesen',
+        icon: HabitIcon.flame,
+        reminderTime: const LocalTime(20, 30),
+      ),
+    )).entityId!;
+    final habitStretch = (await habits.create(
+      commandId: id(),
+      draft: const HabitDraft(title: 'Dehnen', iconKey: 'heart'),
+    )).entityId!;
+    final habitOld = (await habits.create(
+      commandId: id(),
+      draft: const HabitDraft(title: 'Meditation', iconKey: 'moon'),
+    )).entityId!;
+    final habitGone = (await habits.create(
+      commandId: id(),
+      draft: const HabitDraft(title: 'Kurzzeitige Gewohnheit', iconKey: 'check'),
+    )).entityId!;
+
+    // ------------------------------------------------- ten days of records
+    for (var day = 0; day < 10; day++) {
+      final date = LocalDate(2026, 3, 30).addDays(day);
+
+      // Morning: weight (not on day 4), water, breakfast, steps of yesterday.
+      setTime(at(day, 5, 40));
+      if (day != 4) {
+        await weights.create(
+          commandId: id(),
+          draft: WeightDraft(
+            weightGrams: 78000 - day * 200 - (day.isEven ? 100 : 0),
+            occurredAtUtc: now(),
+            beforeToilet: day.isEven,
+            afterDrinking: false,
+            afterEating: day == 6,
+            note: day == 2 ? 'nach dem Aufstehen, „nüchtern“' : null,
+          ),
+        );
+      }
+      setTime(at(day, 6, 10));
+      await water.quickAdd(commandId: id(), amountMl: 250);
+      await meals.create(
+        commandId: id(),
+        draft: MealDraft(
+          name: 'Haferbrei mit Beeren',
+          kcal: day == 3 ? null : 380 + day * 5,
+          occurredAtUtc: now(),
+          note: day == 1 ? 'ohne Zucker' : null,
+        ),
+      );
+
+      // Midday: water in several sizes, lunch, a workout on most days.
+      setTime(at(day, 10, 30));
+      await water.create(
+        commandId: id(),
+        draft: WaterDraft(amountMl: 500, occurredAtUtc: now()),
+      );
+      await water.quickAdd(commandId: id(), amountMl: 250);
+      await meals.create(
+        commandId: id(),
+        draft: MealDraft(
+          name: 'Linsensuppe',
+          kcal: 520,
+          occurredAtUtc: now(),
+        ),
+      );
+      if (day != 2 && day != 5 && day != 8) {
+        setTime(at(day, 16, 30));
+        await workouts.create(
+          commandId: id(),
+          draft: WorkoutDraft(
+            category: TrainingCategory.values[day % TrainingCategory.values.length],
+            durationMinutes: 30 + day * 5,
+            occurredAtUtc: now(),
+            title: day.isEven ? 'Oberkörper' : null,
+            muscleGroups: day.isEven
+                ? const [MuscleGroup.chest, MuscleGroup.shoulders, MuscleGroup.triceps]
+                : const [],
+            intensity: WorkoutIntensity.values[day % WorkoutIntensity.values.length],
+            note: day == 0 ? 'neuer Plan' : null,
+          ),
+        );
+      }
+
+      // Focus: a completed session on most days.
+      if (day != 3) {
+        setTime(at(day, 7, 0));
+        final session = (await focus.start(
+          commandId: id(),
+          category: FocusCategory.values[day % FocusCategory.values.length],
+          plannedSeconds: 1500,
+        )).entityId!;
+        setTime(at(day, 7, 10));
+        await focus.pause(commandId: id(), id: session);
+        setTime(at(day, 7, 12));
+        await focus.resume(commandId: id(), id: session);
+        setTime(at(day, 7, 30));
+        await focus.save(commandId: id(), id: session);
+      }
+
+      // Habits.
+      setTime(at(day, 19, 0));
+      await habits.setChecked(
+        commandId: id(),
+        habitId: habitRead,
+        date: date,
+        checked: true,
+      );
+      if (day.isOdd) {
+        await habits.setChecked(
+          commandId: id(),
+          habitId: habitStretch,
+          date: date,
+          checked: true,
+        );
+      }
+      if (day < 4) {
+        await habits.setChecked(
+          commandId: id(),
+          habitId: habitOld,
+          date: date,
+          checked: true,
+        );
+        await habits.setChecked(
+          commandId: id(),
+          habitId: habitGone,
+          date: date,
+          checked: true,
+        );
+      }
+
+      // Evening: dinner, more water, steps of today, tasks.
+      setTime(at(day, 18, 0));
+      await meals.create(
+        commandId: id(),
+        draft: MealDraft(name: 'Gemüsepfanne', kcal: 640, occurredAtUtc: now()),
+      );
+      await water.create(
+        commandId: id(),
+        draft: WaterDraft(
+          amountMl: 750,
+          occurredAtUtc: now(),
+          note: day == 5 ? 'Glas "kalt" \\ Tee' : null,
+        ),
+      );
+      setTime(at(day, 20, 0));
+      await steps.setSteps(
+        commandId: id(),
+        date: date,
+        steps: day.isEven ? 8200 + day * 100 : 5400 + day * 80,
+      );
+    }
+
+    // ------------------------------------------ tasks (open, done, deleted)
+    setTime(at(2, 9, 0));
+    final taskTax = (await tasks.create(
+      commandId: id(),
+      draft: TaskDraft(
+        title: 'Steuererklärung vorbereiten',
+        description: 'Belege sortieren',
+        priority: TaskPriority.high,
+        dueDate: LocalDate(2026, 4, 10),
+        tags: const ['Finanzen', 'Dringend'],
+      ),
+    )).entityId!;
+    final taskPaper = (await tasks.create(
+      commandId: id(),
+      draft: const TaskDraft(title: 'Altpapier rausbringen', priority: TaskPriority.low),
+    )).entityId!;
+    final taskDentist = (await tasks.create(
+      commandId: id(),
+      draft: const TaskDraft(title: 'Zahnarzttermin buchen'),
+    )).entityId!;
+    final taskGone = (await tasks.create(
+      commandId: id(),
+      draft: const TaskDraft(title: 'Gelöschte Aufgabe'),
+    )).entityId!;
+    setTime(at(3, 17, 45));
+    await tasks.setCompleted(commandId: id(), id: taskPaper, completed: true);
+    setTime(at(4, 10, 0));
+    await tasks.setCompleted(commandId: id(), id: taskDentist, completed: true);
+    await tasks.setCompleted(commandId: id(), id: taskDentist, completed: false);
+    setTime(at(5, 10, 0));
+    await tasks.setCompleted(commandId: id(), id: taskDentist, completed: true);
+    await tasks.delete(commandId: id(), id: taskGone);
+    expect(taskTax, isNotEmpty);
+
+    // -------------------------------------- corrections, deletions, history
+    setTime(at(8, 8, 0));
+    // A weight in another zone: the frozen zone and date stay as written.
+    h.clock.setTimeZone('Europe/London');
+    await weights.create(
+      commandId: id(),
+      draft: WeightDraft(
+        weightGrams: 76600,
+        occurredAtUtc: at(8, 7, 30),
+        beforeToilet: false,
+        afterDrinking: false,
+        afterEating: false,
+      ),
+    );
+    h.clock.setTimeZone('Europe/Berlin');
+    setTime(at(8, 9, 0));
+    // Deleted entries stay as soft deleted rows.
+    final extraWater = (await water.create(
+      commandId: id(),
+      draft: WaterDraft(amountMl: 100, occurredAtUtc: now()),
+    )).entityId!;
+    await water.delete(commandId: id(), id: extraWater);
+    final extraWeight = (await weights.create(
+      commandId: id(),
+      draft: WeightDraft(
+        weightGrams: 99900,
+        occurredAtUtc: at(8, 8, 55),
+        beforeToilet: false,
+        afterDrinking: false,
+        afterEating: false,
+      ),
+    )).entityId!;
+    await weights.delete(commandId: id(), id: extraWeight);
+    final extraWorkout = (await workouts.create(
+      commandId: id(),
+      draft: WorkoutDraft(
+        category: TrainingCategory.sport,
+        durationMinutes: 1,
+        occurredAtUtc: now(),
+      ),
+    )).entityId!;
+    await workouts.delete(commandId: id(), id: extraWorkout);
+    await steps.deleteDay(commandId: id(), date: LocalDate(2026, 4, 3));
+    await habits.setChecked(
+      commandId: id(),
+      habitId: habitRead,
+      date: LocalDate(2026, 4, 5),
+      checked: false,
+    );
+    await habits.delete(commandId: id(), id: habitGone);
+    await habits.archive(commandId: id(), id: habitOld);
+
+    // Module switch and goal changes (effective tomorrow).
+    await modules.setEnabled(
+      commandId: id(),
+      module: ModuleId.nutrition,
+      enabled: false,
+    );
+    setTime(at(9, 6, 0));
+    await modules.setEnabled(
+      commandId: id(),
+      module: ModuleId.nutrition,
+      enabled: true,
+    );
+    await goals.update(
+      commandId: id(),
+      changes: const {
+        GoalType.water: GoalSetting(target: 3000),
+        GoalType.focusMinutes: GoalSetting(target: 30, enabled: false),
+      },
+    );
+
+    // ----------------------------- reminders, running session, notifications
+    setTime(at(9, 7, 0));
+    await reminderPrefs.setNotificationsEnabled(commandId: id(), enabled: true);
+    await reminderPrefs.setWaterSlots(commandId: id(), hours: const {10, 14, 18});
+    await reminderPrefs.setWaterSlots(commandId: id(), hours: const {10, 18});
+    final running = (await focus.start(
+      commandId: id(),
+      category: FocusCategory.programming,
+      plannedSeconds: 3600,
+    )).entityId!;
+    expect(running, isNotEmpty);
+    setTime(at(9, 7, 20));
+    final status = await c.read(reminderServiceProvider).reconcile();
+    expect(status.lastError, isNull);
+
+    // --------------------------------------------------------------- output
+    final counts = <String, int>{};
+    for (final table in h.database.allTables) {
+      final n = await h.database
+          .customSelect('SELECT COUNT(*) AS n FROM ${table.actualTableName}')
+          .getSingle();
+      counts[table.actualTableName] = n.read<int>('n');
+    }
+    // ignore: avoid_print
+    print('row counts: $counts');
+    for (final entry in counts.entries) {
+      expect(entry.value, greaterThan(0), reason: entry.key);
+    }
+
+    final out = Directory('build/fixtures/v1')..createSync(recursive: true);
+    File('${out.path}/v1-database.sql').writeAsStringSync(
+      await _dump(h.database, counts),
+    );
+    final backup = await BackupExporter(
+      database: h.database,
+      clock: h.clock,
+    ).export();
+    expect(backup.isRestorable, isTrue);
+    File('${out.path}/v1-database-backup.json').writeAsBytesSync(backup.bytes);
+    // ignore: avoid_print
+    print('backup records: ${backup.recordCount}, status: $status');
+
+    // Every field with a non-default value, and a fresh installation.
+    File('${out.path}/rich-backup-v1.json').writeAsStringSync(
+      jsonEncode(await richBackupJson()),
+    );
+    final fresh = await DataHarness.create();
+    addTearDown(fresh.dispose);
+    final freshBackup = await BackupExporter(
+      database: fresh.database,
+      clock: fresh.clock,
+    ).export();
+    expect(freshBackup.isRestorable, isTrue);
+    File(
+      '${out.path}/fresh-install-backup-v1.json',
+    ).writeAsBytesSync(freshBackup.bytes);
+  });
+}
+
+/// An SQL text dump: schema and rows in table creation order, one statement
+/// per line (rows ordered by rowid, so the output is deterministic).
+Future<String> _dump(AppDatabase db, Map<String, int> counts) async {
+  final buffer = StringBuffer()
+    ..writeln('-- Schema 1 database of synthetic data (BS-98).')
+    ..writeln('-- Generated by the real commands of the app at schema 1;')
+    ..writeln('-- see test/fixtures/v1/generate_v1_fixtures.dart.txt.')
+    ..writeln('PRAGMA foreign_keys=OFF;')
+    ..writeln('BEGIN TRANSACTION;');
+  final master = await db
+      .customSelect(
+        'SELECT type, name, tbl_name, sql FROM sqlite_master '
+        "WHERE sql IS NOT NULL AND name NOT LIKE 'sqlite_%' ORDER BY rowid",
+      )
+      .get();
+  final tables = [
+    for (final row in master)
+      if (row.read<String>('type') == 'table') row.read<String>('name'),
+  ];
+  for (final row in master) {
+    if (row.read<String>('type') == 'table') {
+      buffer.writeln('${row.read<String>('sql')};');
+    }
+  }
+  for (final table in tables) {
+    final rows = await db
+        .customSelect('SELECT * FROM "$table" ORDER BY rowid')
+        .get();
+    for (final row in rows) {
+      final columns = row.data.keys.map((k) => '"$k"').join(', ');
+      final values = row.data.values.map(_literal).join(', ');
+      buffer.writeln('INSERT INTO "$table" ($columns) VALUES ($values);');
+    }
+  }
+  final sequence = await db
+      .customSelect("SELECT name, seq FROM sqlite_sequence")
+      .get();
+  for (final row in sequence) {
+    buffer.writeln(
+      "DELETE FROM sqlite_sequence WHERE name = '${row.read<String>('name')}';",
+    );
+    buffer.writeln(
+      'INSERT INTO sqlite_sequence (name, seq) VALUES '
+      "('${row.read<String>('name')}', ${row.read<int>('seq')});",
+    );
+  }
+  for (final row in master) {
+    if (row.read<String>('type') == 'index') {
+      buffer.writeln('${row.read<String>('sql')};');
+    }
+  }
+  buffer
+    ..writeln('COMMIT;')
+    ..writeln('PRAGMA user_version=1;');
+  return buffer.toString();
+}
+
+String _literal(Object? value) => switch (value) {
+  null => 'NULL',
+  int v => '$v',
+  String v => "'${v.replaceAll("'", "''")}'",
+  _ => throw StateError('unexpected value ${value.runtimeType}'),
+};
