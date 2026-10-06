@@ -32,12 +32,12 @@ lib/
     wiring/                       Provider-Overrides und Dauerverdrahtung (Erinnerungen, Backup, Uhr)
   core/
     analysis/                     Analyse-Engine (application/, data/, domain/)
-    backup/                       Export, Import, Zurücksetzen, Plattform-Adapter (dto/, platform/, testing/)
+    backup/                       Export, Import, Aufwärtsschritt älterer Versionen (backup_upgrade.dart), Zurücksetzen, Plattform-Adapter (dto/, platform/, testing/)
     bootstrap/                    AppRuntime, Datenbank öffnen und Singletons anlegen, Gerätezone
     commands/                     CommandRunner, UndoAction, Events, SubmissionTracker, AttemptClock, IdGenerator
     config/                       AppConfig (App-Name, stabile technische Kennungen)
     dashboard/domain/             reine Dashboard-Regeln (Layout und Leerzustände, Motivationstexte)
-    database/                     Drift-Schema 1 (tables/), Converter, Schlüssel, Verbindung, reaktive Abfragen
+    database/                     Drift-Schema 2 (tables/), Migrationsschritte (schema_migrations.dart), Converter, Schlüssel, Verbindung, reaktive Abfragen
     design/                       Tokens, Themes, Komponenten, Bewegung, Symbole, Raster
     errors/                       typisierte Fehler (AppFailure)
     feedback/                     FeedbackService (Vertrag)
@@ -59,18 +59,18 @@ integration_test/                 Emulator-Job (siehe test-report.md)
 
 Feature-UI importiert Core-Komponenten, aber niemals die konkrete Repository-Implementierung eines anderen Features (Abschnitt 1).
 
-## 3. Datenmodell (Schema 1)
+## 3. Datenmodell (Schema 2)
 
-Eine lokale SQLite-Datenbank (Drift) im App-Support-Verzeichnis, Schema-Version 1, 19 Tabellen. Fremdschlüssel sind aktiv; Bereichs- und Enum-Prüfungen existieren zusätzlich zur UI-Validierung als `CHECK`-Constraints. Von `build_runner` erzeugter Code wird nicht eingecheckt.
+Eine lokale SQLite-Datenbank (Drift) im App-Support-Verzeichnis, Schema-Version 2, 20 Tabellen. Fremdschlüssel sind aktiv; Bereichs- und Enum-Prüfungen existieren zusätzlich zur UI-Validierung als `CHECK`-Constraints. Von `build_runner` erzeugter Code wird nicht eingecheckt.
 
 | Gruppe | Tabellen |
 |---|---|
 | Singletons | `profile` (id `local`), `app_settings` (id `app`) |
 | Module/Konfiguration | `module_status_history`, `dashboard_cards`, `goal_versions`, `daily_goal_snapshots` |
-| Körper | `weight_entries` (Gramm, Messbedingungen), `step_days` (ein aktiver Wert je Datum) |
+| Körper | `weight_entries` (Gramm, Messbedingungen), `step_days` (ein aktiver Wert je Datum, Quelle `manual` oder `health`) |
 | Ernährung | `water_entries` (ml), `meal_entries` (optionale kcal) |
-| Fokus | `focus_sessions` (persistente Zeitsegmente), `workout_entries` (`training_category`, `muscle_groups`, `intensity`) |
-| Aufgaben | `tasks`, `habits` (`icon_key`), `habit_checks` |
+| Fokus | `focus_sessions` (persistente Zeitsegmente), `workout_entries` (`training_category`, `muscle_groups`, `intensity`), `workout_day_marks` (Ruhetag oder übersprungen je Tag) |
+| Aufgaben | `tasks` (mit optionaler Erinnerung), `habits` (`icon_key`), `habit_checks` |
 | Projektion/technisch | `xp_awards`, `command_receipts`, `reminder_rules`, `scheduled_notifications` |
 
 Konventionen:
@@ -78,8 +78,20 @@ Konventionen:
 - IDs sind UUID v4 (Text). Zeitpunkte sind UTC als Integer-Millisekunden; fachliche Tage sind `YYYY-MM-DD` (`LocalDate`) und werden beim Ereignis **eingefroren**, zusammen mit der IANA-Zone.
 - Veränderliche Fachtabellen haben `created_at_utc`, `updated_at_utc`, `row_version` (bei jeder Änderung erhöht) und Soft-Delete (`deleted_at_utc`); Abfragen schließen gelöschte Zeilen aus.
 - Eligibility-Flags (`gamification_eligible`, `completion_eligibility`, `eligibility`, `reached_goal_eligible`) werden beim ersten Anlegen/Abschließen eingefroren und nie nachträglich auf wahr gesetzt.
-- Partielle Unique-Indizes: eine aktive Gewichtsmessung je exakter Messzeit, ein aktiver Schrittwert je Datum, höchstens eine offene Fokus-Sitzung. Weitere Eindeutigkeiten: ein Habit-Check je Habit/Tag, eine Zielversion je Typ/Datum, ein Snapshot je Tag/Zielschlüssel.
+- Partielle Unique-Indizes: eine aktive Gewichtsmessung je exakter Messzeit, ein aktiver Schrittwert je Datum, eine aktive Ruhetag-Markierung je Datum, höchstens eine offene Fokus-Sitzung. Weitere Eindeutigkeiten: ein Habit-Check je Habit/Tag, eine Zielversion je Typ/Datum, ein Snapshot je Tag/Zielschlüssel.
 - Enum-Schlüssel sind in `core/database/schema_keys.dart` zentral definiert (stabiler Vertrag für Datenbank, Backup und Import).
+
+### Datenvertrag v2 (Schema 2 und Backup 2, BS-98)
+
+Schema 2 hat genau die Daten der drei schemaberührenden Features von v0.2.0 vorbereitet (Entscheidungen D-015 und D-016); alles ist additiv, vorhandene Zeilen behalten jeden Wert.
+
+| Feature | Datenbank | Standard | Sicherung (Version 2) |
+|---|---|---|---|
+| BS-99 Tagesziel „Workout heute“, Ruhetag, Überspringen | Tabelle `workout_day_marks` (`kind` `rest` oder `skipped`, höchstens eine aktive Zeile je `local_date`, Audit- und Soft-Delete-Spalten); Zieltyp `workout_daily` in `goal_versions` | keine Markierung; das Ziel ist ohne Zeile in `goal_versions` aus | neuer Abschnitt `workout_day_marks`; `workout_daily` als `goal_type` und als Zielschlüssel der Snapshots |
+| BS-97 Schritte aus Health | `step_days.source` (`manual` oder `health`); `app_settings.health_steps_sync_enabled`, `health_steps_last_sync_at_utc` | `manual`; aus; nie abgeglichen | Felder `source` (je Schrittetag) sowie `health_steps_sync_enabled` und `health_steps_last_sync_at_utc` in `app_settings` |
+| BS-111 Erinnerung je Aufgabe | `tasks.reminder_at_utc`, `reminder_local_date`, `reminder_timezone_id` (alle drei oder keines, unabhängig vom Abschluss) | keine Erinnerung | drei Felder je Aufgabe |
+
+Die Datenbank wird von Schema 1 durch benannte, einzeln getestete Schritte in einer Transaktion migriert (`SchemaMigrations` in `lib/core/database/schema_migrations.dart`: `workout_day_marks`, `workout_daily_goal_type` als Umbau von `goal_versions`, `step_day_source`, `health_steps_settings`, `task_reminder`); ein neueres Schema wird nicht geöffnet. Dateien der Backup-Version 1 liest der Import über den Aufwärtsschritt `BackupUpgrade` (Einzelheiten und Fixtures in [backup-format.md](backup-format.md)). Die Features setzen mit Repositories und Commands auf diese Tabellen und Spalten auf und ändern Schema und Backup nicht mehr.
 
 ## 4. Commands, Transaktionen, Undo
 
@@ -142,7 +154,7 @@ Regeln für jede Mutation: erst `validate...` (wirft `ValidationFailure` mit Fel
 
 ## 9. Tests
 
-`DataHarness` (`lib/core/testing/data_harness.dart`) liefert eine echte In-Memory-Datenbank, `FakeClock` (Europe/Berlin), deterministische IDs, Command-Runner und einen `ProviderContainer`. Mit `realProjection: true` laufen Snapshots und XP wie in der App; `seedOnboarded()` legt den Zustand nach dem Onboarding an. Widget-Tests nutzen zusätzlich `test/support/pump_app.dart`. Test-Fixtures verwenden ausschließlich synthetische Daten. Ergebnisse und Befehle: [test-report.md](test-report.md).
+`DataHarness` (`lib/core/testing/data_harness.dart`) liefert eine echte In-Memory-Datenbank, `FakeClock` (Europe/Berlin), deterministische IDs, Command-Runner und einen `ProviderContainer`. Mit `realProjection: true` laufen Snapshots und XP wie in der App; `seedOnboarded()` legt den Zustand nach dem Onboarding an. Widget-Tests nutzen zusätzlich `test/support/pump_app.dart`. Test-Fixtures verwenden ausschließlich synthetische Daten. Die Migrations- und Importtests des Datenvertrags v2 lesen Fixtures, die der unveränderte Code von v0.1.0 schrieb (`test/fixtures/v1/`, Herkunft in [backup-format.md](backup-format.md)). Ergebnisse und Befehle: [test-report.md](test-report.md).
 
 ## 10. iOS-Vorbereitung
 
