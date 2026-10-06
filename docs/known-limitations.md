@@ -5,7 +5,7 @@ Wird laufend ergänzt. Offene Anforderungen stehen zusätzlich in [requirements-
 ## Umgebung und Verifikation
 
 - **Kein lokales Android-SDK** im Entwicklungslauf (Lizenzen nicht akzeptiert). Debug-APK und Emulator-Integrationstests entstehen in der CI (GitHub Actions), nicht lokal. Prüfungen mit realem Gerät (TalkBack, echte Benachrichtigungszustellung, Force-Stop, Systemschrift, Performance) sind **nicht prüfbar** und in der Matrix als solche gekennzeichnet.
-- **iOS** ist vorbereitet (Projektdateien, plattformunabhängige Domain, Adapter-Schnittstellen). Ein CI-Workflow auf einem macOS-Runner (`.github/workflows/ios-ipa.yml`, BS-95) baut eine unsignierte IPA; der erste Lauf am 2026-10-04 war grün. Auf einem iPhone wurde laut Screenshot nur der Start mit der Willkommensseite des Onboardings gesehen (Gerät und iOS-Version nicht angegeben). Nicht geprüft: Benachrichtigungen, Teilen-Menü, Dateiauswahl, VoiceOver, Layout bei Notch und Dynamic Island, Hintergrund und Neustart. Das Projekt signiert nichts und veröffentlicht nichts im App Store; die Signatur übernimmt beim Tester SideStore.
+- **iOS** ist vorbereitet (Projektdateien, plattformunabhängige Domain, Adapter-Schnittstellen). Ein CI-Workflow auf einem macOS-Runner (`.github/workflows/ios-ipa.yml`, BS-95) baut eine unsignierte IPA; der erste Lauf am 2026-10-04 war grün. Tyler hat die IPA am 2026-10-04 auf einem iPhone 15 Pro getestet (Rückmeldung in [BS-96](https://spacy-cloud.atlassian.net/browse/BS-96), von uns nicht nachvollzogen): Start, Onboarding, Grundfunktionen, Erinnerungen, Sicherung, Hell und Dunkel und der Neustart liefen laut Tyler ohne Fehler; drei Folgetickets stehen unter „Oberfläche und Bedienung“. Nicht geprüft: VoiceOver, die iOS-Einstellung „Größerer Text“, Notch und Dynamic Island (die Aussage war mehrdeutig), weitere Geräte und iOS-Versionen. Das Projekt signiert nichts und veröffentlicht nichts im App Store; die Signatur übernimmt beim Tester SideStore.
 
 ## Formale offene Punkte (kein Implementierungsblocker)
 
@@ -15,6 +15,9 @@ Wird laufend ergänzt. Offene Anforderungen stehen zusätzlich in [requirements-
 
 ## Oberfläche und Bedienung
 
+- iOS, Tastatur ([BS-112](https://spacy-cloud.atlassian.net/browse/BS-112)): Die Tastatur lässt sich in Formularen nicht einklappen (kein Tippen daneben, kein Ziehen; die iOS-Zifferntastatur hat keine Eingabetaste). Alle Schaltflächen blieben laut Tyler erreichbar. Folgeticket, geplant für v0.2.0.
+- iOS, Texte ([BS-113](https://spacy-cloud.atlassian.net/browse/BS-113)): Der Erinnerungs-Ablauf nennt „Android“ in rund einem Dutzend Texten (zum Beispiel „Android-Abfrage anzeigen“), auch unter iOS. Folgeticket, geplant für v0.2.0.
+- Querformat ([BS-114](https://spacy-cloud.atlassian.net/browse/BS-114)): Weder die Vorlage noch das Manifest sperren das Querformat; Entwurf und Routen-Durchlauf sind Hochformat. Auf dem iPhone ist die Darstellung laut Tyler wenig sinnvoll und schwer lesbar. Die Entscheidung (belassen, sperren oder gestalten) steht aus.
 - Sehr lange einzelne Wörter in Titeln können bei 320 px Breite und 200 % Schrift mitten im Wort umbrechen.
 - Ein erneuter Tipp auf den aktiven Tab scrollt die Seite nicht nach oben.
 - Die vorhersagende Zurück-Geste von Android ist nicht aktiviert (ausdrücklicher Opt-out im Manifest, damit Android 16 sie nicht von sich aus einschaltet); Zurück läuft über die eigene Reihenfolge der App (siehe [docs/screens/shell.md](screens/shell.md)). Auf keinem Gerät geprüft.

@@ -52,7 +52,7 @@ Die Zeiten sind Richtwerte; Schritte mit „optional“ entfallen bei Zeitnot.
 ## 4. Was nicht behauptet wird
 
 - **Keine Messwerte von einem Gerät.** Die Lastzahlen (zum Beispiel Projektions-Neuaufbau und Gewichts-Commit mit mehr als 10.000 synthetischen Datensätzen) stammen von einem Rechner mit In-Memory-Datenbank und vom CI-Runner. Die Planungsziele für ein Gerät (Start etwa 3 s, einfacher Commit 300 ms, Scrollen mit 60 Hz) sind nicht gemessen. Wörter wie „schnell“ oder „flüssig“ sind keine belegte Aussage.
-- **iOS ist nicht gebaut und nicht getestet.** Die Projektdateien sind nur vorbereitet.
+- **iOS ist nur eingeschränkt geprüft.** Die CI baut eine unsignierte IPA, ein Tester hat sie auf einem iPhone ohne blockierende Fehler ausprobiert (BS-96); eine eigene Prüfung auf einem iPhone gab es nicht.
 - **Keine Cloud, keine Konten, keine Telemetrie.** Alle Daten liegen auf dem Gerät; die Sicherungsdatei ist unverschlüsselt, und wohin sie geht, entscheidet die Nutzerin im Teilen-Menü. Es gibt keine Health-Anbindung und keine automatische Schrittzählung: Schritte werden von Hand eingetragen.
 - **Kein Gerätetest der Barrierefreiheit.** Tippflächen, Beschriftungen, Layout bei 200 % Text und Kontraste sind im Host-Test belegt; TalkBack und die echte Systemschrift wurden nicht geprüft.
 - **Erinnerungen:** Zustellung, Systemdialog und das Verhalten nach Force-Stop sind nicht auf einem Gerät geprüft; die Zustellung ist ungenau getaktet.
