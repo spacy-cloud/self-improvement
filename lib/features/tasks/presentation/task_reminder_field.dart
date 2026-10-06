@@ -162,8 +162,8 @@ class _Caption extends StatelessWidget {
 }
 
 /// What the app can say about the delivery of a reminder that lies ahead: the
-/// honest state of the reminders. While the state is not known yet, or when
-/// nothing stands in the way, the quiet line; otherwise a notice with the way
+/// honest state of the reminders. Nothing while the state is not known yet; the
+/// quiet line when nothing stands in the way; otherwise a notice with the way
 /// out. The notice follows the state live, so it disappears when the user
 /// comes back from the settings after allowing notifications.
 class _DeliveryNotice extends ConsumerWidget {
@@ -172,7 +172,11 @@ class _DeliveryNotice extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final status = ref.watch(reminderStatusProvider).value;
-    final notice = status == null ? null : ReminderLabels.taskNotice(status);
+    if (status == null) {
+      // Not known yet (or not readable): neither a promise nor a warning.
+      return const SizedBox.shrink();
+    }
+    final notice = ReminderLabels.taskNotice(status);
     if (notice != null) {
       return _NoticeBanner(
         notice: notice,
@@ -185,7 +189,7 @@ class _DeliveryNotice extends ConsumerWidget {
         const _Caption(
           'Du bekommst ungefähr zu dieser Zeit eine Benachrichtigung.',
         ),
-        if (status?.planLimitReached ?? false) ...<Widget>[
+        if (status.planLimitReached) ...<Widget>[
           const SizedBox(height: 6),
           const _Caption(ReminderTexts.limitNotice),
         ],
