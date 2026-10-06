@@ -2,10 +2,11 @@ name: iOS IPA (unsigned)
 
 # Builds an UNSIGNED .ipa for sideloading tools that sign it themselves (for example
 # SideStore with the tester's Apple ID). No certificates and no secrets are used.
-# A successful build is not a device test: the iOS app has never been run on a device (BS-95).
+# A successful build is not a device test (BS-95). Runs for every push to dev (so the tester
+# gets a fresh IPA after each merge), for the BS-95 feature branch and by hand (workflow_dispatch).
 on:
   push:
-    branches: ["feature/BS-95-ios-ipa-ci"]
+    branches: [dev, "feature/BS-95-ios-ipa-ci"]
   workflow_dispatch:
 
 permissions:
