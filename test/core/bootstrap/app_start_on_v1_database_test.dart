@@ -130,9 +130,20 @@ void main() {
     final goals = await GoalVersionRepository(db).all();
     expect(goals, hasLength(fixture.rows['goal_versions']!.length));
 
-    // The day status of a day with facts, from the stored snapshot.
+    // The stored snapshot of a day: which goals applied, with frozen targets.
     final ids = SequentialIdGenerator(100000);
     final snapshots = GoalSnapshotService(database: db, clock: clock, ids: ids);
+    final snapshot = await snapshots.snapshotFor(LocalDate(2026, 4, 7));
+    expect(snapshot, isNotNull);
+    final targets = {
+      for (final item in snapshot!.items) item.goalKey: item.target,
+    };
+    expect(targets['water'], 2500);
+    expect(targets['steps'], 8000);
+    expect(targets['focus_minutes'], 30);
+    expect(targets.keys, containsAll(['weight_entry', 'task_completion']));
+
+    // The day status of a day with facts, from the stored snapshot.
     final status = await DayStatusRepository(
       database: db,
       clock: clock,

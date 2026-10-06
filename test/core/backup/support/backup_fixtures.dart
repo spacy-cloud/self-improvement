@@ -206,6 +206,15 @@ Future<void> populateRichDatabase(AppDatabase db) async {
         effectiveFromDate: LocalDate(2026, 1, 5),
         createdAtUtc: created,
       ),
+      // The optional daily workout goal of schema 2 (BS-99).
+      GoalVersionsCompanion.insert(
+        id: uuid(0x36),
+        goalType: 'workout_daily',
+        targetInteger: const Value(1),
+        enabled: true,
+        effectiveFromDate: LocalDate(2026, 6, 2),
+        createdAtUtc: at(20, 9, 5),
+      ),
     ]);
     b.insertAll(db.dailyGoalSnapshots, [
       DailyGoalSnapshotsCompanion.insert(
@@ -244,6 +253,15 @@ Future<void> populateRichDatabase(AppDatabase db) async {
         localDate: march(2),
         goalKey: 'habit:${Ids.habitDeleted}',
         moduleId: 'tasks',
+        applicable: true,
+      ),
+      // The daily workout goal (schema 2) belongs to the module `focus`.
+      DailyGoalSnapshotsCompanion.insert(
+        id: uuid(0x46),
+        localDate: march(4),
+        goalKey: 'workout_daily',
+        moduleId: 'focus',
+        targetInteger: const Value(1),
         applicable: true,
       ),
     ]);

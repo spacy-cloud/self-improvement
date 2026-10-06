@@ -184,8 +184,8 @@ void main() {
         'app_settings': 1,
         'module_status_history': 7,
         'dashboard_cards': 8,
-        'goal_versions': 5,
-        'daily_goal_snapshots': 5,
+        'goal_versions': 6,
+        'daily_goal_snapshots': 6,
         'weight_entries': 3,
         'step_days': 3,
         'water_entries': 3,
@@ -366,6 +366,7 @@ void main() {
           'water',
           'weight_entry',
           'water',
+          'workout_daily',
         ]);
         expect(column('dashboard_cards', 'sort_index'), [
           0,
@@ -438,6 +439,130 @@ void main() {
       final second = await exporter.export();
       expect(second.bytes, first.bytes);
       expect(second.fileName, first.fileName);
+    });
+
+    test(
+      'the fields of schema 2 have a fixed place in their records (BS-98)',
+      () async {
+        final backup = await exporter.export();
+        List<String> keysOf(String section) =>
+            rowsOf(backup, section).first.keys.toList();
+        final data = sectionsOf(backup);
+        expect((data['app_settings']! as Map<String, Object?>).keys.toList(), [
+          'id',
+          'theme_mode',
+          'reduce_motion',
+          'haptics',
+          'notifications_enabled',
+          'last_known_timezone',
+          'health_steps_sync_enabled',
+          'health_steps_last_sync_at_utc',
+          'created_at_utc',
+          'updated_at_utc',
+          'row_version',
+        ]);
+        expect(keysOf('step_days'), [
+          'id',
+          'local_date',
+          'steps',
+          'timezone_id',
+          'reached_goal_eligible',
+          'xp_goal_target_steps',
+          'source',
+          'created_at_utc',
+          'updated_at_utc',
+          'row_version',
+        ]);
+        expect(keysOf('workout_day_marks'), [
+          'id',
+          'local_date',
+          'kind',
+          'timezone_id',
+          'created_at_utc',
+          'updated_at_utc',
+          'row_version',
+        ]);
+        expect(keysOf('tasks'), [
+          'id',
+          'title',
+          'description',
+          'priority',
+          'due_local_date',
+          'tags_json',
+          'completed_at_utc',
+          'completed_local_date',
+          'timezone_id',
+          'completion_eligibility',
+          'reminder_at_utc',
+          'reminder_local_date',
+          'reminder_timezone_id',
+          'created_at_utc',
+          'updated_at_utc',
+          'row_version',
+        ]);
+      },
+    );
+
+    test('every new value is written as the contract says (BS-98)', () async {
+      final backup = await exporter.export();
+      final data = sectionsOf(backup);
+      final settings = data['app_settings']! as Map<String, Object?>;
+      expect(settings['health_steps_sync_enabled'], isTrue);
+      expect(
+        settings['health_steps_last_sync_at_utc'],
+        '2026-03-02T17:45:30.125Z',
+      );
+      expect(rowsOf(backup, 'step_days').map((d) => d['source']), [
+        'manual',
+        'manual',
+        'health',
+      ]);
+      expect(
+        rowsOf(backup, 'workout_day_marks').map(
+          (m) =>
+              (m['local_date'], m['kind'], m['timezone_id'], m['row_version']),
+        ),
+        [
+          ('2026-03-05', 'rest', 'Europe/Berlin', 2),
+          ('2026-03-06', 'skipped', 'Europe/London', 1),
+        ],
+        reason: 'sorted by date; the soft deleted mark of 2026-03-07 is absent',
+      );
+      expect(
+        rowsOf(backup, 'tasks').map(
+          (t) => (
+            t['reminder_at_utc'],
+            t['reminder_local_date'],
+            t['reminder_timezone_id'],
+          ),
+        ),
+        [
+          ('2026-03-09T07:30:15.250Z', '2026-03-09', 'Europe/Berlin'),
+          (null, null, null),
+          ('2026-03-04T08:00:00.000Z', '2026-03-04', 'Europe/London'),
+        ],
+        reason: 'open task, completed task without and with a reminder',
+      );
+      expect(
+        rowsOf(backup, 'goal_versions').map((g) => g['goal_type']),
+        contains('workout_daily'),
+      );
+      expect(
+        rowsOf(
+          backup,
+          'daily_goal_snapshots',
+        ).where((s) => s['goal_key'] == 'workout_daily'),
+        [
+          {
+            'id': uuid(0x46),
+            'local_date': '2026-03-04',
+            'goal_key': 'workout_daily',
+            'module_id': 'focus',
+            'target_integer': 1,
+            'applicable': true,
+          },
+        ],
+      );
     });
 
     test('the export does not change the database', () async {

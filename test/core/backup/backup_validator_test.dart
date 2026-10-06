@@ -2074,7 +2074,7 @@ void main() {
       expectValid(result);
       expect(received, isNotNull);
       expect(identical(received, result.document!.data), isTrue);
-      expect(received!.dailyGoalSnapshots, hasLength(5));
+      expect(received!.dailyGoalSnapshots, hasLength(6));
     });
 
     test('its problems reject the file and keep their locations', () {
