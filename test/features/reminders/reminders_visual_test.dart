@@ -32,7 +32,7 @@ void main() {
       await shot(tester, 'sheet_${spec.$1}');
       expect(tester.takeException(), isNull);
 
-      await tapText(tester, 'Weiter zur Android-Abfrage');
+      await tapText(tester, 'Weiter zur Systemabfrage');
       await shot(tester, 'blocked_${spec.$1}');
       expect(tester.takeException(), isNull);
 

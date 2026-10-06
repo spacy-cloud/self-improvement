@@ -29,14 +29,14 @@ void main() {
           expect(find.text('Erinnerungen erlauben?'), findsOneWidget);
           expect(tester.takeException(), isNull, reason: 'permission sheet');
           for (final label in <String>[
-            'Weiter zur Android-Abfrage',
+            'Weiter zur Systemabfrage',
             'Einstellungen öffnen',
             'Später',
           ]) {
             await tester.ensureVisible(find.text(label));
             await tester.pump();
           }
-          await tapText(tester, 'Weiter zur Android-Abfrage');
+          await tapText(tester, 'Weiter zur Systemabfrage');
           expect(
             find.text('Benachrichtigungen sind blockiert'),
             findsOneWidget,
@@ -86,7 +86,7 @@ void main() {
       await check();
       await tapMasterSwitch(tester);
       await check();
-      await tapText(tester, 'Weiter zur Android-Abfrage');
+      await tapText(tester, 'Weiter zur Systemabfrage');
       await check();
 
       env.platform.permission = NotificationPermission.granted;
@@ -112,13 +112,13 @@ void main() {
       );
       await openSettings(tester, env);
       await tapMasterSwitch(tester);
-      await tapText(tester, 'Weiter zur Android-Abfrage');
+      await tapText(tester, 'Weiter zur Systemabfrage');
 
       // The blocked state has a title, a sentence and a state word.
       expect(find.text('Im System blockiert'), findsOneWidget);
       expect(find.text('Benachrichtigungen sind blockiert'), findsOneWidget);
       expect(
-        find.textContaining('Erlaube sie in den Android-Einstellungen'),
+        find.textContaining('Erlaube sie in den Systemeinstellungen'),
         findsOneWidget,
       );
 
@@ -145,7 +145,7 @@ void main() {
       expect(off.flagsCollection.isEnabled, Tristate.isTrue);
 
       await tapMasterSwitch(tester);
-      await tapText(tester, 'Weiter zur Android-Abfrage');
+      await tapText(tester, 'Weiter zur Systemabfrage');
       final blocked = tester.getSemantics(
         find.bySemanticsLabel('Erinnerungen, Im System blockiert'),
       );
@@ -155,13 +155,13 @@ void main() {
       expect(
         find.bySemanticsLabel(
           'Benachrichtigungen sind blockiert. Erlaube sie in den '
-          'Android-Einstellungen, damit Erinnerungen ankommen.',
+          'Systemeinstellungen, damit Erinnerungen ankommen.',
         ),
         findsOneWidget,
       );
       expect(
         find.bySemanticsLabel(
-          'Android-Einstellungen für Benachrichtigungen öffnen',
+          'Systemeinstellungen für Benachrichtigungen öffnen',
         ),
         findsOneWidget,
       );
