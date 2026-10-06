@@ -16,7 +16,7 @@ Wird laufend ergänzt. Offene Anforderungen stehen zusätzlich in [requirements-
 ## Oberfläche und Bedienung
 
 - iOS, Tastatur ([BS-112](https://spacy-cloud.atlassian.net/browse/BS-112)): Die Tastatur lässt sich in Formularen nicht einklappen (kein Tippen daneben, kein Ziehen; die iOS-Zifferntastatur hat keine Eingabetaste). Alle Schaltflächen blieben laut Tyler erreichbar. Folgeticket, geplant für v0.2.0.
-- iOS, Texte ([BS-113](https://spacy-cloud.atlassian.net/browse/BS-113)): Der Erinnerungs-Ablauf nennt „Android“ in rund einem Dutzend Texten (zum Beispiel „Android-Abfrage anzeigen“), auch unter iOS. Folgeticket, geplant für v0.2.0.
+- iOS, Texte ([BS-113](https://spacy-cloud.atlassian.net/browse/BS-113)): Der Erinnerungs-Ablauf sagt „System“ statt „Android“ (D-017, zum Beispiel „Weiter zur Systemabfrage“); ein Regeltest (`test/app/user_text_rules_test.dart`) verbietet Plattformnamen in allen Textliteralen von `lib/`. Die neuen Texte sind auf keinem Gerät gesehen: Die Prüfung auf dem iPhone (Tyler, [BS-96](https://spacy-cloud.atlassian.net/browse/BS-96)) und auf einem Android-Gerät steht aus.
 - Querformat ([BS-114](https://spacy-cloud.atlassian.net/browse/BS-114)): Weder die Vorlage noch das Manifest sperren das Querformat; Entwurf und Routen-Durchlauf sind Hochformat. Auf dem iPhone ist die Darstellung laut Tyler wenig sinnvoll und schwer lesbar. Die Entscheidung (belassen, sperren oder gestalten) steht aus.
 - Sehr lange einzelne Wörter in Titeln können bei 320 px Breite und 200 % Schrift mitten im Wort umbrechen.
 - Ein erneuter Tipp auf den aktiven Tab scrollt die Seite nicht nach oben.
