@@ -243,6 +243,7 @@ void main() {
       expect(model.hiddenRows.map((row) => row.type), [
         GoalType.water,
         GoalType.focusMinutes,
+        GoalType.workoutDaily,
         GoalType.workoutWeekly,
       ]);
       expect(model.rowOf(GoalType.water).tomorrow.target, 2500);
@@ -253,6 +254,111 @@ void main() {
           buildGoalEditorModel(versions: base, today: today, modules: allOn);
       expect(build(), build());
       expect(build().hashCode, build().hashCode);
+    });
+  });
+
+  group('"Workout heute" in the editor (BS-99)', () {
+    final today = LocalDate(2026, 10, 3);
+    final allOn = <ModuleId, bool>{
+      for (final module in ModuleId.values) module: true,
+    };
+    GoalEditorRow rowOf(
+      List<GoalVersion> versions, {
+      Map<ModuleId, bool>? modules,
+    }) => buildGoalEditorModel(
+      versions: versions,
+      today: today,
+      modules: modules ?? allOn,
+    ).rowOf(GoalType.workoutDaily);
+
+    test('(BS-99) sits between "Gewicht erfassen" and "Aufgabe erledigen"', () {
+      final index = goalDisplayOrder.indexOf(GoalType.workoutDaily);
+      expect(goalDisplayOrder[index - 1], GoalType.weightEntry);
+      expect(goalDisplayOrder[index + 1], GoalType.taskCompletion);
+      expect(goalDisplayOrder.toSet(), GoalType.values.toSet());
+      expect(goalDisplayOrder, hasLength(GoalType.values.length));
+    });
+
+    test(
+      '(BS-99) is a switch without a value, with the texts of the design',
+      () {
+        final spec = goalEditorSpec(GoalType.workoutDaily);
+        expect(spec.title, 'Workout heute');
+        expect(spec.caption, 'Training, Ruhetag oder übersprungen zählt');
+        expect(spec.inputLabel, 'Workout heute');
+        expect(spec.isSwitch, isTrue);
+        expect(spec.stepAmount, 0);
+        expect(spec.unit, isEmpty);
+        expect(goalValueText(GoalType.workoutDaily, 1), isEmpty);
+        expect(
+          stepGoalTarget(
+            type: GoalType.workoutDaily,
+            text: '',
+            fallback: 1,
+            direction: 1,
+          ),
+          isNull,
+          reason: 'no plus and minus',
+        );
+      },
+    );
+
+    test(
+      '(BS-99) the summary says Täglich while it is on and Aus while it is off',
+      () {
+        expect(goalSummaryText(GoalType.workoutDaily, target: 1), 'Täglich');
+        expect(
+          goalSummaryText(GoalType.workoutDaily, target: 1, enabled: false),
+          'Aus',
+        );
+      },
+    );
+
+    test('(BS-99) only the target 1 is valid', () {
+      expect(valid(GoalType.workoutDaily, '1'), isTrue);
+      expect(valid(GoalType.workoutDaily, '0'), isFalse);
+      expect(valid(GoalType.workoutDaily, '2'), isFalse);
+      expect(message(GoalType.workoutDaily, '2'), 'Ungültiger Zielwert.');
+    });
+
+    test('(BS-99) without a goal version it is off today and tomorrow, the other goals are on', () {
+      final row = rowOf(const []);
+      expect(row.today, (target: 1, enabled: false));
+      expect(row.tomorrow, (target: 1, enabled: false));
+      expect(row.hasPendingChange, isFalse);
+      final model = buildGoalEditorModel(
+        versions: const [],
+        today: today,
+        modules: allOn,
+      );
+      expect([
+        for (final other in model.rows)
+          if (other.type != GoalType.workoutDaily) other.today.enabled,
+      ], everyElement(isTrue));
+    });
+
+    test(
+      '(BS-99, AT24) a version from tomorrow shows today off and tomorrow on',
+      () {
+        final row = rowOf([
+          GoalVersion(
+            type: GoalType.workoutDaily,
+            effectiveFrom: today.addDays(1),
+          ),
+        ]);
+        expect(row.today.enabled, isFalse);
+        expect(row.tomorrow.enabled, isTrue);
+        expect(row.hasPendingChange, isTrue);
+      },
+    );
+
+    test('(BS-99) with the focus module off the row is hidden and the goal stays stored', () {
+      final row = rowOf(
+        [GoalVersion(type: GoalType.workoutDaily, effectiveFrom: today)],
+        modules: {...allOn, ModuleId.focus: false},
+      );
+      expect(row.visible, isFalse);
+      expect(row.today.enabled, isTrue, reason: 'kept, only hidden');
     });
   });
 }

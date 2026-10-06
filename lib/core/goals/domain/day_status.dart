@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:self_improvement/core/goals/domain/day_snapshot.dart';
 import 'package:self_improvement/core/goals/domain/goal_type.dart';
+import 'package:self_improvement/core/goals/domain/workout_day_mark_kind.dart';
 import 'package:self_improvement/core/modules/module_id.dart';
 import 'package:self_improvement/shared/local_date.dart';
 
@@ -16,7 +17,10 @@ import 'package:self_improvement/shared/local_date.dart';
 /// - focus: sum of `accumulated_seconds` of completed sessions whose completion
 ///   day is [date] (aborted and discarded sessions excluded),
 /// - tasks: count of tasks whose current completion happened on [date],
-/// - habits: ids of habits with an active check on [date].
+/// - habits: ids of habits with an active check on [date],
+/// - workouts: count of active workout entries whose frozen local date is
+///   [date] (how many the week has plays no part), and the active rest or
+///   skipped mark of [date] (`workout_day_marks`), if any.
 @immutable
 final class DayFacts {
   const DayFacts({
@@ -27,6 +31,8 @@ final class DayFacts {
     this.focusCompletedSeconds = 0,
     this.tasksCompleted = 0,
     this.habitIdsChecked = const <String>{},
+    this.workoutEntries = 0,
+    this.workoutDayMark,
   });
 
   final LocalDate date;
@@ -38,6 +44,13 @@ final class DayFacts {
   final int focusCompletedSeconds;
   final int tasksCompleted;
   final Set<String> habitIdsChecked;
+
+  /// Active workout entries of the day.
+  final int workoutEntries;
+
+  /// The active rest or skipped mark of the day; `null` without one. At most
+  /// one mark per day exists.
+  final WorkoutDayMarkKind? workoutDayMark;
 }
 
 /// Progress of one goal of a day.
@@ -66,7 +79,8 @@ final class GoalProgress {
   final bool fulfilled;
 
   /// The day's value in the unit of [target]: ml, steps (`null` without a
-  /// record), entries, whole completed focus minutes, completed tasks, or
+  /// record), entries, whole completed focus minutes, completed tasks,
+  /// workouts (a rest or skipped mark without a workout counts as 1), or
   /// 1 / 0 for a checked / unchecked habit.
   final int? current;
 }
@@ -106,6 +120,17 @@ final class DayStatus {
   /// state ("no daily goals yet") and never a 0/0 ring.
   bool get hasApplicableGoals => applicableCount >= 1;
 
+  /// The progress of the daily goal [type] of this day, or `null` when the
+  /// snapshot has none (a day from before the goal existed).
+  GoalProgress? progressOf(GoalType type) {
+    for (final goal in goals) {
+      if (goal.goalKey == type.key) {
+        return goal;
+      }
+    }
+    return null;
+  }
+
   /// `fulfilledCount / applicableCount` in 0..1, `null` without applicable
   /// goals.
   double? get ringFraction =>
@@ -116,7 +141,8 @@ final class DayStatus {
 ///
 /// Rules: water sum >= target; steps recorded and value >= target; weight
 /// entries >= 1; completed focus seconds >= target minutes * 60; completed
-/// tasks >= 1; habit checked. A goal that is not applicable in the snapshot
+/// tasks >= 1; habit checked; "Workout heute": at least one workout on the day,
+/// a rest day or a skipped day. A goal that is not applicable in the snapshot
 /// never counts. Snapshot items that are neither a daily goal type nor a habit
 /// (for example the weekly workout goal or an unknown key) are ignored.
 DayStatus computeDayStatus(DaySnapshot snapshot, DayFacts facts) {
@@ -167,6 +193,14 @@ GoalProgress? _progressOf(GoalSnapshotItem item, DayFacts facts) {
     GoalType.taskCompletion => (
       facts.tasksCompleted,
       facts.tasksCompleted >= target,
+    ),
+    // One workout of the day, a rest day or a skipped day is enough. The
+    // weekly workout goal has no say: only the facts of this day count.
+    GoalType.workoutDaily => (
+      facts.workoutEntries > 0
+          ? facts.workoutEntries
+          : (facts.workoutDayMark == null ? 0 : target),
+      facts.workoutEntries >= target || facts.workoutDayMark != null,
     ),
     // Filtered out above (not a daily goal); listed for exhaustiveness.
     GoalType.workoutWeekly => (null, false),

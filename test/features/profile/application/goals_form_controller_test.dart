@@ -634,4 +634,113 @@ void main() {
       expect(goalCommands.commandIds, hasLength(1));
     });
   });
+
+  group('"Workout heute" (BS-99)', () {
+    test(
+      '(BS-99) a new editor shows it off: no stored version means off',
+      () async {
+        final args = await open();
+        expect(state(args).drafts[GoalType.workoutDaily]!.enabled, isFalse);
+        expect(state(args).drafts[GoalType.workoutDaily]!.text, isEmpty);
+        expect(state(args).dirty, isFalse);
+      },
+    );
+
+    test('(BS-99, AT24) switching it on saves a version for tomorrow with the fixed target 1', () async {
+      final args = await open();
+      controller(args).setEnabled(GoalType.workoutDaily, enabled: true);
+      expect(state(args).dirty, isTrue);
+
+      final result = await controller(args).submit() as GoalsSaved;
+      expect(result.goalsSaved, isTrue);
+      expect(result.targetSaved, isFalse);
+      expect(result.message, 'Ziele gespeichert. Sie gelten ab morgen.');
+
+      final version = (await versionOn(GoalType.workoutDaily, tomorrow))!;
+      expect(version.enabled, isTrue);
+      expect(version.target, 1);
+      expect(await versionOn(GoalType.workoutDaily, today), isNull);
+      expect(
+        (await versions.all()).where((v) => v.type == GoalType.workoutDaily),
+        hasLength(1),
+      );
+      expect(state(args).dirty, isFalse);
+    });
+
+    test(
+      '(BS-99) only that goal is sent: the other goals stay untouched',
+      () async {
+        final args = await open();
+        controller(args).setEnabled(GoalType.workoutDaily, enabled: true);
+        await controller(args).submit();
+        final all = await versions.all();
+        expect(
+          all.where((v) => v.effectiveFrom == tomorrow).map((v) => v.type),
+          [GoalType.workoutDaily],
+        );
+      },
+    );
+
+    test('(BS-99) on and off again is no change and writes nothing', () async {
+      final args = await open();
+      controller(args)
+        ..setEnabled(GoalType.workoutDaily, enabled: true)
+        ..setEnabled(GoalType.workoutDaily, enabled: false);
+      expect(state(args).dirty, isFalse);
+      expect(await controller(args).submit(), isA<GoalsUnchanged>());
+      expect(goalCommands.commandIds, isEmpty);
+    });
+
+    test('(BS-99, AT24) a goal that is on can be switched off from tomorrow; today keeps its version', () async {
+      await harness.database.transaction(() async {
+        await versions.upsert(
+          GoalVersion(type: GoalType.workoutDaily, effectiveFrom: today),
+          newId: 'daily-on',
+          nowUtc: harness.clock.nowUtc(),
+        );
+      });
+      final args = await open();
+      expect(state(args).drafts[GoalType.workoutDaily]!.enabled, isTrue);
+
+      controller(args).setEnabled(GoalType.workoutDaily, enabled: false);
+      await controller(args).submit();
+      expect(
+        (await versionOn(GoalType.workoutDaily, tomorrow))!.enabled,
+        isFalse,
+      );
+      expect((await versionOn(GoalType.workoutDaily, today))!.enabled, isTrue);
+    });
+
+    test('(BS-99) with the focus module off the goal is never sent', () async {
+      final args = await open(modules: {...allOn, ModuleId.focus: false});
+      controller(args).setEnabled(GoalType.workoutDaily, enabled: true);
+      expect(await controller(args).submit(), isA<GoalsUnchanged>());
+      expect(await versionOn(GoalType.workoutDaily, tomorrow), isNull);
+    });
+
+    test('(BS-99) plus and minus do nothing for a switch goal', () async {
+      final args = await open();
+      controller(args).step(GoalType.workoutDaily, 1);
+      expect(state(args).drafts[GoalType.workoutDaily]!.text, isEmpty);
+      expect(state(args).dirty, isFalse);
+    });
+
+    test('(BS-99) a failed save keeps the switch; the retry saves once with the same id', () async {
+      final args = await open();
+      controller(args).setEnabled(GoalType.workoutDaily, enabled: true);
+      projection.failure = StateError('disk full');
+      expect(await controller(args).submit(), isA<GoalsRejected>());
+      expect(state(args).drafts[GoalType.workoutDaily]!.enabled, isTrue);
+      expect(await versionOn(GoalType.workoutDaily, tomorrow), isNull);
+
+      projection.failure = null;
+      expect(await controller(args).submit(), isA<GoalsSaved>());
+      expect(goalCommands.commandIds, hasLength(2));
+      expect(goalCommands.commandIds[0], goalCommands.commandIds[1]);
+      expect(
+        (await versionOn(GoalType.workoutDaily, tomorrow))!.enabled,
+        isTrue,
+      );
+    });
+  });
 }

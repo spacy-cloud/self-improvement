@@ -19,7 +19,9 @@ const List<GoalType> onboardingSwitchGoals = <GoalType>[
 ];
 
 /// Every goal the last step suggests, in display order: the stepper goals,
-/// then the two on/off goals. All six goal types of the app are covered.
+/// then the two on/off goals. The optional daily workout goal ("Workout
+/// heute", off by default) is not suggested here: it is switched on in the goal
+/// editor.
 const List<GoalType> onboardingGoalTypes = <GoalType>[
   ...onboardingStepperGoals,
   ...onboardingSwitchGoals,
@@ -82,6 +84,7 @@ String goalTitle(GoalType type) => switch (type) {
   GoalType.workoutWeekly => 'Workouts',
   GoalType.taskCompletion => 'Aufgaben',
   GoalType.weightEntry => 'Gewicht',
+  GoalType.workoutDaily => 'Workout heute',
 };
 
 /// The period under the row title: `pro Tag` or `pro Woche`.
