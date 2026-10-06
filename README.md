@@ -42,7 +42,7 @@ Der App-Name steht noch nicht fest und wird im Code als eine Konstante geführt 
 
 ## Lizenz
 
-Der eigene Code und die Dokumentation stehen unter der [MIT-Lizenz](LICENSE) (Copyright Team IA24). Mitgelieferte Fremdinhalte behalten ihre Lizenzen: die Schrift Inter (SIL Open Font License 1.1, Text in `assets/fonts/OFL.txt`), der Pfeil des App-Symbols aus den Material Icons (CC BY 4.0, Quelle und Namensnennung in [assets/branding/README.md](assets/branding/README.md)) und die Abhängigkeiten laut `pubspec.lock` (die Lizenzseite der App listet sie).
+Der eigene Code und die Dokumentation stehen unter der [MIT-Lizenz](LICENSE) (Copyright Spacy.cloud). Mitgelieferte Fremdinhalte behalten ihre Lizenzen: die Schrift Inter (SIL Open Font License 1.1, Text in `assets/fonts/OFL.txt`), der Pfeil des App-Symbols aus den Material Icons (CC BY 4.0, Quelle und Namensnennung in [assets/branding/README.md](assets/branding/README.md)) und die Abhängigkeiten laut `pubspec.lock` (die Lizenzseite der App listet sie).
 
 ## Entwicklungsumgebung einrichten
 
