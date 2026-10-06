@@ -15,6 +15,7 @@ import 'package:self_improvement/core/notifications/domain/reminder_status.dart'
 import 'package:self_improvement/core/notifications/domain/reminder_texts.dart';
 import 'package:self_improvement/core/notifications/platform/reminder_platform.dart';
 import 'package:self_improvement/core/providers/core_providers.dart';
+import 'package:self_improvement/features/reminders/presentation/reminder_permission_sheet.dart';
 
 import 'reminder_test_support.dart';
 
@@ -42,7 +43,7 @@ void main() {
         expect(find.text('Aus'), findsOneWidget);
         expect(toggled(tester, 'Erinnerungen, Aus'), Tristate.isFalse);
         expect(find.textContaining('noch nicht erlaubt'), findsOneWidget);
-        expect(find.textContaining('Android fragt erst'), findsOneWidget);
+        expect(find.textContaining('Das System fragt erst'), findsOneWidget);
         expect(find.text('Benachrichtigungen sind blockiert'), findsNothing);
         expect(find.text('Erinnerungen erlauben?'), findsNothing);
         expect(find.textContaining('Planungsfehler'), findsNothing);
@@ -139,14 +140,14 @@ void main() {
         );
         expect(
           find.textContaining(
-            'Android-Status: Benachrichtigungen sind für diese App nicht erlaubt.',
+            'Systemstatus: Benachrichtigungen sind für diese App nicht erlaubt.',
           ),
           findsOneWidget,
         );
         expect(env.platform.requestPermissionCalls, 0, reason: 'not asked yet');
         expect(await env.wanted(tester), isFalse);
 
-        await tapText(tester, 'Weiter zur Android-Abfrage');
+        await tapText(tester, 'Weiter zur Systemabfrage');
 
         expect(env.platform.requestPermissionCalls, 1);
         expect(find.text('Erinnerungen erlauben?'), findsNothing);
@@ -207,10 +208,14 @@ void main() {
 
       await tapMasterSwitch(tester);
 
+      // The block behind the sheet says the same sentence in its footer.
       expect(
-        find.textContaining(
-          'Android-Status: Der Status der Benachrichtigungen ist nicht '
-          'verfügbar',
+        find.descendant(
+          of: find.byType(ReminderPermissionSheet),
+          matching: find.textContaining(
+            'Systemstatus: Der Status der Benachrichtigungen ist nicht '
+            'verfügbar',
+          ),
         ),
         findsOneWidget,
       );
@@ -230,13 +235,13 @@ void main() {
         await openSettings(tester, env);
 
         await tapMasterSwitch(tester);
-        await tapText(tester, 'Weiter zur Android-Abfrage');
+        await tapText(tester, 'Weiter zur Systemabfrage');
 
         expect(env.platform.requestPermissionCalls, 1);
         expect(find.text('Im System blockiert'), findsOneWidget);
         expect(find.text('Benachrichtigungen sind blockiert'), findsOneWidget);
         expect(
-          find.textContaining('Erlaube sie in den Android-Einstellungen'),
+          find.textContaining('Erlaube sie in den Systemeinstellungen'),
           findsOneWidget,
         );
         expect(
@@ -253,7 +258,7 @@ void main() {
         );
         expect(env.platform.scheduleCalls, isEmpty);
         expect(env.feedback.last!.kind, 'info');
-        expect(env.feedback.last!.message, contains('Android blockiert'));
+        expect(env.feedback.last!.message, contains('das System blockiert'));
         // The rest of the block still works.
         await tapSlot(tester, 14);
         expect(await env.waterHours(tester), {14});
@@ -312,7 +317,7 @@ void main() {
         await openSettings(tester, env);
         await tapSlot(tester, 12);
         await tapMasterSwitch(tester);
-        await tapText(tester, 'Weiter zur Android-Abfrage');
+        await tapText(tester, 'Weiter zur Systemabfrage');
         expect(find.text('Im System blockiert'), findsOneWidget);
         expect(env.platform.alarms, isEmpty);
 
@@ -355,7 +360,7 @@ void main() {
       env.platform.settingsCanOpen = false;
       await openSettings(tester, env);
       await tapMasterSwitch(tester);
-      await tapText(tester, 'Weiter zur Android-Abfrage');
+      await tapText(tester, 'Weiter zur Systemabfrage');
 
       await tapText(tester, 'Öffnen');
 
@@ -376,7 +381,7 @@ void main() {
         );
         await openSettings(tester, env);
         await tapMasterSwitch(tester);
-        await tapText(tester, 'Weiter zur Android-Abfrage');
+        await tapText(tester, 'Weiter zur Systemabfrage');
 
         expect(find.text('Benachrichtigungen nicht verfügbar'), findsOneWidget);
         expect(find.text('Auf diesem Gerät nicht verfügbar'), findsOneWidget);

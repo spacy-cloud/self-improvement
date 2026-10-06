@@ -91,7 +91,7 @@ void main() {
         status(wanted: false, permission: NotificationPermission.denied),
       );
       expect(line, contains('noch nicht erlaubt'));
-      expect(line, contains('Android fragt erst, wenn du Erinnerungen'));
+      expect(line, contains('Das System fragt erst, wenn du Erinnerungen'));
     });
 
     test('denied after the user asked: blocked', () {
