@@ -675,6 +675,26 @@ void main() {
   });
 
   group('opening the schema 1 file with the real app code', () {
+    test(
+      'also when foreign keys are on while the upgrade starts (BS-98)',
+      () async {
+        // The upgrade switches them off for the table rebuild and on again.
+        final upgraded = AppDatabase(
+          v1FixtureExecutor(extraSql: 'PRAGMA foreign_keys = ON;'),
+        );
+        addTearDown(upgraded.close);
+        await upgraded.customSelect('SELECT 1').get();
+        expect(await userVersion(upgraded), 2);
+        expect(await rowsOfAllTables(upgraded, v1Columns), before);
+        expect(await foreignKeyViolations(upgraded), isEmpty);
+        expect(
+          (await upgraded.customSelect('PRAGMA foreign_keys').getSingle())
+              .read<int>('foreign_keys'),
+          1,
+        );
+      },
+    );
+
     test('migrates to schema 2 and keeps every row (AT02, BS-98)', () async {
       final upgraded = AppDatabase(v1FixtureExecutor());
       addTearDown(upgraded.close);
