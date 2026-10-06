@@ -444,8 +444,8 @@ void main() {
 
   group('layout', () {
     testWidgets(
-      'at 200 % text on a small screen the page scrolls to its last row and '
-      'keeps room at the bottom (AT33, BS-118)',
+      'at 200 % text on a small screen the page scrolls to its end and keeps '
+      'room at the bottom (AT33, BS-118)',
       (tester) async {
         await open(tester, size: const Size(320, 568), textScale: 2);
         expect(tester.takeException(), isNull, reason: 'no overflow');
@@ -465,9 +465,11 @@ void main() {
         position.jumpTo(position.maxScrollExtent);
         await tester.pump();
 
-        final lastGroup = tester.getRect(find.byType(AppListGroup).last);
+        // The last card is the one with the licence text (BS-120), or its note
+        // while it loads.
+        final lastCard = tester.getRect(find.byType(AppCard).last);
         expect(
-          lastGroup.bottom,
+          lastCard.bottom,
           lessThanOrEqualTo(568 - 16 + 0.5),
           reason: 'the last card ends above the 16 px page margin',
         );
