@@ -125,6 +125,7 @@ void main() {
           '/settings/modules',
           '/settings/data',
           '/settings/licenses',
+          '/settings/about',
           '/onboarding',
           '/not-found',
           '/streak',

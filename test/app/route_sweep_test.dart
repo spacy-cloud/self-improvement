@@ -44,6 +44,7 @@ final List<String> _routes = <String>{
   AppRoutes.modules,
   AppRoutes.data,
   AppRoutes.licenses,
+  AppRoutes.about,
   AppRoutes.notFound,
   for (final module in bundledModules) ..._paths(module.routes),
 }.where((path) => !path.contains(':')).toList()..sort();

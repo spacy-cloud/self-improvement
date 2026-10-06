@@ -17,6 +17,7 @@ import 'package:self_improvement/features/profile/presentation/goals_screen.dart
 import 'package:self_improvement/features/profile/presentation/profile_edit_screen.dart';
 import 'package:self_improvement/features/profile/presentation/profile_routes.dart';
 import 'package:self_improvement/features/profile/presentation/profile_screen.dart';
+import 'package:self_improvement/features/settings/presentation/about_screen.dart';
 import 'package:self_improvement/features/settings/presentation/licenses_screen.dart';
 import 'package:self_improvement/features/settings/presentation/settings_screen.dart';
 import 'package:self_improvement/shared/local_date.dart';
@@ -139,6 +140,10 @@ List<RouteBase> screenRoutes() => [
   GoRoute(
     path: SettingsRoutes.licenses,
     builder: (context, state) => const LicensesScreen(),
+  ),
+  GoRoute(
+    path: SettingsRoutes.about,
+    builder: (context, state) => const AboutScreen(),
   ),
   for (final path in [
     SettingsRoutes.data,
