@@ -49,11 +49,11 @@ class ReminderPermissionSheet extends StatelessWidget {
         Navigator.of(context).pop(choice);
     final String state = switch (permission) {
       NotificationPermission.granted =>
-        'Android-Status: Benachrichtigungen sind erlaubt.',
+        'Systemstatus: Benachrichtigungen sind erlaubt.',
       NotificationPermission.denied =>
-        'Android-Status: Benachrichtigungen sind für diese App nicht erlaubt.',
+        'Systemstatus: Benachrichtigungen sind für diese App nicht erlaubt.',
       NotificationPermission.unavailable =>
-        'Android-Status: Der Status der Benachrichtigungen ist nicht '
+        'Systemstatus: Der Status der Benachrichtigungen ist nicht '
             'verfügbar.',
     };
     return AppSheetFrame(
@@ -61,7 +61,7 @@ class ReminderPermissionSheet extends StatelessWidget {
       onClose: () => choose(ReminderPermissionChoice.later),
       footer: <Widget>[
         PrimaryButton(
-          label: 'Weiter zur Android-Abfrage',
+          label: 'Weiter zur Systemabfrage',
           onPressed: () => choose(ReminderPermissionChoice.askSystem),
         ),
         const SizedBox(height: 12),
@@ -83,7 +83,7 @@ class ReminderPermissionSheet extends StatelessWidget {
         Text(
           'Die App erinnert dich nur an das, was du einschaltest, zum '
           'Beispiel ans Trinken. Keine Werbung, alles bleibt auf deinem '
-          'Gerät. Dafür fragt Android einmal nach deiner Erlaubnis.',
+          'Gerät. Dafür fragt das System einmal nach deiner Erlaubnis.',
           textAlign: TextAlign.center,
           style: AppTextStyles.bodyRegular.copyWith(
             color: colors.textSecondary,
@@ -94,9 +94,9 @@ class ReminderPermissionSheet extends StatelessWidget {
         const SizedBox(height: 8),
         const SheetMessage(
           text:
-              'Zeigt Android keine Abfrage mehr, erlaube Benachrichtigungen '
+              'Zeigt das System keine Abfrage mehr, erlaube Benachrichtigungen '
               'in den Systemeinstellungen. Erinnerungen kommen ungefähr zur '
-              'gewählten Zeit; Android kann sie verzögern.',
+              'gewählten Zeit; das System kann sie verzögern.',
         ),
       ],
     );
