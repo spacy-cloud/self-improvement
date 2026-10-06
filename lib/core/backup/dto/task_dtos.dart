@@ -8,7 +8,9 @@ import 'package:self_improvement/core/database/schema_keys.dart';
 import 'package:self_improvement/shared/local_date.dart';
 import 'package:self_improvement/shared/local_time.dart';
 
-/// A to-do task. Open means the three completion fields are all `null`.
+/// A to-do task. Open means the three completion fields are all `null`. The
+/// optional reminder (schema 2) is three fields that are all set or all
+/// `null`, independent of the completion.
 @immutable
 final class TaskDto {
   const TaskDto({
@@ -25,6 +27,9 @@ final class TaskDto {
     this.completedLocalDate,
     this.timezoneId,
     this.completionEligibility,
+    this.reminderAtUtc,
+    this.reminderLocalDate,
+    this.reminderTimezoneId,
   });
 
   factory TaskDto.fromJson(Map<String, Object?> json) =>
@@ -41,6 +46,9 @@ final class TaskDto {
     completedLocalDate: row.completedLocalDate,
     timezoneId: row.timezoneId,
     completionEligibility: row.completionEligibility,
+    reminderAtUtc: row.reminderAtUtc,
+    reminderLocalDate: row.reminderLocalDate,
+    reminderTimezoneId: row.reminderTimezoneId,
     createdAtUtc: row.createdAtUtc,
     updatedAtUtc: row.updatedAtUtc,
     rowVersion: row.rowVersion,
@@ -67,6 +75,18 @@ final class TaskDto {
         'completion_eligibility',
         'Berechtigung beim Abschluss',
       ),
+      reminderAtUtc: r.optionalInstant(
+        'reminder_at_utc',
+        'Erinnerungszeitpunkt',
+      ),
+      reminderLocalDate: r.optionalDate(
+        'reminder_local_date',
+        'Erinnerungsdatum',
+      ),
+      reminderTimezoneId: r.optionalTimezone(
+        'reminder_timezone_id',
+        'Erinnerungszeitzone',
+      ),
       createdAtUtc: r.instant('created_at_utc', 'Erstellzeitpunkt'),
       updatedAtUtc: r.instant('updated_at_utc', 'Änderungszeitpunkt'),
       rowVersion: r.integer('row_version', 'Zeilenversion', min: 1),
@@ -82,6 +102,19 @@ final class TaskDto {
         'completed_at_utc',
         'Abschlussangaben unvollständig (Zeitpunkt, Datum und '
             'Berechtigung gehören zusammen)',
+      );
+    }
+    // The table's CHECK constraints: the reminder triple is all or nothing.
+    final reminderFields = [
+      dto.reminderAtUtc != null,
+      dto.reminderLocalDate != null,
+      dto.reminderTimezoneId != null,
+    ];
+    if (!r.hasProblems && reminderFields.toSet().length > 1) {
+      r.fail(
+        'reminder_at_utc',
+        'Erinnerungsangaben unvollständig (Zeitpunkt, Datum und '
+            'Zeitzone gehören zusammen)',
       );
     }
     return dto;
@@ -100,6 +133,12 @@ final class TaskDto {
   final LocalDate? completedLocalDate;
   final String? timezoneId;
   final bool? completionEligibility;
+
+  /// The optional reminder: when the notification is due (UTC) and the local
+  /// date and zone frozen when it was set. All three or none.
+  final DateTime? reminderAtUtc;
+  final LocalDate? reminderLocalDate;
+  final String? reminderTimezoneId;
   final DateTime createdAtUtc;
   final DateTime updatedAtUtc;
   final int rowVersion;
@@ -117,6 +156,11 @@ final class TaskDto {
     'completed_local_date': completedLocalDate?.toIso(),
     'timezone_id': timezoneId,
     'completion_eligibility': completionEligibility,
+    'reminder_at_utc': reminderAtUtc == null
+        ? null
+        : BackupValues.formatInstant(reminderAtUtc!),
+    'reminder_local_date': reminderLocalDate?.toIso(),
+    'reminder_timezone_id': reminderTimezoneId,
     'created_at_utc': BackupValues.formatInstant(createdAtUtc),
     'updated_at_utc': BackupValues.formatInstant(updatedAtUtc),
     'row_version': rowVersion,
@@ -133,6 +177,9 @@ final class TaskDto {
     completedLocalDate: Value(completedLocalDate),
     timezoneId: Value(timezoneId),
     completionEligibility: Value(completionEligibility),
+    reminderAtUtc: Value(reminderAtUtc),
+    reminderLocalDate: Value(reminderLocalDate),
+    reminderTimezoneId: Value(reminderTimezoneId),
     createdAtUtc: createdAtUtc,
     updatedAtUtc: updatedAtUtc,
     rowVersion: Value(rowVersion),

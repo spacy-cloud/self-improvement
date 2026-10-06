@@ -128,3 +128,34 @@ class WorkoutEntries extends Table with AuditColumns, SoftDeleteColumn {
   @override
   Set<Column> get primaryKey => {id};
 }
+
+/// A day marked as a rest day or as a skipped workout (schema 2, BS-99): the
+/// daily workout goal counts such a day as done (without XP) next to a logged
+/// workout. At most one active row per local date; changing the kind of a day
+/// updates its row, undo works through the audit columns and the soft delete
+/// like for every other fact.
+@DataClassName('WorkoutDayMarkRow')
+@TableIndex.sql('''
+  CREATE UNIQUE INDEX workout_day_marks_active_date
+    ON workout_day_marks (local_date)
+    WHERE deleted_at_utc IS NULL;
+''')
+class WorkoutDayMarks extends Table with AuditColumns, SoftDeleteColumn {
+  TextColumn get id => text()();
+
+  /// The local business day the mark applies to.
+  TextColumn get localDate => text().map(const LocalDateConverter())();
+
+  /// One of [SchemaKeys.workoutDayMarkKinds]: `rest` or `skipped`.
+  TextColumn get kind => text().check(
+    CustomExpression<bool>(
+      'kind IN ${SchemaKeys.sqlIn(SchemaKeys.workoutDayMarkKinds)}',
+    ),
+  )();
+
+  /// IANA zone in effect when the mark was set.
+  TextColumn get timezoneId => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}

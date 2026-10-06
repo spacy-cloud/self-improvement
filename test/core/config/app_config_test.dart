@@ -57,6 +57,6 @@ void main() {
 
   test('backup format contract stays stable', () {
     expect(AppConfig.backupFormat, 'levelup_life_backup');
-    expect(AppConfig.backupSchemaVersion, 1);
+    expect(AppConfig.backupSchemaVersion, 2);
   });
 }

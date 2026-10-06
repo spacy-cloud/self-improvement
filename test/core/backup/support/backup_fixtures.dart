@@ -81,6 +81,8 @@ Future<void> populateRichDatabase(AppDatabase db) async {
           haptics: const Value(false),
           notificationsEnabled: const Value(true),
           lastKnownTimezone: const Value('Europe/Berlin'),
+          healthStepsSyncEnabled: const Value(true),
+          healthStepsLastSyncAtUtc: Value(at(2, 17, 45, 30, 125)),
           createdAtUtc: created,
           updatedAtUtc: updated,
           rowVersion: const Value(3),
@@ -326,6 +328,7 @@ Future<void> populateRichDatabase(AppDatabase db) async {
         timezoneId: berlin,
         reachedGoalEligible: const Value(false),
         xpGoalTargetSteps: const Value(10000),
+        source: const Value('health'),
         createdAtUtc: at(4, 20),
         updatedAtUtc: at(4, 20),
       ),
@@ -334,6 +337,7 @@ Future<void> populateRichDatabase(AppDatabase db) async {
         localDate: march(5),
         steps: 500,
         timezoneId: berlin,
+        source: const Value('health'),
         deletedAtUtc: Value(deleted),
         createdAtUtc: at(5, 20),
         updatedAtUtc: deleted,
@@ -526,6 +530,35 @@ Future<void> populateRichDatabase(AppDatabase db) async {
         updatedAtUtc: deleted,
       ),
     ]);
+    b.insertAll(db.workoutDayMarks, [
+      WorkoutDayMarksCompanion.insert(
+        id: uuid(0x161),
+        localDate: march(5),
+        kind: 'rest',
+        timezoneId: berlin,
+        createdAtUtc: at(5, 21, 0, 0, 9),
+        updatedAtUtc: at(5, 21, 5),
+        rowVersion: const Value(2),
+      ),
+      WorkoutDayMarksCompanion.insert(
+        id: uuid(0x162),
+        localDate: march(6),
+        kind: 'skipped',
+        timezoneId: 'Europe/London',
+        createdAtUtc: at(6, 20),
+        updatedAtUtc: at(6, 20),
+      ),
+      WorkoutDayMarksCompanion.insert(
+        id: uuid(0x163),
+        localDate: march(7),
+        kind: 'rest',
+        timezoneId: berlin,
+        deletedAtUtc: Value(deleted),
+        createdAtUtc: at(7, 20),
+        updatedAtUtc: deleted,
+        rowVersion: const Value(3),
+      ),
+    ]);
     b.insertAll(db.tasks, [
       TasksCompanion.insert(
         id: uuid(0x151),
@@ -534,6 +567,9 @@ Future<void> populateRichDatabase(AppDatabase db) async {
         priority: const Value('high'),
         dueLocalDate: Value(march(10)),
         tagsJson: const Value(['Finanzen', 'Dringend']),
+        reminderAtUtc: Value(at(9, 7, 30, 15, 250)),
+        reminderLocalDate: Value(march(9)),
+        reminderTimezoneId: const Value(berlin),
         createdAtUtc: at(1, 9),
         updatedAtUtc: at(1, 10),
         rowVersion: const Value(2),
@@ -557,6 +593,9 @@ Future<void> populateRichDatabase(AppDatabase db) async {
         completedLocalDate: Value(march(4)),
         timezoneId: const Value('Europe/London'),
         completionEligibility: const Value(true),
+        reminderAtUtc: Value(at(4, 8)),
+        reminderLocalDate: Value(march(4)),
+        reminderTimezoneId: const Value('Europe/London'),
         createdAtUtc: at(2, 9, 30),
         updatedAtUtc: at(4, 10),
       ),
@@ -760,7 +799,7 @@ List<int> bytesOf(Object? json) => utf8.encode(jsonEncode(json));
 /// The validator without a snapshot checker.
 const BackupValidator plainValidator = BackupValidator();
 
-/// The rows of the sixteen backup tables a correct export of [db] contains,
+/// The rows of the seventeen backup tables a correct export of [db] contains,
 /// rendered as text and sorted: active rows only, and only checks of active
 /// habits.
 Future<Map<String, List<String>>> expectedExportRows(AppDatabase db) async {
@@ -813,6 +852,11 @@ Future<Map<String, List<String>>> expectedExportRows(AppDatabase db) async {
         db.workoutEntries,
       )..where((t) => t.deletedAtUtc.isNull())).get(),
     ),
+    'workout_day_marks': text(
+      await (db.select(
+        db.workoutDayMarks,
+      )..where((t) => t.deletedAtUtc.isNull())).get(),
+    ),
     'tasks': text(
       await (db.select(db.tasks)..where((t) => t.deletedAtUtc.isNull())).get(),
     ),
@@ -822,7 +866,7 @@ Future<Map<String, List<String>>> expectedExportRows(AppDatabase db) async {
   };
 }
 
-/// ALL rows of the sixteen backup tables of [db] (no filtering).
+/// ALL rows of the seventeen backup tables of [db] (no filtering).
 Future<Map<String, List<String>>> backupTablesDump(AppDatabase db) async {
   final dump = await dumpDatabase(db);
   return {
@@ -844,6 +888,7 @@ bool _isBackupTable(String name) => const {
   'meal_entries',
   'focus_sessions',
   'workout_entries',
+  'workout_day_marks',
   'tasks',
   'habits',
   'habit_checks',

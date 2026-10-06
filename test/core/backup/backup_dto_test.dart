@@ -31,6 +31,7 @@ final Map<BackupTable, RoundTrip> roundTrips = {
   BackupTable.mealEntries: (j) => MealEntryDto.fromJson(j).toJson(),
   BackupTable.focusSessions: (j) => FocusSessionDto.fromJson(j).toJson(),
   BackupTable.workoutEntries: (j) => WorkoutEntryDto.fromJson(j).toJson(),
+  BackupTable.workoutDayMarks: (j) => WorkoutDayMarkDto.fromJson(j).toJson(),
   BackupTable.tasks: (j) => TaskDto.fromJson(j).toJson(),
   BackupTable.habits: (j) => HabitDto.fromJson(j).toJson(),
   BackupTable.habitChecks: (j) => HabitCheckDto.fromJson(j).toJson(),
@@ -214,6 +215,9 @@ void main() {
               'completed_local_date',
               'completion_eligibility',
               'segment_started_at_utc',
+              'reminder_at_utc',
+              'reminder_local_date',
+              'reminder_timezone_id',
             }.contains(key);
             if (isPaired || first[key] == null) {
               continue;
@@ -444,13 +448,23 @@ void main() {
         ).single.field,
         'format',
       );
-      expect(
-        problemsOf(
-          () =>
-              BackupDocument.fromJson(jsonCopy(backup)..['schemaVersion'] = 2),
-        ).single.field,
-        'schemaVersion',
-      );
+      for (final version in [0, 3, 99]) {
+        expect(
+          problemsOf(
+            () => BackupDocument.fromJson(
+              jsonCopy(backup)..['schemaVersion'] = version,
+            ),
+          ).single.field,
+          'schemaVersion',
+          reason: 'version $version',
+        );
+      }
+    });
+
+    test('a document made from the database is of the current version', () {
+      final document = BackupDocument.fromJson(jsonCopy(backup));
+      expect(document.sourceSchemaVersion, 2);
+      expect(document.toJson()['schemaVersion'], BackupFormat.schemaVersion);
     });
 
     test('the record limit is checked before the records are read', () {
@@ -466,6 +480,286 @@ void main() {
     });
   });
 
+  group('the fields of schema 2 (BS-98)', () {
+    Map<String, Object?> first(BackupTable table) =>
+        copyOf(recordsOf(backup, table).first);
+
+    List<ImportProblem> problemsOfSet(
+      BackupTable table,
+      Map<String, Object?> changes,
+    ) => problemsOf(() => roundTrips[table]!(first(table)..addAll(changes)));
+
+    test('step_days.source: manual and health, nothing else (BS-97)', () {
+      final days = recordsOf(backup, BackupTable.stepDays);
+      expect(days.map((d) => d['source']).toSet(), {'manual', 'health'});
+      for (final source in ['manual', 'health']) {
+        expect(
+          () => roundTrips[BackupTable.stepDays]!(
+            first(BackupTable.stepDays)..['source'] = source,
+          ),
+          returnsNormally,
+        );
+      }
+      for (final source in ['watch', 'Manual', 'HEALTH', '', ' health']) {
+        final problems = problemsOfSet(BackupTable.stepDays, {
+          'source': source,
+        });
+        expect(problems.single.field, 'source', reason: '"$source"');
+        expect(
+          problems.single.message,
+          'Quelle enthält einen unbekannten Wert',
+        );
+        if (source.trim().isNotEmpty) {
+          expect(problems.single.displayText, isNot(contains(source.trim())));
+        }
+      }
+      expect(
+        problemsOfSet(BackupTable.stepDays, {'source': null}).single.message,
+        'Quelle darf nicht leer sein',
+      );
+      expect(
+        problemsOfSet(BackupTable.stepDays, {'source': 1}).single.message,
+        contains('Datentyp'),
+      );
+    });
+
+    test(
+      'app_settings: the health switch and the time of the last comparison',
+      () {
+        final settings = recordsOf(backup, BackupTable.appSettings).single;
+        expect(settings['health_steps_sync_enabled'], isTrue);
+        expect(
+          settings['health_steps_last_sync_at_utc'],
+          '2026-03-02T17:45:30.125Z',
+        );
+        // The time is optional, the switch is not.
+        expect(
+          () => roundTrips[BackupTable.appSettings]!(
+            first(BackupTable.appSettings)
+              ..['health_steps_last_sync_at_utc'] = null,
+          ),
+          returnsNormally,
+        );
+        expect(
+          problemsOfSet(BackupTable.appSettings, {
+            'health_steps_sync_enabled': null,
+          }).single.field,
+          'health_steps_sync_enabled',
+        );
+        for (final wrong in <Object>[1, 'true', 0]) {
+          expect(
+            problemsOfSet(BackupTable.appSettings, {
+              'health_steps_sync_enabled': wrong,
+            }).single.message,
+            contains('Datentyp'),
+            reason: '$wrong',
+          );
+        }
+        for (final bad in [
+          '2026-03-02T17:45:30Z',
+          '2026-03-02T17:45:30.125+02:00',
+          '2026-03-02',
+          '2026-13-02T17:45:30.125Z',
+          1775000000000,
+        ]) {
+          expect(
+            problemsOfSet(BackupTable.appSettings, {
+              'health_steps_last_sync_at_utc': bad,
+            }).single.field,
+            'health_steps_last_sync_at_utc',
+            reason: '$bad',
+          );
+        }
+      },
+    );
+
+    group('tasks: the optional reminder is all or nothing (BS-111)', () {
+      const reminder = {
+        'reminder_at_utc': '2026-03-09T07:30:15.250Z',
+        'reminder_local_date': '2026-03-09',
+        'reminder_timezone_id': 'Europe/Berlin',
+      };
+
+      test('open and completed tasks may carry one, or none', () {
+        final tasks = recordsOf(backup, BackupTable.tasks);
+        expect(
+          tasks.where((t) => t['reminder_at_utc'] != null),
+          hasLength(2),
+          reason: 'one open and one completed task with a reminder',
+        );
+        expect(tasks.where((t) => t['reminder_at_utc'] == null), isNotEmpty);
+        expect(
+          tasks.where(
+            (t) =>
+                t['reminder_at_utc'] != null && t['completed_at_utc'] == null,
+          ),
+          isNotEmpty,
+        );
+        expect(
+          tasks.where(
+            (t) =>
+                t['reminder_at_utc'] != null && t['completed_at_utc'] != null,
+          ),
+          isNotEmpty,
+        );
+      });
+
+      test('all three fields set, or all three null', () {
+        final open = first(BackupTable.tasks)
+          ..['completed_at_utc'] = null
+          ..['completed_local_date'] = null
+          ..['timezone_id'] = null
+          ..['completion_eligibility'] = null;
+        expect(
+          () => roundTrips[BackupTable.tasks]!({...open, ...reminder}),
+          returnsNormally,
+        );
+        expect(
+          () => roundTrips[BackupTable.tasks]!({
+            ...open,
+            'reminder_at_utc': null,
+            'reminder_local_date': null,
+            'reminder_timezone_id': null,
+          }),
+          returnsNormally,
+        );
+      });
+
+      for (final keep in <Set<String>>[
+        {'reminder_at_utc'},
+        {'reminder_local_date'},
+        {'reminder_timezone_id'},
+        {'reminder_at_utc', 'reminder_local_date'},
+        {'reminder_at_utc', 'reminder_timezone_id'},
+        {'reminder_local_date', 'reminder_timezone_id'},
+      ]) {
+        test('only ${keep.join(' and ')} is rejected', () {
+          final record = {
+            ...first(BackupTable.tasks),
+            for (final key in reminder.keys)
+              key: keep.contains(key) ? reminder[key] : null,
+          };
+          final problems = problemsOf(
+            () => roundTrips[BackupTable.tasks]!(record),
+          );
+          expect(problems.single.field, 'reminder_at_utc');
+          expect(
+            problems.single.message,
+            'Erinnerungsangaben unvollständig (Zeitpunkt, Datum und '
+            'Zeitzone gehören zusammen)',
+          );
+        });
+      }
+
+      test('each field is checked on its own', () {
+        for (final (field, bad) in <(String, Object?)>[
+          ('reminder_at_utc', '2026-03-09T07:30:15Z'),
+          ('reminder_at_utc', 5),
+          ('reminder_local_date', '2026-02-30'),
+          ('reminder_local_date', '09.03.2026'),
+          ('reminder_timezone_id', 'Mars/Olympus'),
+          ('reminder_timezone_id', ''),
+        ]) {
+          final problems = problemsOf(
+            () => roundTrips[BackupTable.tasks]!({
+              ...first(BackupTable.tasks),
+              ...reminder,
+              field: bad,
+            }),
+          );
+          expect(problems.map((p) => p.field), [field], reason: '$field $bad');
+        }
+      });
+
+      test('the values survive the typed record unchanged', () {
+        final dto = TaskDto.fromJson({
+          ...first(BackupTable.tasks),
+          ...reminder,
+        });
+        expect(dto.reminderAtUtc, DateTime.utc(2026, 3, 9, 7, 30, 15, 250));
+        expect(dto.reminderAtUtc!.isUtc, isTrue);
+        expect(dto.reminderLocalDate, LocalDate(2026, 3, 9));
+        expect(dto.reminderTimezoneId, 'Europe/Berlin');
+      });
+    });
+
+    group('workout_day_marks: rest and skipped days (BS-99)', () {
+      test('the rich fixture has both kinds and two zones', () {
+        final marks = recordsOf(backup, BackupTable.workoutDayMarks);
+        expect(marks.map((m) => m['kind']).toSet(), {'rest', 'skipped'});
+        expect(marks.map((m) => m['timezone_id']).toSet(), {
+          'Europe/Berlin',
+          'Europe/London',
+        });
+      });
+
+      test('kind is rest or skipped', () {
+        for (final kind in ['rest', 'skipped']) {
+          expect(
+            () => roundTrips[BackupTable.workoutDayMarks]!(
+              first(BackupTable.workoutDayMarks)..['kind'] = kind,
+            ),
+            returnsNormally,
+          );
+        }
+        for (final kind in [
+          'sick',
+          'Rest',
+          'SKIPPED',
+          '',
+          'rest ',
+          'workout',
+        ]) {
+          final problems = problemsOfSet(BackupTable.workoutDayMarks, {
+            'kind': kind,
+          });
+          expect(problems.single.field, 'kind', reason: '"$kind"');
+          expect(problems.single.message, 'Art enthält einen unbekannten Wert');
+        }
+        expect(
+          problemsOfSet(BackupTable.workoutDayMarks, {
+            'kind': null,
+          }).single.message,
+          'Art darf nicht leer sein',
+        );
+      });
+
+      test('date, zone, id and version are checked', () {
+        for (final (field, bad) in <(String, Object?)>[
+          ('local_date', '2026-02-30'),
+          ('local_date', '2026-3-5'),
+          ('local_date', null),
+          ('timezone_id', 'Mars/Olympus'),
+          ('timezone_id', null),
+          ('id', 'not-a-uuid'),
+          ('id', null),
+          ('row_version', 0),
+          ('created_at_utc', '2026-03-05T21:00:00Z'),
+          ('updated_at_utc', null),
+        ]) {
+          expect(
+            problemsOfSet(BackupTable.workoutDayMarks, {
+              field: bad,
+            }).map((p) => p.field),
+            [field],
+            reason: '$field $bad',
+          );
+        }
+      });
+
+      test('the typed record keeps its values and writes them back', () {
+        final json = first(BackupTable.workoutDayMarks);
+        final dto = WorkoutDayMarkDto.fromJson(json);
+        expect(dto.kind, json['kind']);
+        expect(dto.localDate.toIso(), json['local_date']);
+        expect(dto.timezoneId, json['timezone_id']);
+        expect(dto.rowVersion, json['row_version']);
+        expect(dto.toJson(), json);
+        expect(dto.toCompanion().kind, Value<String>(dto.kind));
+      });
+    });
+  });
+
   group('DTO details', () {
     test('goal keys are goal types or habit:<uuid>', () {
       for (final key in const [
@@ -475,6 +769,7 @@ void main() {
         'focus_minutes',
         'task_completion',
         'workout_weekly',
+        'workout_daily',
       ]) {
         expect(DailyGoalSnapshotDto.isKnownGoalKey(key), isTrue, reason: key);
       }

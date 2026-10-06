@@ -1,8 +1,12 @@
-/// Persisted enum-like keys of schema version 1.
+/// Persisted enum-like keys of schema version 2.
 ///
 /// These strings are a stable contract: they are stored in SQLite (CHECK
 /// constraints), exported in backups and validated on import. Domain enums
 /// map to and from these keys; tests assert both sides stay in sync.
+///
+/// Version 2 (BS-98) added `workout_daily` to [goalTypes], [stepSources] and
+/// [workoutDayMarkKinds]. Nothing was removed or renamed: version 1 keys keep
+/// their meaning.
 abstract final class SchemaKeys {
   static const List<String> modules = [
     'body',
@@ -49,6 +53,11 @@ abstract final class SchemaKeys {
     'xp': 'gamification',
   };
 
+  /// Goal types of `goal_versions.goal_type` and of the goal keys of day
+  /// snapshots. `workout_weekly` is a weekly display value, `workout_daily`
+  /// (schema 2, BS-99) the optional daily goal "Workout heute"; both belong to
+  /// the module `focus`. The daily goal is off unless a version switches it on
+  /// (no row means off).
   static const List<String> goalTypes = [
     'water',
     'steps',
@@ -56,7 +65,17 @@ abstract final class SchemaKeys {
     'focus_minutes',
     'task_completion',
     'workout_weekly',
+    'workout_daily',
   ];
+
+  /// Where the total of a step day comes from (`step_days.source`, schema 2,
+  /// BS-97): typed in by hand, or taken from the health app of the phone.
+  /// Rows written before schema 2 are `manual`.
+  static const List<String> stepSources = ['manual', 'health'];
+
+  /// What a day without a workout counts as (`workout_day_marks.kind`, schema
+  /// 2, BS-99): a deliberate rest day or a skipped workout.
+  static const List<String> workoutDayMarkKinds = ['rest', 'skipped'];
 
   static const List<String> themeModes = ['system', 'light', 'dark', 'oled'];
 
@@ -124,6 +143,9 @@ abstract final class SchemaKeys {
     'habit',
   ];
 
+  /// Kinds of `reminder_rules.kind`. A task reminder (schema 2, BS-111) is not
+  /// a rule: it is a property of the task (`tasks.reminder_at_utc`), planned
+  /// by the reminder engine under the semantic key prefix `task`.
   static const List<String> reminderKinds = ['water', 'habit', 'focus_end'];
 
   static const List<String> notificationStates = ['scheduled', 'cancelled'];

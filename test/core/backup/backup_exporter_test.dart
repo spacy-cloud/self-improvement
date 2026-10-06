@@ -89,7 +89,7 @@ void main() {
   group('content of a rich database', () {
     setUp(useRichDatabase);
 
-    test('root fields and the sixteen sections in file order', () async {
+    test('root fields and the seventeen sections in file order', () async {
       final backup = await exporter.export();
       final root = decode(backup);
       expect(root.keys.toList(), [
@@ -101,7 +101,7 @@ void main() {
       ]);
       expect(root['format'], 'levelup_life_backup');
       expect(root['format'], AppConfig.backupFormat);
-      expect(root['schemaVersion'], 1);
+      expect(root['schemaVersion'], 2);
       expect(root['exportedAtUtc'], '2026-10-03T08:00:00.000Z');
       expect(root['appVersion'], AppConfig.appVersion);
       expect(sectionsOf(backup).keys.toList(), [
@@ -117,6 +117,7 @@ void main() {
         'meal_entries',
         'focus_sessions',
         'workout_entries',
+        'workout_day_marks',
         'tasks',
         'habits',
         'habit_checks',
@@ -191,6 +192,7 @@ void main() {
         'meal_entries': 3,
         'focus_sessions': 3,
         'workout_entries': 2,
+        'workout_day_marks': 2,
         'tasks': 3,
         'habits': 2,
         'habit_checks': 3,
@@ -217,6 +219,7 @@ void main() {
         uuid(0x134), // meal
         uuid(0x304), // focus session
         uuid(0x143), // workout
+        uuid(0x163), // rest day mark
         uuid(0x154), // task
         Ids.habitDeleted,
         uuid(0x504), // habit check

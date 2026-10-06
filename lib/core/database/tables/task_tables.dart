@@ -47,6 +47,34 @@ class Tasks extends Table with AuditColumns, SoftDeleteColumn {
   /// Frozen per completion; null while open.
   BoolColumn get completionEligibility => boolean().nullable()();
 
+  /// The optional reminder of the task (schema 2, BS-111): the instant the
+  /// notification is due (UTC). The three `reminder_*` columns are all set or
+  /// all null; they follow the time model of the facts (UTC instant plus the
+  /// local date and zone frozen when the reminder was set) and are independent
+  /// of the completion fields. The reminder engine plans the notification
+  /// under the semantic key `task:<id>`; a reminder is not a row of
+  /// `reminder_rules`.
+  IntColumn get reminderAtUtc =>
+      integer().map(const UtcMillisConverter()).nullable()();
+
+  /// Local business date of [reminderAtUtc] in [reminderTimezoneId], frozen
+  /// when the reminder was set.
+  TextColumn get reminderLocalDate => text()
+      .map(const LocalDateConverter())
+      .nullable()
+      .check(
+        const CustomExpression<bool>(
+          '(reminder_at_utc IS NULL) = (reminder_local_date IS NULL)',
+        ),
+      )();
+
+  /// IANA zone in effect when the reminder was set.
+  TextColumn get reminderTimezoneId => text().nullable().check(
+    const CustomExpression<bool>(
+      '(reminder_at_utc IS NULL) = (reminder_timezone_id IS NULL)',
+    ),
+  )();
+
   @override
   Set<Column> get primaryKey => {id};
 

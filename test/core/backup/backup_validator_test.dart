@@ -182,6 +182,19 @@ final List<FieldRule> fieldRules = [
     invalid: ['Mars/Base', '', 5],
     valid: ['UTC', 'Europe/Berlin', null],
   ),
+  boolRule(BackupTable.appSettings, 'health_steps_sync_enabled'),
+  FieldRule(
+    BackupTable.appSettings,
+    'health_steps_last_sync_at_utc',
+    invalid: [
+      '2026-03-02T06:30:15Z',
+      '2026-03-02T06:30:15.250+01:00',
+      '2026-03-02',
+      '2026-02-30T06:30:15.250Z',
+      1772433015250,
+    ],
+    valid: [...goodInstants, null],
+  ),
   ...auditRules(BackupTable.appSettings),
   // --- module_status_history -----------------------------------------------
   idRule(BackupTable.moduleStatusHistory),
@@ -237,6 +250,7 @@ final List<FieldRule> fieldRules = [
       'focus_minutes',
       'task_completion',
       'workout_weekly',
+      'workout_daily',
     ],
     // A different type does not collide with another version's date.
     index: 4,
@@ -272,7 +286,7 @@ final List<FieldRule> fieldRules = [
     BackupTable.dailyGoalSnapshots,
     'goal_key',
     invalid: ['sleep', 'habit:', 'habit:not-a-uuid', 'Water', '', 5, null],
-    valid: ['steps', 'workout_weekly', 'habit:${uuid(0x999)}'],
+    valid: ['steps', 'workout_weekly', 'workout_daily', 'habit:${uuid(0x999)}'],
     index: 1,
   ),
   FieldRule(
@@ -340,6 +354,12 @@ final List<FieldRule> fieldRules = [
     'xp_goal_target_steps',
     invalid: [0, -1, '8000', 8000.5],
     valid: [1, 8000, 100000],
+  ),
+  FieldRule(
+    BackupTable.stepDays,
+    'source',
+    invalid: ['watch', 'Manual', 'HEALTH', '', ' health', 1, true, null],
+    valid: ['manual', 'health'],
   ),
   zoneRule(BackupTable.stepDays),
   ...auditRules(BackupTable.stepDays),
@@ -527,6 +547,22 @@ final List<FieldRule> fieldRules = [
   noteRule(BackupTable.workoutEntries),
   boolRule(BackupTable.workoutEntries, 'gamification_eligible'),
   ...auditRules(BackupTable.workoutEntries),
+  // --- workout_day_marks (index 0 rests on 2026-03-05, 1 skips 2026-03-06) -
+  idRule(BackupTable.workoutDayMarks),
+  FieldRule(
+    BackupTable.workoutDayMarks,
+    'local_date',
+    invalid: badDates,
+    valid: ['2024-02-29', '2026-12-31', '2026-03-09'],
+  ),
+  FieldRule(
+    BackupTable.workoutDayMarks,
+    'kind',
+    invalid: ['sick', 'Rest', 'SKIPPED', '', 'rest ', 1, null],
+    valid: ['rest', 'skipped'],
+  ),
+  zoneRule(BackupTable.workoutDayMarks),
+  ...auditRules(BackupTable.workoutDayMarks),
   // --- tasks (index 0 is an open task) -------------------------------------
   idRule(BackupTable.tasks),
   FieldRule(
@@ -605,6 +641,25 @@ final List<FieldRule> fieldRules = [
     invalid: [1, 'true', 0],
     valid: [true, false],
     index: 1,
+  ),
+  // Index 0 is an open task with a reminder (all three fields set).
+  FieldRule(
+    BackupTable.tasks,
+    'reminder_at_utc',
+    invalid: badInstants,
+    valid: goodInstants,
+  ),
+  FieldRule(
+    BackupTable.tasks,
+    'reminder_local_date',
+    invalid: ['2026-02-30', '03.10.2026', 20261003, '2026-2-3'],
+    valid: ['2024-02-29', '2026-12-31'],
+  ),
+  FieldRule(
+    BackupTable.tasks,
+    'reminder_timezone_id',
+    invalid: ['Mars/Base', '', 'europe/berlin', 5],
+    valid: goodZones,
   ),
   ...auditRules(BackupTable.tasks),
   // --- habits (their id is checked in its own test: checks refer to it) ----
@@ -999,6 +1054,59 @@ void main() {
       }
     });
 
+    group('task reminder triple (BS-111)', () {
+      const triple = [
+        'reminder_at_utc',
+        'reminder_local_date',
+        'reminder_timezone_id',
+      ];
+      const values = <String, Object?>{
+        'reminder_at_utc': '2026-03-09T07:30:15.250Z',
+        'reminder_local_date': '2026-03-09',
+        'reminder_timezone_id': 'Europe/Berlin',
+      };
+
+      test('all three set or all three null is valid, open or completed', () {
+        for (final index in [0, 1]) {
+          expectValid(
+            validate((r) => record(r, BackupTable.tasks, index).addAll(values)),
+          );
+          expectValid(
+            validate(
+              (r) => record(
+                r,
+                BackupTable.tasks,
+                index,
+              ).addAll({for (final key in triple) key: null}),
+            ),
+          );
+        }
+      });
+
+      for (final only in triple) {
+        test('only $only set is rejected', () {
+          final result = validate(
+            (r) => record(r, BackupTable.tasks).addAll({
+              for (final key in triple) key: key == only ? values[key] : null,
+            }),
+          );
+          expectSingle(result, 'tasks[0]', 'reminder_at_utc');
+        });
+      }
+
+      for (final missing in triple) {
+        test('only $missing missing is rejected', () {
+          final result = validate(
+            (r) => record(r, BackupTable.tasks).addAll({
+              for (final key in triple)
+                key: key == missing ? null : values[key],
+            }),
+          );
+          expectSingle(result, 'tasks[0]', 'reminder_at_utc');
+        });
+      }
+    });
+
     group('focus session', () {
       // Index 0 completed, 1 discarded, 2 paused (the only open one).
       test('the fixture has the expected sessions', () {
@@ -1207,6 +1315,7 @@ void main() {
         BackupTable.mealEntries,
         BackupTable.focusSessions,
         BackupTable.workoutEntries,
+        BackupTable.workoutDayMarks,
         BackupTable.tasks,
         BackupTable.habits,
         BackupTable.habitChecks,
@@ -1334,6 +1443,30 @@ void main() {
       );
     });
 
+    test('a day has at most one mark (BS-99)', () {
+      final root = fresh();
+      expect(record(root, BackupTable.workoutDayMarks)['kind'], 'rest');
+      expect(record(root, BackupTable.workoutDayMarks, 1)['kind'], 'skipped');
+      final date = record(root, BackupTable.workoutDayMarks)['local_date'];
+      final result = validate(
+        (r) => record(r, BackupTable.workoutDayMarks, 1)['local_date'] = date,
+      );
+      expectSingle(
+        result,
+        'workout_day_marks[1]',
+        'local_date',
+        messageContains: 'mehrere Markierungen',
+      );
+      // The same kind on another day is fine.
+      expectValid(
+        validate(
+          (r) => record(r, BackupTable.workoutDayMarks, 1)
+            ..['kind'] = 'rest'
+            ..['local_date'] = '2026-03-09',
+        ),
+      );
+    });
+
     test('a habit has one check per day', () {
       final first = record(fresh(), BackupTable.habitChecks);
       expectSingle(
@@ -1456,14 +1589,16 @@ void main() {
       expectSingle(validate((r) => r.remove('format')), 'root', 'format');
     });
 
-    test('only schema version 1 is accepted', () {
+    test('only the schema versions 1 and 2 are accepted', () {
       for (final version in <Object?>[
         0,
-        2,
+        3,
         -1,
         100,
         '1',
+        '2',
         1.0,
+        2.0,
         1.5,
         null,
         true,
@@ -1480,7 +1615,7 @@ void main() {
         'root',
         'schemaVersion',
       );
-      expectValid(validate((r) => r['schemaVersion'] = 1));
+      expectValid(validate((r) => r['schemaVersion'] = 2));
     });
 
     test('exportedAtUtc must be a valid instant', () {
@@ -1849,7 +1984,7 @@ void main() {
   group('AT31: files that must be rejected without touching data', () {
     test('wrong schema version', () {
       expectSingle(
-        validate((r) => r['schemaVersion'] = 2),
+        validate((r) => r['schemaVersion'] = 3),
         'root',
         'schemaVersion',
       );
