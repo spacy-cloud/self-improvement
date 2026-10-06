@@ -85,11 +85,12 @@ Weitere Tickets:
 
 ## 1a. v0.2.0 (Epic [BS-98](https://spacy-cloud.atlassian.net/browse/BS-98))
 
-Zeilen nach Ticketschlüssel sortiert. Der Datenvertrag hat kein eigenes Ticket: Das Epic BS-98 trägt die Features von v0.2.0. Testzahlen sind die Ergebnisse von `flutter test <Pfad>` auf dem Host am genannten Stand.
+Zeilen nach Ticketschlüssel sortiert (Basis der Branches: PR 4, danach `dev`). Der Datenvertrag hat kein eigenes Ticket: Das Epic BS-98 trägt die Features von v0.2.0. Testzahlen sind die Ergebnisse von `flutter test <Pfad>` auf dem Host am genannten Stand (Zahl der Tests in der Datei, davon die neuen); die Gesamtzahl aller Tests und die PR-Nummern trägt die Koordination nach dem Lauf in [test-report.md](test-report.md) ein. Abnahme-IDs stehen nur, wo ein vorhandener Abnahmefall die Änderung berührt.
 
 | Jira | AP | Prio | Arbeitspaket | Anforderungen | Abnahmetests | Screen / Route | Implementierung | Tests | PR / Commit | Jira-Status |
 |---|---|---|---|---|---|---|---|---|---|---|
 | [BS-98](https://spacy-cloud.atlassian.net/browse/BS-98) | – | – | Datenvertrag v2: Schema 2 und Backup 2 für BS-99 (Ruhetag, Überspringen), BS-97 (Quelle der Schritte) und BS-111 (Erinnerung je Aufgabe) | C03, C05, C09 | AT02, AT30, AT31 | Daten und Sicherung (Anzeige der Format-Version der Datei) | `lib/core/database/` (Schema 2, `schema_migrations.dart`), `lib/core/backup/` (Format 2, `backup_upgrade.dart`), D-015, D-016, [backup-format.md](backup-format.md) | `test/core/database` (Migrationsschritte einzeln und im Ganzen, Struktur wie ein frisch angelegtes Schema 2), `test/core/backup` (Aufwärtsschritt, Import der Sicherungen von v0.1.0, Export 2, Rundlauf), `test/core/bootstrap/app_start_on_v1_database_test.dart`, Fixtures in `test/fixtures/v1/`. Evidenz: Host-Test, das Update einer echten Datenbank auf einem Gerät ist nicht geprüft | Branch `feature/BS-98-data-contract-v2` (Basis: PR 4) | Epic, Features offen |
+| [BS-108](https://spacy-cloud.atlassian.net/browse/BS-108) | – | Medium | Home: Die Aktion der Schritte-Karte bleibt nach dem ersten Eintrag des Tages („Schritte aktualisieren“); die Gewichtskarte bleibt unverändert | W03, C04, Q02 | AT15, AT26, AT33, AT34 | Home, Karte `steps`; `/steps/new` (Entwurf `4123:316`) | `lib/features/body/steps/presentation/steps_dashboard_card.dart`; D-023 | `test/features/body/steps/steps_screens_test.dart` (41, davon 13 neu), `test/features/dashboard/presentation/home_real_modules_test.dart` (18, davon 9 neu); [screens/body-weight-steps.md](screens/body-weight-steps.md) | PR gegen `dev` (Basis PR 4), Branch `feature/BS-108-steps-card-action` | In Arbeit |
 
 ## 2. Anforderungen C01–Q03
 
