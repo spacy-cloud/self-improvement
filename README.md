@@ -11,9 +11,9 @@ Der App-Name steht noch nicht fest und wird im Code als eine Konstante geführt 
 | Bereich | Stand |
 |---|---|
 | Design | Freigegeben (V1, 02.10.2026) |
-| Umsetzung | Android V1 im Jira-Epic [BS-51](https://spacy-cloud.atlassian.net/browse/BS-51): Kern und alle fünf Module sind umgesetzt, der Integrationsbranch `feature/BS-51-android-v1` liegt als Pull Request (PR 2) gegen `main`. Stand der Anforderungen und Abnahmefälle mit Nachweisen und offenen Punkten: [docs/requirements-matrix.md](docs/requirements-matrix.md) |
-| Tests | 6485 Host-Tests lokal bestanden (Stand 2026-10-04, Code-Stand `93ee81f`), Analyse und Format ohne Befund; das CI-Ergebnis steht im Pull Request. Auf einem Gerät (Samsung S25) wurde bisher nur der Start eines Debug-Builds gesehen, kein Funktionstest: Details und Grenzen in [docs/test-report.md](docs/test-report.md) |
-| Abnahme | Nicht abgenommen: Die Abnahme entscheidet das Team, kein Umsetzungsticket der V1 (BS-52 bis BS-92) ist auf „Erledigt“ |
+| Umsetzung | Android V1 im Jira-Epic [BS-51](https://spacy-cloud.atlassian.net/browse/BS-51): Kern und alle fünf Module sind umgesetzt, der Integrationsbranch `feature/BS-51-android-v1` ist am 2026-10-04 mit PR 2 (Merge-Commit `dfe560b`) in `main` gemergt, `dev` steht auf demselben Stand. Stand der Anforderungen und Abnahmefälle mit Nachweisen und offenen Punkten: [docs/requirements-matrix.md](docs/requirements-matrix.md) |
+| Tests | 6485 Host-Tests lokal bestanden (Stand 2026-10-04, Code-Stand `93ee81f`), Analyse und Format ohne Befund; das CI-Ergebnis steht im Pull Request (PR 2: alle sechs Prüfungen grün). Auf einem Gerät (Samsung S25) wurden bisher der Start eines Debug-Builds und, laut Rückmeldung, eine Benachrichtigung gesehen, kein Funktionstest: Details und Grenzen in [docs/test-report.md](docs/test-report.md) |
+| Abnahme | Das Projektteam hat die 35 Umsetzungs- und Befundtickets aus PR 2 (BS-53 bis BS-74, BS-77, BS-81 bis BS-92) am 2026-10-04 in Jira auf „Erledigt“ gesetzt; das ist die Entscheidung des Teams, keine unabhängige Prüfung. Nicht erledigt sind BS-47 (App-Name), BS-49 (Figma-Version), BS-51 (Epic), BS-52, BS-75, BS-76 und BS-78 bis BS-80; Geräteprüfungen und iOS bleiben offen |
 | iOS | Projektdateien vorbereitet; ein CI-Workflow (`ios-ipa.yml`, BS-95) baut eine unsignierte IPA, die der Tester per SideStore selbst signiert. Laut Screenshot startet die App auf einem iPhone (Willkommensseite des Onboardings), sonst ist nichts getestet |
 
 ## Dokumentation
@@ -74,7 +74,7 @@ APK-Dateien und Build-Ordner werden nicht eingecheckt. Eine Store-Veröffentlich
 
 ## Mitwirken
 
-- `main` ist der stabile Stand; Änderungen über Feature-Branches und Pull Requests.
+- `main` ist die Produktion, `dev` die Entwicklung; Änderungen laufen über Feature-Branches und Pull Requests gegen `dev` (Entscheidung D-013 in [docs/implementation-decisions.md](docs/implementation-decisions.md)).
 - Branch-Namen mit Jira-Key, z. B. `feature/BS-61-weight-flow` (BS-61 ist das Gewichtsticket).
 - Code, Kommentare und Commit-Messages auf Englisch; Oberfläche und Dokumentation auf Deutsch.
 - Keine echten Gesundheitsdaten, Zugangsdaten oder privaten Notizen in Code, Tests oder Dokumentation; Testdaten sind synthetisch.

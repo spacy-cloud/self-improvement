@@ -113,13 +113,13 @@ Definiert in `.github/workflows/ci.yml`; Ergebnis der Läufe: siehe Pull Request
 
 Das CI-Ergebnis des Emulator-Jobs steht im Pull Request. Die Abläufe löschen die App-Datenbank des Zielgeräts und starten deshalb nur mit der ausdrücklichen Bestätigung `--dart-define=WIPE_APP_DATA=yes` (die CI übergibt sie); sie gehören nicht auf ein Handy mit echten Daten.
 
-Zusätzlich lief die App am 2026-10-03 manuell auf einem Android-Emulator des Projektteams (Debug-Build aus Android Studio): Start mit dem Produktionspfad und Anzeige des Dashboards mit leeren Zuständen. Am 2026-10-04 lief ein Debug-Build (arm64) auf einem Samsung S25 und zeigte die Willkommensseite des Onboardings; der erste Versuch mit einer älteren Installation war beim Start abgestürzt, die Ursache ist nicht untersucht (kein Log vorhanden). Weitere manuelle Prüfungen (Rundgang in [erste-tests.md](erste-tests.md)) sind offen.
+Zusätzlich lief die App am 2026-10-03 manuell auf einem Android-Emulator des Projektteams (Debug-Build aus Android Studio): Start mit dem Produktionspfad und Anzeige des Dashboards mit leeren Zuständen. Am 2026-10-04 lief ein Debug-Build (arm64) auf einem Samsung S25 und zeigte die Willkommensseite des Onboardings; ein erster Startversuch auf dem S25 war abgestürzt, die Ursache ist nicht untersucht (kein Log vorhanden). Laut Rückmeldung funktioniert auf dem S25 auch eine Benachrichtigung; es wurde nicht genauer getestet, ein Protokoll gibt es nicht. Weitere manuelle Prüfungen (Rundgang in [erste-tests.md](erste-tests.md)) sind offen.
 
 ## 6. Nicht getestet
 
 Nicht auf einem Gerät oder mit der echten Plattform geprüft (in der automatischen Entwicklungsumgebung gibt es kein Android-SDK; Emulator-Läufe stammen aus der CI und aus dem einen manuellen Lauf des Projektteams); die jeweils vorhandenen Stellvertreter stehen in der [Anforderungsmatrix](requirements-matrix.md), Abschnitt 6:
 
-- **Echtes Gerät:** Gefühl bei Start und Scrollen, Leistung, Speicher. Gesehen wurde nur der Start eines Debug-Builds auf einem Samsung S25 (2026-10-04, Willkommensseite des Onboardings).
+- **Echtes Gerät:** Gefühl bei Start und Scrollen, Leistung, Speicher. Gesehen wurden der Start eines Debug-Builds auf einem Samsung S25 (2026-10-04, Willkommensseite des Onboardings) und, laut Rückmeldung, eine Benachrichtigung (nicht genauer getestet).
 - **TalkBack** und die Lesereihenfolge; echte Systemschrift bis 200 % und echte Tastatur (im Host nur simuliert).
 - **Zustellung von Erinnerungen:** Systemdialog ab Android 13, endgültige Ablehnung, ungenau getaktete Alarme, Verhalten nach Force-Stop, Antippen einer echten Benachrichtigung.
 - **Teilen-Menü und Dateiauswahl** für Export und Import, einschließlich der Kopie der Auswahl im Cache und sehr großer Dateien.
