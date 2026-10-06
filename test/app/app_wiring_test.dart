@@ -8,7 +8,11 @@ import 'package:self_improvement/app/router/app_router.dart';
 import 'package:self_improvement/core/backup/backup_providers.dart';
 import 'package:self_improvement/core/backup/reset_service.dart';
 import 'package:self_improvement/core/bootstrap/device_time_zone.dart';
+import 'package:self_improvement/core/database/app_database.dart';
 import 'package:self_improvement/core/design/design.dart';
+import 'package:self_improvement/core/health/application/health_providers.dart';
+import 'package:self_improvement/core/health/domain/health_steps_source.dart';
+import 'package:self_improvement/core/health/platform/fake_health_steps_source.dart';
 import 'package:self_improvement/core/notifications/application/reminder_providers.dart';
 import 'package:self_improvement/core/providers/core_providers.dart';
 import 'package:self_improvement/core/testing/data_harness.dart';
@@ -300,6 +304,83 @@ void main() {
           () => app.container.read(backupListenerProvider).onDataReplaced(),
         );
         expect(app.container.read(dataEpochProvider), 1);
+      },
+    );
+  });
+
+  group('steps from the health interface (BS-97)', () {
+    Future<void> switchOn(DataHarness harness) => harness.database
+        .update(harness.database.appSettings)
+        .write(const AppSettingsCompanion(healthStepsSyncEnabled: Value(true)));
+
+    testWidgets(
+      'the start of the app runs one comparison, a return to the foreground '
+      'another one (BS-97)',
+      (tester) async {
+        final source = FakeHealthStepsSource();
+        final app = await pumpFullApp(
+          tester,
+          overrides: [healthStepsSourceProvider.overrideWithValue(source)],
+          seed: switchOn,
+        );
+        await app.settle();
+        expect(source.totalCalls, hasLength(7), reason: 'start');
+
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.inactive,
+        );
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+        await app.settle();
+        expect(
+          source.totalCalls,
+          hasLength(7),
+          reason: 'leaving reads nothing',
+        );
+
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await app.settle();
+        expect(source.totalCalls, hasLength(14), reason: 'resume');
+      },
+    );
+
+    testWidgets(
+      'with the switch off the interface is not asked at start or resume '
+      '(BS-97)',
+      (tester) async {
+        final source = FakeHealthStepsSource();
+        final app = await pumpFullApp(
+          tester,
+          overrides: [healthStepsSourceProvider.overrideWithValue(source)],
+        );
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await app.settle();
+        expect(source.availabilityCalls, 0);
+        expect(source.accessCalls, 0);
+        expect(source.totalCalls, isEmpty);
+      },
+    );
+
+    testWidgets(
+      'a switch that is on without access (imported backup) reads nothing '
+      'and shows no dialog (BS-97, AT30)',
+      (tester) async {
+        final source = FakeHealthStepsSource(accessValue: HealthAccess.denied);
+        final app = await pumpFullApp(
+          tester,
+          overrides: [healthStepsSourceProvider.overrideWithValue(source)],
+          seed: switchOn,
+        );
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await app.settle();
+        expect(source.accessCalls, greaterThanOrEqualTo(1));
+        expect(source.totalCalls, isEmpty);
+        expect(source.requestAccessCalls, 0);
       },
     );
   });
