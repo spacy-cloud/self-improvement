@@ -722,6 +722,7 @@ class _ValueFieldState extends State<_ValueField> {
                 ),
                 onChanged: widget.onChanged,
                 onSubmitted: widget.onSubmitted,
+                onTapOutside: dismissKeyboardOnTapOutside,
               ),
             ),
           ),

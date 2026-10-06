@@ -157,6 +157,7 @@ class NumberDisplayField extends StatelessWidget {
                     ),
                     onChanged: onChanged,
                     onSubmitted: onSubmitted,
+                    onTapOutside: dismissKeyboardOnTapOutside,
                   ),
                 ),
               ),
@@ -321,6 +322,8 @@ class FormSheetFrame extends StatelessWidget {
                 ),
                 Flexible(
                   child: SingleChildScrollView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
                     child: child,
                   ),
