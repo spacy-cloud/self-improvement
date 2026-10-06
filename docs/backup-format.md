@@ -401,7 +401,7 @@ Was eine Datei der Version 1 in Version-2-Begriffen bedeutet, trägt der Schritt
 
 Alle übrigen Werte der Datei bleiben unverändert (IDs, Zeitstempel, Zeilenversionen, eingefrorene Eignungs-Flags). XP und Streak stehen nicht in der Datei und werden nach dem Import wie bisher aus den Fakten neu berechnet.
 
-**Eine Datei der Version 1 mit Inhalt der Version 2 wird abgelehnt.** Enthält sie den Abschnitt `workout_day_marks` („Unbekannter Abschnitt“) oder eines der neuen Felder in einem Datensatz („Unbekanntes Zusatzfeld“, mit Abschnitt und Position, ohne den Wert), ist die Datei beschädigt oder zusammengesetzt und wird wie jede andere Datei mit unbekannten Feldern abgelehnt; es wird nichts halb geglaubt. Andere Probleme einer Version-1-Datei haben dieselben Meldungen und Positionen wie vor Version 2. Umgekehrt braucht eine Datei der Version 2 alle neuen Felder und den neuen Abschnitt (Pflicht). Weder `schemaVersion` `0`, `3` oder höher noch eine Zahl mit Nachkommaanteil, ein Text oder ein fehlender Wert werden gelesen (Meldung „unterstützt: Version 1 und 2“).
+**Eine Datei der Version 1 mit Inhalt der Version 2 wird abgelehnt.** Enthält sie den Abschnitt `workout_day_marks` („Unbekannter Abschnitt“) oder eines der neuen Felder in einem Datensatz („Unbekanntes Zusatzfeld“, mit Abschnitt und Position, ohne den Wert), ist die Datei beschädigt oder zusammengesetzt und wird wie jede andere Datei mit unbekannten Feldern abgelehnt; es wird nichts halb geglaubt. Andere Probleme einer Version-1-Datei haben dieselben Meldungen und Positionen wie vor Version 2. Umgekehrt braucht eine Datei der Version 2 alle neuen Felder und den neuen Abschnitt (Pflicht). Jede andere `schemaVersion` wird abgelehnt: `0`, `3` und höher, eine Zahl mit Nachkommaanteil, ein Text oder ein fehlender Wert (Meldung „unterstützt: Version 1 und 2“).
 
 Das Gegenstück in der Datenbank sind die benannten, einzeln getesteten Migrationsschritte von Schema 1 auf 2 (`lib/core/database/schema_migrations.dart`, Entscheidung D-016). Beide Wege führen zum selben Ergebnis: Eine mit dem neuen Code geöffnete v0.1.0-Datenbank und eine importierte v0.1.0-Sicherung derselben Daten exportieren byte-identische Dateien der Version 2 (`test/core/backup/backup_v1_import_test.dart`).
 
@@ -415,7 +415,7 @@ Das Gegenstück in der Datenbank sind die benannten, einzeln getesteten Migratio
 
 ## Fixtures aus Version 1
 
-Die Tests der Aufwärtsschritte lesen Dateien, die der **unveränderte Code von v0.1.0** geschrieben hat (`lib/`, `test/` und `pubspec.*` des Commits `26243de` sind identisch mit dem Tag `v0.1.0`), nicht von Hand gebaute Beispiele. Sie liegen in `test/fixtures/v1/`, nur mit synthetischen Daten („Mia Muster“, kein Personenbezug):
+Die Tests der Aufwärtsschritte lesen Dateien, die der **unveränderte Code von v0.1.0** geschrieben hat (der Stand, auf dem die Fixtures entstanden, Commit `26243de` des iOS-Branches, hat dieselben `lib/`, `test/` und `pubspec.*` wie der Tag `v0.1.0`), nicht von Hand gebaute Beispiele. Sie liegen in `test/fixtures/v1/`, nur mit synthetischen Daten („Mia Muster“, kein Personenbezug):
 
 | Datei | Inhalt | Entstehung |
 |---|---|---|
