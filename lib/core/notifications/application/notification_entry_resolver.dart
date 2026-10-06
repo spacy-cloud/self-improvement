@@ -26,6 +26,8 @@ class NotificationEntryResolver {
   ///
   /// - unknown or malformed payload, or the module is switched off: `/`
   /// - the habit does not exist, was deleted or is archived: `/habits`
+  /// - the task does not exist or was deleted: the task list
+  ///   `/habits?tab=tasks` (a completed task still exists: its form opens)
   /// - otherwise the route of the payload.
   Future<String> resolve(String? payload) async {
     final target = NotificationRouteResolver.parse(payload);
@@ -54,6 +56,13 @@ class NotificationEntryResolver {
         // before, the habit still exists for the user.
         final archivedFrom = row.archivedFromDate;
         return archivedFrom == null || _clock.today() < archivedFrom;
+      case NotificationEntityKind.task:
+        final row =
+            await (_database.select(_database.tasks)..where(
+                  (t) => t.id.equals(entity.id) & t.deletedAtUtc.isNull(),
+                ))
+                .getSingleOrNull();
+        return row != null;
     }
   }
 }

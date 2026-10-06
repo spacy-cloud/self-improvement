@@ -38,13 +38,6 @@ class RemindersSection extends ConsumerStatefulWidget {
 
 class _RemindersSectionState extends ConsumerState<RemindersSection>
     with WidgetsBindingObserver {
-  /// Said when the system settings cannot be opened from the app. Neutral on
-  /// purpose: the path to the app's settings differs between the platforms.
-  static const String _settingsNotOpenedText =
-      'Die Systemeinstellungen konnten nicht geöffnet werden. Öffne die '
-      'Einstellungen deines Geräts, wähle diese App und erlaube '
-      'Benachrichtigungen.';
-
   /// A change is running (switch, permission dialog or slot): the controls
   /// are disabled so a second tap cannot start a second change.
   bool _busy = false;
@@ -134,7 +127,7 @@ class _RemindersSectionState extends ConsumerState<RemindersSection>
         } else {
           final opened = await actions.openSystemSettings();
           if (!opened) {
-            feedback.showInfo(_settingsNotOpenedText);
+            feedback.showInfo(ReminderLabels.settingsNotOpened);
           }
         }
     }
@@ -218,7 +211,7 @@ class _RemindersSectionState extends ConsumerState<RemindersSection>
     final feedback = ref.read(feedbackServiceProvider);
     final opened = await ref.read(reminderActionsProvider).openSystemSettings();
     if (!opened) {
-      feedback.showInfo(_settingsNotOpenedText);
+      feedback.showInfo(ReminderLabels.settingsNotOpened);
     }
   }
 
@@ -238,7 +231,8 @@ class _RemindersSectionState extends ConsumerState<RemindersSection>
 
   /// Opens the screen a planned reminder points to. The target is resolved
   /// like a tap on the notification: an unknown payload or a switched off
-  /// module opens the dashboard, a missing habit the habit list.
+  /// module opens the dashboard, a missing habit the habit list, a missing
+  /// task the task list.
   Future<void> _open(ScheduledReminder reminder) async {
     final router = GoRouter.of(context);
     final route = await ref
@@ -321,7 +315,8 @@ class _RemindersSectionState extends ConsumerState<RemindersSection>
         else if (status.state == ReminderState.active)
           const _Note(
             'Aktuell ist nichts geplant. Wähle Uhrzeiten für die '
-            'Trink-Erinnerung oder lege eine Gewohnheit mit Uhrzeit an.',
+            'Trink-Erinnerung, lege eine Gewohnheit mit Uhrzeit an oder gib '
+            'einer Aufgabe eine Erinnerung.',
           ),
         _Notices(status: status),
       ],
@@ -577,8 +572,9 @@ class _OtherKindsNote extends StatelessWidget {
   Widget build(BuildContext context) {
     return const _Note(
       'Weitere Erinnerungen: Gewohnheiten erinnern zu der Uhrzeit, die du bei '
-      'der Gewohnheit einstellst. Am Ende einer laufenden Fokus-Sitzung gibt '
-      'es einmalig einen Hinweis.',
+      'der Gewohnheit einstellst, Aufgaben zu dem Zeitpunkt, den du bei der '
+      'Aufgabe wählst. Am Ende einer laufenden Fokus-Sitzung gibt es einmalig '
+      'einen Hinweis.',
     );
   }
 }
@@ -692,12 +688,14 @@ class _PlannedBlock extends ConsumerWidget {
   static IconData _iconOf(ReminderKind kind) => switch (kind) {
     ReminderKind.water => AppIcon.water.data,
     ReminderKind.habit => AppIcon.habit.data,
+    ReminderKind.task => AppIcon.task.data,
     ReminderKind.focusEnd => AppIcon.focus.data,
   };
 
   static AppAccent _accentOf(ReminderKind kind) => switch (kind) {
     ReminderKind.water => AppAccent.water,
     ReminderKind.habit => AppAccent.habits,
+    ReminderKind.task => AppAccent.habits,
     ReminderKind.focusEnd => AppAccent.focus,
   };
 }
