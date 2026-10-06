@@ -1,8 +1,11 @@
 import 'package:flutter/widgets.dart';
 import 'package:self_improvement/app/router/app_routes.dart';
 import 'package:self_improvement/core/design/design.dart';
+import 'package:self_improvement/core/goals/domain/goal_type.dart';
+import 'package:self_improvement/core/goals/domain/goal_version.dart';
 import 'package:self_improvement/core/modules/module.dart';
 import 'package:self_improvement/core/modules/module_id.dart';
+import 'package:self_improvement/shared/local_date.dart';
 
 /// The fixed plus menu: exactly these eight entries exist, in this order
 /// (Figma `2037:18`). A module contributes the ones it owns through its
@@ -39,7 +42,58 @@ final class PlusEntry {
   final String route;
   final AppAccent accent;
   final ModuleId module;
+
+  /// The goal of "Meine Ziele" this entry belongs to, or `null` for an entry
+  /// without one ([plusGoalFor]).
+  GoalType? get goal => plusGoalFor(id);
 }
+
+/// The goal of "Meine Ziele" an entry belongs to, or `null` when it has none.
+///
+/// Weight ("Gewicht erfassen"), workout ("Workouts"), water, steps, focus and
+/// task ("Aufgabe erledigen") each have a goal there. A habit carries its own
+/// daily goal inside the habit and a meal has no goal at all, so those two
+/// stay in the menu whenever their module is on (BS-117).
+GoalType? plusGoalFor(String id) => switch (id) {
+  'weight' => GoalType.weightEntry,
+  'workout' => GoalType.workoutWeekly,
+  'water' => GoalType.water,
+  'steps' => GoalType.steps,
+  'focus' => GoalType.focusMinutes,
+  'task' => GoalType.taskCompletion,
+  _ => null,
+};
+
+/// The goals the user has switched on, in the state the user saved last.
+///
+/// A goal counts as set when its switch is on, whatever its value ("Täglich",
+/// "1× pro Woche", 10.000 steps); "Aus" means it is not set. A goal without a
+/// stored version counts as on (its planning default), exactly as in the goal
+/// editor. The target weight of the profile is no goal here: "Gewicht
+/// erfassen" decides about the weight entry.
+///
+/// Goal edits are saved for TOMORROW (the day ring and the streak keep today's
+/// goals), and the editor starts from that state. The menu follows the saved
+/// state at once: a goal switched off a moment ago is gone the next time the
+/// menu is looked at, and a goal switched on shows its entry again, although
+/// today's ring still counts the old state.
+Set<GoalType> activeGoalTypes(Iterable<GoalVersion> versions, LocalDate today) {
+  final from = nextEffectiveDate(today);
+  return <GoalType>{
+    for (final type in GoalType.values)
+      if (effectiveGoalOrDefault(versions, type, from).enabled) type,
+  };
+}
+
+/// The entries of [entries] whose goal is in [activeGoals], plus the entries
+/// without a goal (habit, meal). The order stays as it is.
+List<PlusEntry> filterPlusEntriesByGoals(
+  Iterable<PlusEntry> entries,
+  Set<GoalType> activeGoals,
+) => <PlusEntry>[
+  for (final entry in entries)
+    if (entry.goal == null || activeGoals.contains(entry.goal)) entry,
+];
 
 /// Icon tile accent per entry (Figma: weight and task use the brand tint).
 AppAccent plusAccentFor(String id) => switch (id) {
@@ -61,6 +115,9 @@ AppAccent plusAccentFor(String id) => switch (id) {
 /// - ordered by the actions' `plusOrder` (ties keep the fixed menu order),
 /// - with an open focus session "Fokus" becomes "Fokus fortsetzen" and leads
 ///   to the running session instead of starting a second one.
+///
+/// The goals of the user are a second filter that comes afterwards
+/// ([filterPlusEntriesByGoals]): this function knows modules only.
 List<PlusEntry> resolvePlusEntries({
   required Iterable<SelfImprovementModule> modules,
   required Map<ModuleId, bool> statuses,
