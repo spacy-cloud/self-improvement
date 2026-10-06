@@ -86,6 +86,18 @@ class AppSettings extends Table with AuditColumns {
 
   TextColumn get lastKnownTimezone => text().nullable()();
 
+  /// Desired state of "Schritte aus Health übernehmen" (schema 2, BS-97).
+  /// Off by default; like [notificationsEnabled] it is a wish only, the real
+  /// permission is always read from the device.
+  BoolColumn get healthStepsSyncEnabled =>
+      boolean().withDefault(const Constant(false))();
+
+  /// When the last comparison with the health app finished (UTC, schema 2,
+  /// BS-97); null until one ran. Informational: it is no cursor of the
+  /// comparison.
+  IntColumn get healthStepsLastSyncAtUtc =>
+      integer().map(const UtcMillisConverter()).nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -141,6 +153,9 @@ class DashboardCards extends Table {
 }
 
 /// Versioned goal values. Changes take effect from a given local date.
+///
+/// `workout_daily` (schema 2, BS-99) is off unless a version switches it on:
+/// the absence of a row means off, unlike the other goal types.
 @DataClassName('GoalVersionRow')
 @TableIndex(
   name: 'goal_versions_type_date',
