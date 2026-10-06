@@ -52,4 +52,8 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // Steps from Health Connect (BS-97, D-031): the stable client library (Apache 2.0) and the
+    // coroutines that its suspend functions need in HealthStepsPlugin. Read only, steps only.
+    implementation("androidx.health.connect:connect-client:1.1.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
 }

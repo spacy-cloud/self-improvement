@@ -15,4 +15,6 @@
     <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
         <item name="android:windowBackground">?android:colorBackground</item>
     </style>
+    <!-- The explanation of the Health Connect permission (HealthRationaleActivity): a dialog. -->
+    <style name="HealthRationaleTheme" parent="@android:style/Theme.DeviceDefault.Dialog" />
 </resources>
