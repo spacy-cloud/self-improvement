@@ -1,6 +1,6 @@
 # Architektur
 
-Dieses Dokument beschreibt die tatsächlich umgesetzte Architektur und die Verträge, auf die sich alle Features stützen. Es wird mit den Arbeitspaketen fortgeschrieben (Jira-Epic [BS-51](https://spacy-cloud.atlassian.net/browse/BS-51)); beschrieben ist der Code-Stand `577a853` (Ende der Kette der Pull Requests des Releases v0.2.0; der Stand von V1 war `c0ce096`). Fachliche Regeln stehen in der Funktions- und technischen Spezifikation des Teams; hier stehen Struktur, Verträge und Muster.
+Dieses Dokument beschreibt die tatsächlich umgesetzte Architektur und die Verträge, auf die sich alle Features stützen. Es wird mit den Arbeitspaketen fortgeschrieben (Jira-Epic [BS-51](https://spacy-cloud.atlassian.net/browse/BS-51)); beschrieben ist der Code-Stand `a90f3b1` (Ende der Kette der Pull Requests des Releases v0.2.0; der Stand von V1 war `c0ce096`). Fachliche Regeln stehen in der Funktions- und technischen Spezifikation des Teams; hier stehen Struktur, Verträge und Muster.
 
 ## 1. Schichten
 

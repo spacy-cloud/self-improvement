@@ -12,6 +12,7 @@ import 'package:self_improvement/core/backup/import_preview.dart';
 import 'package:self_improvement/core/backup/platform/backup_file_gateway.dart';
 import 'package:self_improvement/core/backup/reset_service.dart';
 import 'package:self_improvement/core/backup/testing/in_memory_backup_adapters.dart';
+import 'package:self_improvement/core/config/app_config.dart';
 import 'package:self_improvement/core/database/app_database.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/core/providers/core_providers.dart';
@@ -282,7 +283,7 @@ void main() {
         expect(find.text('sicherung-2026-09-07.json'), findsOneWidget);
         expect(find.text('Mia Muster'), findsOneWidget);
         expect(find.text('3. Okt. 2026, 10:00 Uhr'), findsOneWidget);
-        expect(find.text('1.0.0'), findsOneWidget);
+        expect(find.text(AppConfig.appVersion), findsOneWidget);
         expect(find.text('Version 2'), findsOneWidget);
         expect(find.text('25'), findsOneWidget, reason: 'entries in total');
         // Counts per area (the rich fixture holds these numbers).
@@ -562,7 +563,9 @@ void main() {
 
       expect(find.text('0.9.2'), findsOneWidget);
       expect(
-        find.textContaining('stammt aus App-Version 0.9.2 (diese App: 1.0.0)'),
+        find.textContaining(
+          'stammt aus App-Version 0.9.2 (diese App: ${AppConfig.appVersion})',
+        ),
         findsOneWidget,
       );
     });

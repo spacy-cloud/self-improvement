@@ -7,7 +7,7 @@ Dokumentiert tatsächlich ausgeführte Prüfungen mit Umgebung und Ergebnis. Nic
 | Aspekt | Wert |
 |---|---|
 | Datum der Läufe | 2026-10-07 |
-| Code-Stand | Commit `577a853` (Ende der Kette der Pull Requests des Releases v0.2.0: Branch `feature/BS-93-browse-days`, PR 25, enthält die Pull Requests 4 bis 21, 23 und 25); der Pull Request dieser Abnahme ändert nur Dateien unter `docs/` und `README.md` |
+| Code-Stand | Commit `a90f3b1` (Branch `feature/BS-98-version-0-2-0`, PR 28: das Ende der Kette der Pull Requests des Releases v0.2.0 bis PR 27 mit der Versionsanhebung auf 0.2.0+2; die Pull Requests 4 bis 21, 23, 25, 26 und 27); die Zahlen dieser Seite sind für diesen Stand gemessen, der Rest von PR 28 ändert nur Dateien unter `docs/` und `README.md` |
 | Toolchain | Flutter 3.47.6 (stable, Framework-Revision `5fc346839b`), Dart 3.13.5, DevTools 2.60.0 (Ausgabe von `flutter --version`; siehe [implementation-decisions.md](implementation-decisions.md)) |
 | Host | Linux x86_64, 16 Kerne |
 | Host-Tests | `flutter test` mit echter In-Memory-SQLite-Datenbank (Drift), fester Uhr `FakeClock` (Zone Europa/Berlin), Fakes für Erinnerungs-Plattform, Teilen und Dateiauswahl, Fake-Quelle und nachgebautem Kanal für Health, simulierter Textskala und Tastatur; nur synthetische Daten |
@@ -22,11 +22,11 @@ Befehl, ausgeführt nach `flutter pub get` und `dart run build_runner build`:
 flutter test --no-pub
 ```
 
-Ergebnis: **8493 Tests bestanden, 0 übersprungen, 0 fehlgeschlagen**, Exit-Code 0, Laufzeit laut Reporter 11:37 Minuten (Lauf mit `--reporter json`, damit sich die Tests je Verzeichnis zählen lassen; der Rechner führte dabei andere Testläufe parallel aus, ein Lauf auf ruhigem Rechner ist schneller). Sie verteilen sich auf 357 Testdateien; 4 weitere Dateien (`focus_visual_test.dart`, `workout_day_visual_test.dart`, `goals_today_visual_test.dart`, `habits_dashboard_card_visual_test.dart`) registrieren nur mit einer Umgebungsvariable Tests (Bilder für den Sichtvergleich mit Figma). Auf der Basis (`origin/dev` vor der Kette, Commit `0c2ae0f`) waren es 6485 Tests; die Kette brachte 2008 hinzu (bis PR 21 stand der Lauf bei 8226 Tests, mit PR 23 bei 8268, mit PR 25 bei 8493).
+Ergebnis: **8540 Tests bestanden, 0 übersprungen, 0 fehlgeschlagen**, Exit-Code 0, Laufzeit laut Reporter 3:48 Minuten (Lauf mit `--reporter json`, damit sich die Tests je Verzeichnis zählen lassen; der Rechner war dabei sonst ruhig). Sie verteilen sich auf 357 Testdateien; 4 weitere Dateien (`focus_visual_test.dart`, `workout_day_visual_test.dart`, `goals_today_visual_test.dart`, `habits_dashboard_card_visual_test.dart`) registrieren nur mit einer Umgebungsvariable Tests (Bilder für den Sichtvergleich mit Figma). Auf der Basis (`origin/dev` vor der Kette, Commit `0c2ae0f`) waren es 6485 Tests; die Kette brachte 2055 hinzu (bis PR 21 stand der Lauf bei 8226 Tests, mit PR 23 bei 8268, mit PR 25 bei 8493, mit PR 27 bei 8540).
 
 ### Ergebnis je Bereich
 
-Die Zeilen stammen aus dem Gesamtlauf und sind nach dem Verzeichnis der Testdatei aufgeteilt; jedes Verzeichnis lässt sich einzeln mit `flutter test --no-pub <Verzeichnis>` wiederholen. Die Summe der Zeilen ist 8493 und stimmt mit dem Gesamtlauf überein.
+Die Zeilen stammen aus dem Gesamtlauf und sind nach dem Verzeichnis der Testdatei aufgeteilt; jedes Verzeichnis lässt sich einzeln mit `flutter test --no-pub <Verzeichnis>` wiederholen. Die Summe der Zeilen ist 8540 und stimmt mit dem Gesamtlauf überein.
 
 | Bereich | Verzeichnis | Tests |
 |---|---|---:|
@@ -41,7 +41,7 @@ Die Zeilen stammen aus dem Gesamtlauf und sind nach dem Verzeichnis der Testdate
 | Design-System (Tokens, Kontrast, Komponenten, Golden-Tests) | `test/core/design` | 906 |
 | Feedback | `test/core/feedback` | 6 |
 | Ziele, Snapshots, XP-Projektion, Streak | `test/core/goals` | 235 |
-| Health-Schnittstelle (Tagesfenster, Vertrag, Kanal zu Health Connect, Adapterwahl) | `test/core/health` | 45 |
+| Health-Schnittstelle (Tagesfenster, Vertrag, Kanal zu Health Connect, Adapterwahl) | `test/core/health` | 50 |
 | Module | `test/core/modules` | 23 |
 | Benachrichtigungen (Planer, Service, Plattform-Adapter) | `test/core/notifications` | 540 |
 | Onboarding-Repository | `test/core/onboarding` | 11 |
@@ -49,9 +49,9 @@ Die Zeilen stammen aus dem Gesamtlauf und sind nach dem Verzeichnis der Testdate
 | Einstellungen | `test/core/settings` | 10 |
 | Zeit | `test/core/time` | 12 |
 | Analyse (Oberfläche) | `test/features/analysis` | 123 |
-| Körper (Gewicht und Schritte, mit Health) | `test/features/body` | 470 |
-| Dashboard (Home, Ziele heute, Tage blättern) | `test/features/dashboard` | 578 |
-| Fokus und Workouts | `test/features/focus` | 784 |
+| Körper (Gewicht und Schritte, mit Health) | `test/features/body` | 497 |
+| Dashboard (Home, Ziele heute, Tage blättern) | `test/features/dashboard` | 584 |
+| Fokus und Workouts | `test/features/focus` | 788 |
 | Gamification | `test/features/gamification` | 173 |
 | Modulverwaltung | `test/features/modules` | 42 |
 | Ernährung (Wasser und Mahlzeiten) | `test/features/nutrition` | 618 |
@@ -59,13 +59,13 @@ Die Zeilen stammen aus dem Gesamtlauf und sind nach dem Verzeichnis der Testdate
 | Profil und Ziele | `test/features/profile` | 248 |
 | Erinnerungen (Oberfläche) | `test/features/reminders` | 114 |
 | Einstellungen, Daten und Sicherung | `test/features/settings` | 251 |
-| Aufgaben und Gewohnheiten | `test/features/tasks` | 1128 |
+| Aufgaben und Gewohnheiten | `test/features/tasks` | 1129 |
 | Lasttest und Listen-Scroll | `test/performance` | 7 |
 | Plattform (Manifest-Prüfungen) | `test/platform` | 28 |
 | Gemeinsame Hilfen (Datum, Zahlen) | `test/shared` | 24 |
-| Test-Hilfen | `test/support` | 6 |
+| Test-Hilfen | `test/support` | 10 |
 | Demo-Backup-Erzeuger | `test/tool` | 1 |
-| **Summe** | | **8493** |
+| **Summe** | | **8540** |
 
 Die Tests je Abnahmefall (AT01 bis AT36) zählt `dart run tool/at_coverage.dart`; die Auswertung steht in Abschnitt 3 der Anforderungsmatrix.
 
@@ -73,7 +73,7 @@ Die Tests je Abnahmefall (AT01 bis AT36) zählt `dart run tool/at_coverage.dart`
 
 | Prüfung | Befehl | Ergebnis |
 |---|---|---|
-| Format | `dart format --output=none --set-exit-if-changed lib test tool integration_test` | „Formatted 927 files (0 changed)“, Exit-Code 0 (gezählt vor der Codegenerierung wie in der CI; lokal nach der Codegenerierung ist es eine erzeugte Datei mehr) |
+| Format | `dart format --output=none --set-exit-if-changed lib test tool integration_test` | „Formatted 929 files (0 changed)“, Exit-Code 0 (gezählt vor der Codegenerierung wie in der CI; lokal nach der Codegenerierung ist es eine erzeugte Datei mehr) |
 | Statische Analyse | `flutter analyze --no-pub` | „No issues found!“, Exit-Code 0 |
 | Native Anzeigenamen | `dart run tool/sync_app_name.dart --check` | „Native display names are in sync („App-Name“)“, Exit-Code 0 |
 
@@ -104,7 +104,7 @@ Planungsziele für ein **Gerät**, an denen die Werte gemessen werden müssen: S
 
 ## 5. CI-Jobs: was sie beweisen und was nicht
 
-Definiert in `.github/workflows/ci.yml` und `.github/workflows/ios-ipa.yml`; Ergebnis der Läufe: siehe Pull Request. Am 2026-10-07 waren die Prüfungen aller 20 Pull Requests der Kette (4 bis 21, 23 und 25) grün; jeder Branch der Kette enthält seine Vorgänger, die CI von PR 25 hat also den Stand `577a853` geprüft.
+Definiert in `.github/workflows/ci.yml` und `.github/workflows/ios-ipa.yml`; Ergebnis der Läufe: siehe Pull Request. Am 2026-10-07 waren die Prüfungen der Pull Requests 4 bis 21, 23, 25 und 26 grün; jeder Branch der Kette enthält seine Vorgänger, die CI von PR 25 hat also den Stand `577a853` geprüft und die von PR 26 den Stand `4fb9936` (dazu nur Dokumente). Die Prüfungen von PR 27 und PR 28 stehen in den Pull Requests.
 
 | Job | Was der Job ausführt | Beweist | Beweist nicht |
 |---|---|---|---|
@@ -119,7 +119,7 @@ Zusätzlich lief die App am 2026-10-03 manuell auf einem Android-Emulator des Pr
 
 ## 6. Release v0.2.0
 
-Das Release besteht aus einer Kette von Pull Requests gegen `dev`; jeder Branch enthält seine Vorgänger. Reihenfolge: PR 4 (iOS und Doku), 8 (Datenvertrag v2), 6 (BS-113), 5 (BS-108), 7 (BS-118), 9 (BS-117), 10 (BS-120), 11 (BS-112), 12 (BS-114), 15 (BS-121), 16 (BS-99), 17 (BS-111), 13, 14 und 18 (BS-97), 19 (BS-110), 20 und 21 (BS-100), 23 (Befunde des Prüfzyklus 1), 25 (BS-93), 26 (Abnahme der Dokumente); danach folgt die Versionsanhebung. Die Zuordnung von Pull Request, Ticket und Jira-Status steht in Abschnitt 1a der [Anforderungsmatrix](requirements-matrix.md). Alles in diesem Abschnitt sind Host-Tests und Prüfungen am Quelltext; **nichts davon ist auf einem Gerät geprüft** (Abschnitt 7).
+Das Release besteht aus einer Kette von Pull Requests gegen `dev`; jeder Branch enthält seine Vorgänger. Reihenfolge: PR 4 (iOS und Doku), 8 (Datenvertrag v2), 6 (BS-113), 5 (BS-108), 7 (BS-118), 9 (BS-117), 10 (BS-120), 11 (BS-112), 12 (BS-114), 15 (BS-121), 16 (BS-99), 17 (BS-111), 13, 14 und 18 (BS-97), 19 (BS-110), 20 und 21 (BS-100), 23 (Befunde des Prüfzyklus 1), 25 (BS-93), 26 (Abnahme der Dokumente), 27 (Befunde des Prüfzyklus 2), 28 (Versionsanhebung 0.2.0+2 und die nach Prüfzyklus 2 neu gesetzten Zahlen). Die Zuordnung von Pull Request, Ticket und Jira-Status steht in Abschnitt 1a der [Anforderungsmatrix](requirements-matrix.md). Alles in diesem Abschnitt sind Host-Tests und Prüfungen am Quelltext; **nichts davon ist auf einem Gerät geprüft** (Abschnitt 7).
 
 ### 6.1 Migration und Import älterer Sicherungen (Datenvertrag v2, BS-98)
 
@@ -178,15 +178,33 @@ Ein Prüfer, der den Code nicht geschrieben hat, prüft den Stand in Zyklen (hö
 
 Der Prüfer hat außerdem gemessen: 6485 Tests auf der Basis (wie berichtet); Format, Codegenerierung, App-Name-Abgleich und Analyse des Integrationsstands ohne Befund; die Testzahlen der Berichte stimmen (bis auf die Zählung in R1-07); die Kontrastzahlen der Doku (Ringgrün in Hell 2,66:1 und 2,30:1) stimmen; das Kotlin der Health-Anbindung übersetzt mit `-Werror` ohne Fehler. Von 66 Stichproben-Mutationen erkannten die Tests 65; eine überlebte (M53, „Android“ im Ressourcentext der Datenschutz-Erklärung) und ist seither vom Regeltest erfasst (R1-08).
 
+**Zyklus 2** prüfte das Kettenende `577a853` (die Pull Requests 4 bis 21, 23 und 25; 8493 Tests). Ergebnis: **kein P0, kein P1, sieben P2** (R2-01 bis R2-07); dazu kam R2-08 aus der Durchsicht des Koordinators.
+
+| Schwere | Befund | Behandlung |
+|---|---|---|
+| P2 | R2-01: „Zugriff erlauben“ startete nach einem Import mit eingeschaltetem Schalter den Systemdialog ohne den Erklärtext (BS-97) | behoben in PR 27: alle drei Stellen zeigen zuerst den Erklärtext |
+| P2 | R2-02: Die Fokus-Karte eines vergangenen Tages nahm das Ziel aus den Zielversionen statt aus dem Snapshot des Tages (BS-93) | behoben in PR 27 |
+| P2 | R2-03: Zeitzonenwechsel nach Westen auf dem gezeigten Tag löste in der Karte „Aufgaben und Gewohnheiten“ eine Assertion aus (nur Debug und Tests; BS-93, BS-110) | behoben in PR 27 (Ladezustand im Anbieter, richtige Meldung) |
+| P2 | R2-04: Der Abbau vor dem Schließen der Datenbank (R1-04) verhinderte nicht jedes Hängen von `flutter test` | gemindert in PR 27: Zeitlimit von 20 s im Abbau von `createTestHarness`, ein Hänger endet als Fehler; die Ursache des offenen Abonnements ist nicht eingegrenzt, Tests, die die Datenbank selbst schließen, haben das Limit nicht |
+| P2 | R2-05: Der Löschtext der Schritte versprach das Wiedereintragen durch Health für jeden Tag (BS-97) | behoben in PR 27: nur für heute und die sechs Tage davor und nur, wenn Health liefert |
+| P2 | R2-06: Veraltete Aussagen über spätere Pull Requests in Screen-Dokumenten und einem Testnamen | erledigt in PR 26 und PR 27 |
+| P2 | R2-07: Texte öffentlicher Pull Requests verwiesen auf einen Bericht außerhalb des Repositorys; der Titel von PR 4 nannte einen Vornamen | erledigt: Texte und Titel umgeschrieben |
+| P2 | R2-08 (Koordinator): Der Vorname des Projektinhabers stand in 13 Zeilen von 6 Dokumenten | behoben in PR 27 (Rolle statt Vorname); die Pull-Request-Texte sind angepasst |
+
+Der Prüfer hat außerdem gemessen: Format, Codegenerierung, App-Name-Abgleich und Analyse von `577a853` ohne Befund und 8493 Tests grün; die Zahlen der Pull-Request-Texte stimmen; 44 eigene Mutationsproben (BS-93 19, BS-110 9, BS-100 6, BS-97 Oberfläche 7, Behebungen aus PR 23 3), alle lassen Tests scheitern bis auf einen gleichwertigen Mutanten; jeder Branch der Kette enthält seinen Vorgänger und alle Pull Requests waren ohne Konflikt mergebar; Schema und Backup sind seit PR 8 unverändert. Die Behebungen aus Zyklus 1 wirken (R1-01, R1-02, R1-03, R1-05, R1-06, R1-08, R1-12 und R1-14), R1-04 und R1-10 nur teilweise (R2-04 und R2-07), R1-09 im Baum (der Name bleibt im Verlauf von Git).
+
+Die Korrekturen aus Zyklus 2 (PR 27) hat kein unabhängiger Prüfer noch einmal gelesen; ein Zyklus 3 ist nicht gelaufen. Sie sind durch neue Tests und je eine Mutationsprobe belegt (die Zahlen stehen im Text von PR 27).
+
 ### 6.4 Zufallsreihenfolge und Zeitzonen
 
-Der Prüfer hat die Suite des Integrationsstands `e99de3a` (Zyklus 1) in zufälliger Reihenfolge und unter fremden Zeitzonen laufen lassen:
+Der Prüfer hat die Suite des Integrationsstands `e99de3a` (Zyklus 1) und des Kettenendes `577a853` (Zyklus 2) in zufälliger Reihenfolge und unter fremden Zeitzonen laufen lassen:
 
 - **Zufällige Reihenfolge** (`--test-randomize-ordering-seed`): Seed 20261007 über die ganze Suite: 7771 grün, 3 rot (die beiden Fehler von R1-01 und das Zeitlimit von `load_test.dart`, R1-13, schon in der Basis); Seed 777 grün und Seed 4242 mit denselben zwei Fehlern, beide ohne `test/performance`.
 - **Zeitzonen:** die ganze Suite unter `TZ=Pacific/Kiritimati` (UTC+14) und unter `TZ=America/St_Johns` (UTC−3:30 mit Sommerzeit), je 7741 Tests grün (ohne `test/performance`). Die CI läuft in UTC, der Rechner des Prüfers in Berlin: Eine Abhängigkeit von der Zeitzone des Rechners wurde nicht gefunden.
 - **Nach der Behebung von R1-01** (PR 23): `test/app/form_keyboard_test.dart` (72) und `test/core/design/components/keyboard_dismiss_test.dart` (14), zusammen 86 Tests, sind in der Standardreihenfolge und mit den Seeds 21, 23, 26, 777, 4242 und 20261007 grün; jede der 60 Varianten (Android und iOS) läuft auch einzeln mit `--plain-name`.
+- **Zyklus 2** (Stand `577a853`): Zufallsreihenfolge mit Seed 20261007 und Seed 424242, je 8486 Tests grün (ohne `test/performance`); Zeitzonen `Pacific/Kiritimati` und `America/St_Johns`, je 8486 Tests grün (ohne `test/performance`).
 
-Die Läufe des Prüfers gelten für den Stand von Zyklus 1, nicht für das Kettenende `577a853`; der Gesamtlauf in Abschnitt 2 lief in der Standardreihenfolge und in der Zeitzone des Rechners (Berlin).
+Die Läufe des Prüfers gelten für die Stände der Zyklen (`e99de3a`, `577a853`), nicht für das Kettenende `a90f3b1`; der Gesamtlauf in Abschnitt 2 lief in der Standardreihenfolge und in der Zeitzone des Rechners (Berlin).
 
 ## 7. Nicht getestet
 

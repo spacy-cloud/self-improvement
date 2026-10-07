@@ -123,7 +123,7 @@ Hinweis zum Testen: Aufrufe von `FocusRestorer.restore()` im Widget-Test laufen 
 
 ## 8. Offene Punkte und Integration
 
-Erledigt (Stand `577a853`): `FocusModule` ist in `bundledModules` registriert (Routen, Karten, Plus-Einträge); `initialize` läuft über den Modul-Lebenszyklus beim Start und bei Reaktivierung; die Dashboard-Karte hält `focusCountdownProvider` am Leben, sodass der Übergang in die Bestätigung auch ohne Fokusbildschirm stattfindet; die Modulverwaltung führt bei `MustResolveFirst` zu `/focus/session` (`focusDeactivationResolveRoute`); `feedbackServiceProvider` ist mit der Snackbar überschrieben; "Wochenziel ändern" öffnet den Zieleditor `/goals`; das Plus-Menü springt bei offener Sitzung direkt zu `/focus/session` (Abschnitt 5).
+Erledigt (Stand `a90f3b1`): `FocusModule` ist in `bundledModules` registriert (Routen, Karten, Plus-Einträge); `initialize` läuft über den Modul-Lebenszyklus beim Start und bei Reaktivierung; die Dashboard-Karte hält `focusCountdownProvider` am Leben, sodass der Übergang in die Bestätigung auch ohne Fokusbildschirm stattfindet; die Modulverwaltung führt bei `MustResolveFirst` zu `/focus/session` (`focusDeactivationResolveRoute`); `feedbackServiceProvider` ist mit der Snackbar überschrieben; "Wochenziel ändern" öffnet den Zieleditor `/goals`; das Plus-Menü springt bei offener Sitzung direkt zu `/focus/session` (Abschnitt 5).
 
 Offen:
 

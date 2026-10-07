@@ -19,14 +19,14 @@ abstract final class AppConfig {
 
   /// Application version (without build number); kept in sync with
   /// `pubspec.yaml` by `test/core/config/app_config_test.dart`.
-  static const String appVersion = '1.0.0';
+  static const String appVersion = '0.2.0';
 
   /// Build number (the part of the `pubspec.yaml` version after the `+`); kept
   /// in sync with `pubspec.yaml` by `test/core/config/app_config_test.dart`.
   /// The settings row and the page "Über die App" show [appVersion] and this
   /// number, so they can only differ from the release by the one version in
   /// `pubspec.yaml`.
-  static const int buildNumber = 1;
+  static const int buildNumber = 2;
 
   /// Stable technical backup format marker (unchanged since V1). Not a
   /// visible brand name.

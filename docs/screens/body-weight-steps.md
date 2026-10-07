@@ -204,7 +204,7 @@ Schritte können aus der Health-App des Telefons übernommen werden (Android: He
 
 ## 6. Tests
 
-Befehle: `flutter test test/features/body` (470 Tests, grün), davon `flutter test test/features/body/steps` (310) für die Schritte (92 vor BS-97, 218 neue in den sieben Health-Dateien unten) und 160 für das Gewicht (`application`, `data`, `domain`, `presentation`). Echte In-Memory-Datenbank, feste Uhr 2026-10-03 Europe/Berlin, nur synthetische Gewichte und Schritte. `dart run tool/at_coverage.dart` ordnet die Tests den Abnahmefällen AT05 bis AT09, AT12, AT15, AT23 bis AT28, AT30, AT33 bis AT35 zu.
+Befehle: `flutter test test/features/body` (497 Tests, grün), davon `flutter test test/features/body/steps` (337) für die Schritte (92 vor BS-97, 218 neue in den sieben Health-Dateien unten) und 160 für das Gewicht (`application`, `data`, `domain`, `presentation`). Echte In-Memory-Datenbank, feste Uhr 2026-10-03 Europe/Berlin, nur synthetische Gewichte und Schritte. `dart run tool/at_coverage.dart` ordnet die Tests den Abnahmefällen AT05 bis AT09, AT12, AT15, AT23 bis AT28, AT30, AT33 bis AT35 zu.
 
 | Datei in `test/features/body/` | Tests | Schwerpunkt (Abnahme-IDs) |
 |---|---:|---|
