@@ -186,13 +186,14 @@ Auf einem Gerät sind bisher der Start eines Debug-Builds und, laut Rückmeldung
 - **Zeitzonen- und Sommerzeitwechsel des Betriebssystems** (AT25).
 - **Android-Systemzurück** und der ausdrückliche Opt-out aus dem vorhersagenden Zurück (BS-85) auf Android 16.
 - **Release-Build:** Die CI baut ihn (mit Debug-Signatur), gestartet wurde er nirgends.
-- **iOS:** nicht gebaut, nicht getestet.
+- **iOS:** unsignierte IPA aus der CI (BS-95); Tyler hat sie am 2026-10-04 auf einem iPhone 15 Pro getestet ([BS-96](https://spacy-cloud.atlassian.net/browse/BS-96), Rückmeldung des Testers, von uns nicht nachvollzogen): keine blockierenden Fehler, Folgetickets [BS-112](https://spacy-cloud.atlassian.net/browse/BS-112), [BS-113](https://spacy-cloud.atlassian.net/browse/BS-113) und [BS-114](https://spacy-cloud.atlassian.net/browse/BS-114). VoiceOver, „Größerer Text“ und die Aussage zu Notch und Dynamic Island sind offen.
 
 Offene Arbeit und Entscheidungen:
 
 - [BS-78](https://spacy-cloud.atlassian.net/browse/BS-78) (Geräteabnahme Responsive, Tastatur, TalkBack, Themes): Der automatisierte Teil (Routen-Durchlauf) ist umgesetzt; TalkBack, echte Systemschrift und Tastatur und der Bildvergleich mit Figma auf einem Gerät sind offen.
 - [BS-76](https://spacy-cloud.atlassian.net/browse/BS-76): Der Emulator-Job führt den Smoke-Test und sieben Abläufe mit dem echten Produktionsstart aus (Beschreibung in [integration-tests.md](integration-tests.md)); nicht automatisiert sind Systemdialoge, Teilen-Menü, Dateiauswahl, TalkBack und die Benachrichtigungszustellung, und es gibt keinen Lauf auf einem echten Handy.
 - [BS-79](https://spacy-cloud.atlassian.net/browse/BS-79): Prüfzyklus 1 bis 3 sind gelaufen (Zyklus 3 fand kein P0 und kein P1; seine Korrekturen sind nicht erneut unabhängig geprüft, Einzelheiten in Jira, BS-79); die Gesamtprüfung ist nicht abgeschlossen; BS-81 bis BS-92 sind korrigiert, aber nicht abgenommen.
+- [BS-112](https://spacy-cloud.atlassian.net/browse/BS-112) (iOS-Tastatur), [BS-113](https://spacy-cloud.atlassian.net/browse/BS-113) (plattformneutrale Texte im Erinnerungs-Ablauf) und [BS-114](https://spacy-cloud.atlassian.net/browse/BS-114) (Querformat, Entscheidung) sind die offenen Folgetickets aus Tylers iOS-Test ([BS-96](https://spacy-cloud.atlassian.net/browse/BS-96)).
 - Formale Punkte: App-Name ([BS-47](https://spacy-cloud.atlassian.net/browse/BS-47)) und benannte Figma-Version ([BS-49](https://spacy-cloud.atlassian.net/browse/BS-49)).
 - Bekannte, dokumentierte und nicht behobene Eigenschaften der Oberfläche: [known-limitations.md](known-limitations.md).
 - Abnahme: Die 35 Umsetzungs- und Befundtickets aus PR 2 stehen seit dem 2026-10-04 in Jira auf „Erledigt“ (Entscheidung des Teams); `umgesetzt` in dieser Matrix beschreibt Code und grüne Host-Tests, nicht die Entscheidung des Teams und keine Geräteprüfung.
