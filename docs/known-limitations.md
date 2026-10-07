@@ -68,7 +68,7 @@ Wird laufend ergänzt. Offene Anforderungen stehen zusätzlich in [requirements-
 
 ## Fachliche Grenzen von V1
 
-- Keine Cloud, Konten, Telemetrie oder Laufzeit-Netzwerkfunktion; keine eigene Schrittzählung (die App liest keine Sensoren), keine Anbindung an HealthKit (iOS) oder an Samsung Health selbst, keine KI-Analyse, keine MCP-Schnittstelle. Schritte kommen von Hand oder, nur auf Android und erst seit v0.2.0, lesend aus Health Connect (Abschnitt „Schritte aus Health (BS-97)“). Die übrigen Punkte sind für später vorgemerkt und nicht als Platzhalter sichtbar.
+- Keine Cloud, Konten, Telemetrie oder Laufzeit-Netzwerkfunktion; keine eigene Schrittzählung (die App liest keine Sensoren), keine KI-Analyse, keine MCP-Schnittstelle. Eine Health-Anbindung gibt es nur für Schritte und nur unter Android (Health Connect, nur lesend, erst seit v0.2.0, der Schalter „Schritte aus Health übernehmen“ ist standardmäßig aus; Abschnitt „Schritte aus Health (BS-97)“); iOS (HealthKit), Samsung Health selbst und andere Datenarten gibt es nicht, Schritte kommen sonst von Hand. Die übrigen Punkte sind für später vorgemerkt und nicht als Platzhalter sichtbar.
 - SQLite wird nicht zusätzlich verschlüsselt; Schutz durch Gerätesandbox und Gerätesperre.
 - Lokale Erinnerungen nutzen ungenaue Android-Alarme ohne Exact-Alarm-Recht und ohne Foreground-Service. Zustellung kann vom Betriebssystem verzögert werden; nach einem Force-Stop kann die Zustellung bis zum nächsten App-Start ausbleiben.
 - Die Uhr des Geräts ist ohne Server nicht manipulationssicher; XP und Streak sind ein lokaler Motivationsmechanismus.
