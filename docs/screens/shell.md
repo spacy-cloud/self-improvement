@@ -65,6 +65,8 @@ Regeln: In jedem Modul stehen statische Pfade vor parametrischen (`/weight/new` 
 
 Die vier Tabs liegen in einer `StatefulShellRoute` (indexierter Stapel): jeder Tab behält Navigation und Scroll-Zustand. Alle anderen Seiten liegen auf der Wurzel-Navigation und werden mit `push` über den aktuellen Tab gelegt (keine Navigationsleiste, wie in den Figma-Frames). Erneutes Tippen auf den gewählten Tab setzt ihn auf seine Wurzel zurück.
 
+**Seitliche Gesten (BS-93).** Die Shell selbst kennt keine seitliche Geste: Die Tabs wechseln nur über die Leiste. Die seitliche Wischgeste gehört allein dem Tab Home (er blättert durch die Tage, [dashboard-gamification.md](dashboard-gamification.md) Abschnitt 13) und liegt über der Seite des Tabs, nicht über der Shell; sie konkurriert mit dem senkrechten Scrollen nach der Regel „die Achse, in der der Finger zuerst die tote Zone verlässt, gewinnt“ und blättert nur auf Home und nur, wenn es einen anderen Tag zum Ansehen gibt. Seiten über Home (auch „Karten anpassen“) tragen die Geste nicht. Die Systemgeste Zurück vom Bildschirmrand (Android) und die Zurück-Wischgeste vom Rand einer Seite (iPhone) nimmt das Betriebssystem, bevor die App die Berührung sieht; der gewählte Tag gehört nicht zur Navigation und wird beim Wechsel des Tabs nicht angefasst.
+
 ## 4. Guards
 
 | Fall | Verhalten |
@@ -153,6 +155,7 @@ Die Navigations-Einstiege des Shells (Plus-Menü, Benachrichtigungen) öffnen Se
 - Navigation: ausgewählter Tab wird angesagt; Plus heißt "Eintrag hinzufügen" bzw. "Schließen".
 - Modulverwaltung: Schalter melden ihren Zustand, jede Zeile nennt Position und Zustand ("Position 1 von 8, Modul ausgeschaltet"), jeder Button hat eine deutsche Beschriftung mit Kartenname, Zustand nie nur über Farbe (Text "Aus", "Ausgeblendet", "Modul ausgeschaltet").
 - Tippflächen mindestens 48 x 48; Schrift bis 200 % ohne Abschneiden (Inhalt scrollt, Kopfzeilen stapeln); Tastatur-Inset wird beachtet; keine Aktion nur per Geste.
+- Home blättert durch die Tage (BS-93): Die Wischgeste hat in den zwei Pfeilen (48 x 48, mit dem Zieltag in der Beschriftung) ihre Alternative; die eigenen Wischgesten eines Screenreaders erreichen die Seite nicht. Das Datum ist eine Überschrift und eine Live-Region (Ansage mit Abstand zu heute), „Zurück zu heute“ legt den Fokus auf das Datum.
 - Ausrichtung: Die App sperrt keine Ausrichtung (WCAG 1.3.4) und ist nicht für das Querformat gestaltet (BS-114, D-019). Der Host-Test `test/app/landscape_smoke_test.dart` zeigt, dass jede Seite bei 852 x 393 ohne Überlauf mit Tippflächen und Beschriftungen steht; die Grenzen (Tastatur ab etwa 250 px) stehen in [known-limitations.md](../known-limitations.md).
 - Systemleisten: Edge-to-Edge; die Navigationsleiste hält den unteren Systemabstand selbst frei, das Plus-Menü schwebt direkt darüber, die Systemnavigation übernimmt Farbe und Symbolhelligkeit des Themes.
 - Snackbar: Live-Region; Fehler bleiben bis zur Aktion, wenn es "Erneut" gibt.

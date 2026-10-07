@@ -36,6 +36,16 @@ Wird laufend ergänzt. Offene Anforderungen stehen zusätzlich in [requirements-
 - **Wortbruch.** Bei 320 px Breite und 200 % Schrift bricht ein langes Wort im Hinweis des Formulars („Benachrichtigungen“, „Systemeinstellungen“) mitten im Wort um, wie im Banner der Einstellungen.
 - **Ungenau getaktet wie alle Erinnerungen.** Das System kann die Benachrichtigung um einige Minuten verzögern; das Formular sagt „ungefähr zu dieser Zeit“.
 
+## Home blättert durch die Tage (BS-93, D-029)
+
+- **Nur Host-Tests, nichts auf einem Gerät.** Die echte Wischgeste auf dem Glas, die Ansage und der Fokus mit TalkBack und VoiceOver (insbesondere dass der Fokus nach „Zurück zu heute“ am Datum liegt), die Systemgeste Zurück vom Rand (Android) und die Systemschrift sind auf keinem Gerät gesehen (Samsung S25 und iPhone stehen aus); die Checkliste steht in [screens/dashboard-gamification.md](screens/dashboard-gamification.md) Abschnitt 13.10. Die CI wurde nicht abgewartet.
+- **Höchstens sieben Tage zurück und nie vor dem Profilstart.** Ältere Tage zeigen weiter die Verläufe der Module und die Analyse. Der gewählte Tag wird nicht gespeichert; ein neuer Kalendertag (Mitternacht, Rückkehr in die App, Wechsel der Zeitzone über die Tagesgrenze) setzt Home auf heute. Reist man nach Westen, liegt „heute“ einen Tag früher, und Einträge mit späterem Datum sind auf Home nicht zu sehen (wie auf den Seiten der Module).
+- **Ein vergangener Tag zeigt nur.** Einträge über das Plus-Menü und die Formulare gelten für jetzt, auch wenn Home einen früheren Tag zeigt; ein Vorbelegen mit dem gezeigten Tag gibt es nicht. Ruhetag und Überspringen lassen sich weiter nur für heute setzen (BS-99).
+- **Offene Aufgaben eines vergangenen Tages fehlen.** Die Karte „Aufgaben und Gewohnheiten“ nennt die an diesem Tag erledigten Aufgaben und die Gewohnheiten des Tages; ob eine Aufgabe damals fällig war, lässt sich aus dem Gespeicherten nicht wissen (die Fälligkeit kann sich seither geändert haben). „x von y erledigt“ zählt deshalb nur diese Zeilen.
+- **Karten laden je für sich.** Beim ersten Besuch eines Tages steht auf einer Karte kurz „–“, bis ihre Zahlen da sind; ein besuchter Tag wird nicht zwischengespeichert.
+- **Zurück-Taste:** Auf einem vergangenen Tag verlässt sie wie bisher die App von Home aus; einen Schritt „zurück zu heute“ gibt es nicht (dafür „Zurück zu heute“ im Hinweis).
+- **Schritte aus Health** an einem vergangenen Tag: Die Quelle („aus Health“) steht nur im Sprechtext der Karte, die Zeile der Quelle und „Aktualisieren“ gehören zu heute.
+
 ## Formale offene Punkte (kein Implementierungsblocker)
 
 - **App-Name** ([BS-47](https://spacy-cloud.atlassian.net/browse/BS-47)): sichtbarer Platzhalter „App-Name“ (`AppConfig.appName`).
