@@ -105,6 +105,25 @@ void main() {
       }
     });
 
+    test('an upper case letter in any one of the five groups of the id is '
+        'refused (BS-111, AT29)', () {
+      const lower = 'abcdef12-abcd-abcd-abcd-abcdef123456';
+      expect(NotificationRouteResolver.parse('/tasks/$lower'), isNotNull);
+      final groups = lower.split('-');
+      for (var group = 0; group < groups.length; group++) {
+        final changed = [...groups];
+        changed[group] = changed[group].replaceFirst('a', 'A');
+        final id = changed.join('-');
+        expect(id, isNot(lower));
+        expect(
+          NotificationRouteResolver.parse('/tasks/$id'),
+          isNull,
+          reason: 'group ${group + 1}: $id',
+        );
+        expect(NotificationRoutes.taskEdit(id), NotificationRoutes.tasks);
+      }
+    });
+
     test('the longest valid payload stays inside the length limit', () {
       expect(
         '/tasks/$taskId'.length,
