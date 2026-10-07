@@ -262,7 +262,7 @@ Befehl: `flutter test test/features/dashboard test/app/route_sweep_test.dart tes
 | Datei | Fälle | Abnahme-IDs |
 |---|---:|---|
 | `test/features/dashboard/domain/goals_day_test.dart` | 47 | C04 |
-| `.../presentation/goals_today_screen_test.dart` | 68 | AT33, AT34, AT35, C02, C04, C06, Q01, Q02 |
+| `.../presentation/goals_today_screen_test.dart` | 69 | AT33, AT34, AT35, C02, C04, C06, Q01, Q02 |
 | `.../presentation/goals_today_flow_test.dart` | 23 | AT23, AT33, C02, C03, C04 |
 | `.../presentation/goal_destinations_test.dart` | 19 | C02, C03 |
 | `.../presentation/day_overview_card_tap_test.dart` | 26 | AT33, AT34, AT35, C04, Q02 |
