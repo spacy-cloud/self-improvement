@@ -11,15 +11,29 @@ import '../support/platform_names.dart';
 /// never "Android" or "iOS". A text that is right on one platform and wrong on
 /// the other reached a tester on an iPhone ("Weiter zur Android-Abfrage"), and
 /// a widget test of a single state cannot find the next one. These tests read
-/// the sources of `lib/` and fail by file and line.
+/// the sources and fail by file and line.
 ///
-/// What is scanned: every string literal of every Dart file below `lib/`
-/// (button labels, semantic labels, messages, notification texts: whatever a
-/// person reads or hears is a literal there). What is not scanned, on purpose:
+/// What is scanned:
+///
+/// - Every string literal of every Dart file below `lib/` (button labels,
+///   semantic labels, messages, notification texts: whatever a person reads or
+///   hears is a literal there). Literals that follow each other (`'And' 'roid'`)
+///   or are joined by a plus (`'And' + 'roid'`) are one string for Dart, so
+///   they are read as one.
+/// - Every string resource of the Android app (`<string>` and the items of
+///   `<string-array>` and `<plurals>` in `android/app/src/main/res/values*/`):
+///   the explanation of the Health Connect permission is shown by the system
+///   from there and is no literal of `lib/` (BS-98, R1-08).
+///
+/// A platform name counts with whatever letters follow it ("iPhones",
+/// "Androidgeräte", see `test/support/platform_names.dart`).
+///
+/// What is not scanned, on purpose:
 ///
 /// - Comments. They are written for developers (`/// Android adapter ...`).
 /// - Identifiers and class names (`AndroidNotificationChannel`,
-///   `androidIconName`). They are code, not text.
+///   `androidIconName`) and the markup of the resource files (`parent="@android:
+///   style/..."`). They are code, not text.
 /// - The texts of third-party licences on the page "Lizenzen". The licence
 ///   registry delivers them at run time, they are not literals of `lib/`, and
 ///   we cannot word them.
@@ -27,6 +41,8 @@ import '../support/platform_names.dart';
 ///   The widget test of the reminder flow
 ///   (`test/features/reminders/reminder_platform_neutral_test.dart`) reads
 ///   what is really on the screen for that.
+/// - The names the platforms give to themselves in their own files: the manifest
+///   and the Info.plist hold no text of the app but the app name.
 ///
 /// A technical literal that has to name a platform (a channel name, a map key)
 /// goes into [allowedLiterals] with the reason; the list is empty today.
@@ -35,8 +51,9 @@ import '../support/platform_names.dart';
 /// how a text reads on a device.
 
 /// Literals that may name a platform because no person ever reads them: file
-/// path (as `lib/...`) to the exact text of the literal and the reason. An
-/// entry that no literal needs any more fails [main]'s last test.
+/// path (as `lib/...` or `android/...`) to the exact text of the literal and
+/// the reason. An entry that no literal needs any more fails [main]'s last
+/// test.
 const Map<String, Map<String, String>> allowedLiterals =
     <String, Map<String, String>>{};
 
@@ -61,7 +78,8 @@ final class LiteralScan {
   const LiteralScan(this.literals, {required this.wellFormed});
 
   /// All literals, a literal inside an interpolation (`'${a ? 'x' : 'y'}'`)
-  /// as an own entry.
+  /// as an own entry. Literals that Dart joins (`'a' 'b'`, `'a' + 'b'`) are one
+  /// entry, on the line of the first one.
   final List<SourceLiteral> literals;
 
   /// False when a string is not closed before its line or the file ends. In a
@@ -90,6 +108,18 @@ final class _LiteralScanner {
   /// the `}` that closes the `${` the caller just read.
   void _code({required bool inInterpolation}) {
     var depth = 0;
+    // The last literal of this level. It may still grow: Dart joins string
+    // literals that follow each other ('a' 'b') or sit on both sides of a plus
+    // ('a' + 'b') into one string, so a word split over them is one word.
+    SourceLiteral? open;
+    var openEnd = 0;
+    void close() {
+      if (open != null) {
+        literals.add(open!);
+        open = null;
+      }
+    }
+
     while (_i < _source.length) {
       final char = _source[_i];
       if (_source.startsWith('//', _i)) {
@@ -99,13 +129,22 @@ final class _LiteralScanner {
       } else if (_source.startsWith('/*', _i)) {
         _skipBlockComment();
       } else if (_startsString()) {
-        _string();
+        final start = _i;
+        final literal = _string();
+        if (open != null && _joins(openEnd, start)) {
+          open = SourceLiteral('${open!.text}${literal.text}', open!.line);
+        } else {
+          close();
+          open = literal;
+        }
+        openEnd = _i;
       } else {
         if (char == '{') {
           depth++;
         } else if (char == '}') {
           if (inInterpolation && depth == 0) {
             _i++;
+            close();
             return;
           }
           depth--;
@@ -115,6 +154,37 @@ final class _LiteralScanner {
         _i++;
       }
     }
+    close();
+  }
+
+  /// Whether nothing but blanks, comments and at most one plus lies between
+  /// [from] and [to]: then the literal that ends at [from] and the one that
+  /// starts at [to] are one string.
+  bool _joins(int from, int to) {
+    var plus = false;
+    var i = from;
+    while (i < to) {
+      final char = _source[i];
+      if (char == ' ' || char == '\t' || char == '\r' || char == '\n') {
+        i++;
+      } else if (_source.startsWith('//', i)) {
+        while (i < to && _source[i] != '\n') {
+          i++;
+        }
+      } else if (_source.startsWith('/*', i)) {
+        final end = _source.indexOf('*/', i + 2);
+        if (end == -1 || end + 2 > to) {
+          return false;
+        }
+        i = end + 2;
+      } else if (char == '+' && !plus) {
+        plus = true;
+        i++;
+      } else {
+        return false;
+      }
+    }
+    return true;
   }
 
   void _skipBlockComment() {
@@ -151,7 +221,7 @@ final class _LiteralScanner {
     return false;
   }
 
-  void _string() {
+  SourceLiteral _string() {
     final startLine = _line;
     var raw = false;
     if (_source[_i] == 'r' || _source[_i] == 'R') {
@@ -189,7 +259,7 @@ final class _LiteralScanner {
         _i++;
       }
     }
-    literals.add(SourceLiteral(text.toString(), startLine));
+    return SourceLiteral(text.toString(), startLine);
   }
 
   /// Reads the escape sequence that starts at the backslash at [_i].
@@ -277,6 +347,97 @@ final class _LiteralScanner {
       unit == 0x24;
 }
 
+/// The texts of the string resources of an Android `values*/*.xml` source: the
+/// content of `<string>` and of the items of `<string-array>` and `<plurals>`.
+///
+/// Comments and everything that is no text (styles, colours, attribute values
+/// such as `parent="@android:style/..."`) are skipped. Entities, CDATA and the
+/// escapes of Android resources are decoded and markup inside a text (`<b>`) is
+/// dropped, so none of them can hide a word. [LiteralScan.wellFormed] is true:
+/// the resource files are read with patterns, which cannot lose track.
+LiteralScan scanXmlStrings(String xml) {
+  // Blank the comments out but keep their line breaks, so lines stay right.
+  final source = xml.replaceAllMapped(
+    RegExp(r'<!--.*?-->', dotAll: true),
+    (match) => match.group(0)!.replaceAll(RegExp(r'[^\n]'), ' '),
+  );
+  final literals = <SourceLiteral>[];
+  void add(String raw, int offset) {
+    final line = '\n'.allMatches(source.substring(0, offset)).length + 1;
+    literals.add(SourceLiteral(_androidResourceText(raw), line));
+  }
+
+  // The opening tag of an element that is not self-closing (`<string
+  // name="a">`, `<string>`) is the first group, the text the last one; the text
+  // starts after the tag.
+  const open = r'(?:\s[^>]*[^/>])?>';
+  for (final match in RegExp(
+    '(<string$open)(.*?)</string\\s*>',
+    dotAll: true,
+  ).allMatches(source)) {
+    add(match.group(2)!, match.start + match.group(1)!.length);
+  }
+  for (final list in RegExp(
+    '(<(string-array|plurals)$open)(.*?)</\\2\\s*>',
+    dotAll: true,
+  ).allMatches(source)) {
+    final listStart = list.start + list.group(1)!.length;
+    for (final item in RegExp(
+      '(<item$open)(.*?)</item\\s*>',
+      dotAll: true,
+    ).allMatches(list.group(3)!)) {
+      add(item.group(2)!, listStart + item.start + item.group(1)!.length);
+    }
+  }
+  literals.sort((a, b) => a.line.compareTo(b.line));
+  return LiteralScan(literals, wellFormed: true);
+}
+
+/// What a person reads for the raw content of a string resource.
+String _androidResourceText(String raw) {
+  var text = raw.replaceAllMapped(
+    RegExp(r'<!\[CDATA\[(.*?)\]\]>', dotAll: true),
+    (match) => match.group(1)!,
+  );
+  text = text.replaceAll(RegExp(r'</?[A-Za-z][^>]*>'), '');
+  text = text.replaceAllMapped(RegExp(r'&(#x[0-9a-fA-F]+|#[0-9]+|[a-z]+);'), (
+    match,
+  ) {
+    final entity = match.group(1)!;
+    switch (entity) {
+      case 'amp':
+        return '&';
+      case 'lt':
+        return '<';
+      case 'gt':
+        return '>';
+      case 'quot':
+        return '"';
+      case 'apos':
+        return "'";
+    }
+    final code = entity.startsWith('#x')
+        ? int.tryParse(entity.substring(2), radix: 16)
+        : int.tryParse(entity.substring(1));
+    return code == null || code < 0 || code > 0x10FFFF
+        ? match.group(0)!
+        : String.fromCharCode(code);
+  });
+  return text.replaceAllMapped(RegExp(r'\\(u[0-9a-fA-F]{4}|.)', dotAll: true), (
+    match,
+  ) {
+    final escaped = match.group(1)!;
+    return switch (escaped[0]) {
+      'n' => '\n',
+      't' => '\t',
+      'u' when escaped.length == 5 => String.fromCharCode(
+        int.parse(escaped.substring(1), radix: 16),
+      ),
+      _ => escaped,
+    };
+  });
+}
+
 /// The platform names in the literals of [source], one line per hit
 /// (`line N: "text"`). A literal in [allowed] (exact text) is skipped.
 List<String> platformNamesInLiterals(
@@ -285,6 +446,20 @@ List<String> platformNamesInLiterals(
 }) {
   return <String>[
     for (final literal in scanLiterals(source).literals)
+      if (!allowed.contains(literal.text) &&
+          platformNameIn(literal.text) != null)
+        'line ${literal.line}: "${literal.text}"',
+  ];
+}
+
+/// The platform names in the string resources of [xml], one line per hit
+/// (`line N: "text"`). A text in [allowed] (exact text) is skipped.
+List<String> platformNamesInResources(
+  String xml, {
+  Set<String> allowed = const <String>{},
+}) {
+  return <String>[
+    for (final literal in scanXmlStrings(xml).literals)
       if (!allowed.contains(literal.text) &&
           platformNameIn(literal.text) != null)
         'line ${literal.line}: "${literal.text}"',
@@ -394,6 +569,150 @@ final androidIconName = AndroidNotificationChannel(iOS: ios);
         <String>['line 1: "iOS"'],
       );
     });
+
+    test('joins literals that follow each other, as Dart does: a word split over two of them is found (BS-113, R1-08)', () {
+      expect(texts("a = 'And' 'roid';"), <String>['Android']);
+      expect(platformNamesInLiterals("a = 'And' 'roid';"), <String>[
+        'line 1: "Android"',
+      ]);
+      // Over lines, with a comment in between and in other quotes.
+      expect(texts("a = 'i'\n    // note\n    /* more */ \"OS\";"), <String>[
+        'iOS',
+      ]);
+      expect(
+        platformNamesInLiterals("x;\nf(\n  'Für iPh'\n  'ones'\n);"),
+        <String>['line 3: "Für iPhones"'],
+        reason: 'the line is the one of the first literal',
+      );
+      // Three in a row and a raw one.
+      expect(texts("a = 'An' 'dro' r'id';"), <String>['Android']);
+    });
+
+    test('joins the two sides of a plus between literals (BS-113, R1-08)', () {
+      expect(texts("a = 'And' + 'roid';"), <String>['Android']);
+      expect(texts("a = 'And'\n    + 'roid'\n    + 's';"), <String>[
+        'Androids',
+      ]);
+      expect(platformNamesInLiterals("a = 'i' + 'Phone';"), <String>[
+        'line 1: "iPhone"',
+      ]);
+    });
+
+    test('keeps literals apart that are not joined (BS-113, R1-08)', () {
+      // A comma, a call, an operator or an identifier in between: two strings.
+      expect(texts("f('And', 'roid');"), <String>['And', 'roid']);
+      expect(texts("a = ['And', 'roid'];"), <String>['And', 'roid']);
+      expect(texts("a = 'And' + b + 'roid';"), <String>['And', 'roid']);
+      expect(texts("a = 'And'; b = 'roid';"), <String>['And', 'roid']);
+      expect(texts("a = g('And') + 'roid';"), <String>['And', 'roid']);
+      expect(texts("a = 'And' ? 'roid' : 'x';"), <String>['And', 'roid', 'x']);
+      expect(platformNamesInLiterals("f('And', 'roid');"), isEmpty);
+    });
+
+    test(
+      'joins literals around an interpolation and inside one (BS-113, R1-08)',
+      () {
+        expect(texts(r"a = 'x$y' 'Phone';"), <String>[
+          'x${interpolationMark}Phone',
+        ]);
+        expect(
+          platformNamesInLiterals(r"a = '${c ? 'i' 'OS' : 'x'}';"),
+          <String>['line 1: "iOS"'],
+        );
+      },
+    );
+  });
+
+  group('the string resources of the Android app (BS-98, R1-08)', () {
+    List<String> texts(String xml) => <String>[
+      for (final literal in scanXmlStrings(xml).literals) literal.text,
+    ];
+
+    test(
+      'finds strings, the items of arrays and plurals, with their lines',
+      () {
+        const xml = '''
+<resources>
+    <string name="a">Eins</string>
+    <string name="b" translatable="false">Zwei</string>
+    <string-array name="c">
+        <item>Drei</item>
+        <item>Vier</item>
+    </string-array>
+    <plurals name="d">
+        <item quantity="one">Fuenf</item>
+        <item quantity="other">Sechs</item>
+    </plurals>
+</resources>
+''';
+        final scan = scanXmlStrings(xml);
+        expect(
+          <String>[for (final l in scan.literals) l.text],
+          <String>['Eins', 'Zwei', 'Drei', 'Vier', 'Fuenf', 'Sechs'],
+        );
+        expect(
+          <int>[for (final l in scan.literals) l.line],
+          <int>[2, 3, 5, 6, 9, 10],
+        );
+        expect(scan.wellFormed, isTrue);
+      },
+    );
+
+    test('skips comments, styles, colours and attribute values', () {
+      const xml = '''
+<resources>
+    <!-- The Android window, "iOS" too: <string name="x">iPhone</string> -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowBackground">@drawable/android_background</item>
+    </style>
+    <color name="c">#FF0000</color>
+    <string name="empty"/>
+    <string name="app_name">App-Name</string>
+</resources>
+''';
+      expect(texts(xml), <String>['App-Name']);
+      expect(platformNamesInResources(xml), isEmpty);
+    });
+
+    test('decodes entities, escapes and CDATA, and drops markup, so none of '
+        'them hides a word', () {
+      const xml = r'''
+<resources>
+    <string name="a">&#65;ndroid und &#x69;OS</string>
+    <string name="b">\u0069Phone und \u0041ndroid</string>
+    <string name="c">Auf <b>Android</b> und <xliff:g id="x">iPad</xliff:g></string>
+    <string name="d"><![CDATA[Android <b>CDATA</b>]]></string>
+    <string name="e">Fish &amp; Chips, 5 &lt; 6, \'quoted\' \@home \n\t.</string>
+</resources>
+''';
+      expect(texts(xml), <String>[
+        'Android und iOS',
+        'iPhone und Android',
+        'Auf Android und iPad',
+        'Android CDATA',
+        "Fish & Chips, 5 < 6, 'quoted' @home \n\t.",
+      ]);
+      expect(platformNamesInResources(xml), hasLength(4));
+    });
+
+    test('finds a platform name in a text and says where (BS-113, R1-08)', () {
+      const xml = '''
+<resources>
+    <string name="title">Schritte aus Health Connect</string>
+    <string name="text">Diese App liest\nunter Android deine Schritte.</string>
+</resources>
+''';
+      expect(platformNamesInResources(xml), <String>[
+        'line 3: "Diese App liest\nunter Android deine Schritte."',
+      ]);
+      expect(
+        platformNamesInResources(
+          xml,
+          allowed: <String>{'Diese App liest\nunter Android deine Schritte.'},
+        ),
+        isEmpty,
+      );
+    });
   });
 
   group('the platform names', () {
@@ -411,6 +730,24 @@ final androidIconName = AndroidNotificationChannel(iOS: ios);
       }
     });
 
+    test('are found in the plural and in compounds, and reported whole (BS-113, R1-08)', () {
+      for (final (text, found) in <(String, String)>[
+        ('Für iPhones und iPads', 'iPhones'),
+        ('Nur auf iPads', 'iPads'),
+        ('Androidgeräte werden unterstützt', 'Androidgeräte'),
+        ('Das Android-Gerät', 'Android'),
+        ('Die iOS-Version', 'iOS'),
+        ('iPhone-Nutzer', 'iPhone'),
+        ('iPhonetastatur', 'iPhonetastatur'),
+        ('Androids Sicht', 'Androids'),
+        ('ANDROIDGERÄTE', 'ANDROIDGERÄTE'),
+        ('IOSGeräte', 'IOSGeräte'),
+        ('Gerätetyp: iPadOS-Tablet', 'iPadOS'),
+      ]) {
+        expect(platformNameIn(text), found, reason: text);
+      }
+    });
+
     test('are not found inside other words', () {
       for (final text in <String>[
         'Studios',
@@ -420,6 +757,13 @@ final androidIconName = AndroidNotificationChannel(iOS: ios);
         'Systemstatus: Benachrichtigungen sind erlaubt.',
         'Das System fragt erst, wenn du Erinnerungen einschaltest.',
         'Pad, Phone, Droid',
+        // The letters have to follow the name at the start of a word.
+        'Auto-Radios und Videostudios',
+        'Anionen und Kationen (Ionen)',
+        'Mobilgeräte, Handys und Tablets',
+        // Health Connect is the name of a service, no platform.
+        'Schritte aus Health Connect',
+        'Diese App kann deine Schritte aus Health Connect übernehmen.',
       ]) {
         expect(platformNameIn(text), isNull, reason: text);
       }
@@ -438,20 +782,40 @@ final androidIconName = AndroidNotificationChannel(iOS: ios);
       file.path: scanLiterals(file.readAsStringSync()),
   };
 
-  group('the texts of the app (BS-113, D-017, AT28)', () {
-    test('no string literal in lib/ names a platform', () {
-      final hits = <String>[];
-      for (final MapEntry(key: path, value: scan) in scans.entries) {
-        final allowed = allowedLiterals[path]?.keys.toSet() ?? <String>{};
-        for (final literal in scan.literals) {
-          final name = platformNameIn(literal.text);
-          if (name != null && !allowed.contains(literal.text)) {
-            hits.add('$path:${literal.line} names "$name": ${literal.text}');
-          }
+  // The string resources of the Android app: the system shows them (the
+  // explanation of the Health Connect permission), they are no literal of lib/.
+  final resources = <File>[
+    for (final directory in Directory(
+      'android/app/src/main/res',
+    ).listSync().whereType<Directory>())
+      if (directory.path.split('/').last.startsWith('values'))
+        for (final file in directory.listSync().whereType<File>())
+          if (file.path.endsWith('.xml')) file,
+  ]..sort((a, b) => a.path.compareTo(b.path));
+  final resourceScans = <String, LiteralScan>{
+    for (final file in resources)
+      file.path: scanXmlStrings(file.readAsStringSync()),
+  };
+
+  /// One line per text in [scanned] that names a platform and is not allowed.
+  List<String> platformHits(Map<String, LiteralScan> scanned) {
+    final hits = <String>[];
+    for (final MapEntry(key: path, value: scan) in scanned.entries) {
+      final allowed = allowedLiterals[path]?.keys.toSet() ?? <String>{};
+      for (final literal in scan.literals) {
+        final name = platformNameIn(literal.text);
+        if (name != null && !allowed.contains(literal.text)) {
+          hits.add('$path:${literal.line} names "$name": ${literal.text}');
         }
       }
+    }
+    return hits;
+  }
+
+  group('the texts of the app (BS-113, D-017, AT28)', () {
+    test('no string literal in lib/ names a platform', () {
       expect(
-        hits,
+        platformHits(scans),
         isEmpty,
         reason:
             'Texts say "System" or "Gerät", never the platform: a person on '
@@ -459,6 +823,21 @@ final androidIconName = AndroidNotificationChannel(iOS: ios);
             'must name one goes into allowedLiterals with the reason.',
       );
     });
+
+    test(
+      'no string resource of the Android app names a platform (BS-113, R1-08)',
+      () {
+        expect(
+          platformHits(resourceScans),
+          isEmpty,
+          reason:
+              'The system shows these texts, for example the explanation of '
+              'the Health Connect permission: they say "System" or "Gerät" '
+              'too. A technical text that must name a platform goes into '
+              'allowedLiterals with the reason.',
+        );
+      },
+    );
 
     test('the scan reads every source of lib/ to the end', () {
       expect(sources.length, greaterThan(150), reason: 'the scan finds lib/');
@@ -502,12 +881,49 @@ final androidIconName = AndroidNotificationChannel(iOS: ios);
       );
     });
 
+    test('the scan reaches the string resources of the Android app (BS-98, '
+        'R1-08)', () {
+      const rationale = 'android/app/src/main/res/values/health_rationale.xml';
+      expect(resourceScans, contains(rationale));
+      final texts = <String>[
+        for (final literal in resourceScans[rationale]!.literals) literal.text,
+      ];
+      expect(texts, hasLength(2));
+      expect(texts, contains('Schritte aus Health Connect'));
+      expect(
+        texts.last,
+        allOf(contains('Health Connect'), contains('nur die Zahl deiner')),
+      );
+      expect(
+        texts.last,
+        contains('\n\n'),
+        reason: 'the escapes of the resource are decoded',
+      );
+      expect(
+        resourceScans,
+        contains('android/app/src/main/res/values/strings.xml'),
+      );
+      // The styles are in the same folders and hold no text.
+      expect(
+        resourceScans['android/app/src/main/res/values/styles.xml']!.literals,
+        isEmpty,
+      );
+      for (final entry in resourceScans.entries) {
+        expect(entry.value.wellFormed, isTrue, reason: entry.key);
+      }
+    });
+
     test('every allowed literal is still there and still needed', () {
+      final everything = <String, LiteralScan>{...scans, ...resourceScans};
       for (final MapEntry(key: path, value: entries)
           in allowedLiterals.entries) {
-        expect(scans, contains(path), reason: '$path is not a source of lib/');
+        expect(
+          everything,
+          contains(path),
+          reason: '$path is not a source of lib/ or a string resource',
+        );
         final texts = <String>{
-          for (final literal in scans[path]!.literals) literal.text,
+          for (final literal in everything[path]!.literals) literal.text,
         };
         for (final MapEntry(key: text, value: reason) in entries.entries) {
           expect(reason.trim(), isNotEmpty, reason: '$path: "$text"');
