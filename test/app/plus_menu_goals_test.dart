@@ -121,13 +121,13 @@ void main() {
       },
     );
 
-    for (final id in plusEntryIds.where((id) => plusGoalFor(id) != null)) {
+    for (final id in plusEntryIds.where((id) => plusGoalsFor(id).isNotEmpty)) {
       testWidgets(
         '(BS-117, C02) switching off the goal of "$id" hides exactly its '
         'entry, the others stay in order and a hint says where to change it',
         (tester) async {
           final app = await pumpFullApp(tester, modules: fullFakeModules());
-          await _setGoal(app, plusGoalFor(id)!, on: false);
+          await _switchOff(app, plusGoalsFor(id));
           await _openPlus(app);
           expect(_shown(tester), _without([id]));
           expect(_inSheet(find.text(_hint)), findsOneWidget);
@@ -135,6 +135,57 @@ void main() {
         },
       );
     }
+
+    // "Workout" belongs to two goals: "Workouts" (weekly, on by default) and
+    // "Workout heute" (daily, off by default, BS-99). It is offered while one of
+    // them is on.
+    for (final (weekly, daily) in <(bool, bool)>[
+      (false, false),
+      (false, true),
+      (true, false),
+      (true, true),
+    ]) {
+      final shown = weekly || daily;
+      testWidgets('(BS-117, BS-99, R1-03, C02) Workout with "Workouts" '
+          '${weekly ? 'on' : 'off'} and "Workout heute" ${daily ? 'on' : 'off'} '
+          'is ${shown ? 'offered' : 'hidden'}', (tester) async {
+        final app = await pumpFullApp(tester, modules: fullFakeModules());
+        await _setGoals(app, {
+          GoalType.workoutWeekly: weekly,
+          GoalType.workoutDaily: daily,
+        });
+        await _openPlus(app);
+        expect(
+          _shown(tester),
+          shown ? plusEntryIds : _without(['workout']),
+          reason: 'only Workout depends on these two goals',
+        );
+        expect(
+          _inSheet(find.text(_hint)),
+          shown ? findsNothing : findsOneWidget,
+        );
+      });
+    }
+
+    testWidgets(
+      '(BS-117, BS-99, R1-03, C02) switching "Workout heute" on while '
+      '"Workouts" is off brings the entry back in the open menu',
+      (tester) async {
+        final app = await pumpFullApp(tester, modules: fullFakeModules());
+        await _setGoal(app, GoalType.workoutWeekly, on: false);
+        await _openPlus(app);
+        expect(_shown(tester), _without(['workout']));
+
+        await _setGoal(app, GoalType.workoutDaily, on: true);
+        await app.settle();
+        expect(_shown(tester), plusEntryIds);
+        expect(_inSheet(find.text(_hint)), findsNothing);
+
+        await _setGoal(app, GoalType.workoutDaily, on: false);
+        await app.settle();
+        expect(_shown(tester), _without(['workout']));
+      },
+    );
 
     testWidgets(
       '(BS-117, C02) a goal switched on again brings its entry back at its '
