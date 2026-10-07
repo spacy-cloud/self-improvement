@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router/go_router.dart';
+import 'package:self_improvement/app/router/app_router.dart';
 import 'package:self_improvement/app/router/app_routes.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/core/modules/module_registry.dart';
 import 'package:self_improvement/features/body/presentation/weight_form_screen.dart';
+import 'package:self_improvement/features/dashboard/presentation/dashboard_routes.dart';
 
 import 'support/app_harness.dart';
 
@@ -28,36 +29,17 @@ const Size _landscape = Size(852, 393);
 const Size _portrait = Size(393, 852);
 const EdgeInsets _turnedPhone = EdgeInsets.fromLTRB(59, 0, 59, 21);
 
-/// The paths of [routes] and of their children (as in the route sweep).
-Iterable<String> _paths(List<RouteBase> routes, [String prefix = '']) sync* {
-  for (final route in routes) {
-    if (route is! GoRoute) {
-      continue;
-    }
-    final full = route.path.startsWith('/')
-        ? route.path
-        : '${prefix == '/' ? '' : prefix}/${route.path}';
-    yield full;
-    yield* _paths(route.routes, full);
-  }
-}
-
-/// Every page of the app that has no id in its path: the core pages and the
-/// pages of all bundled modules, found from the route tables themselves.
+/// Every page of the app that has no id in its path, read from the route table
+/// itself: the tabs, the core pages and the pages of all bundled modules. A new
+/// page is covered without touching this file; the hand-kept list it replaces
+/// had lost the page "Über die App" (BS-98, R1-05). The onboarding is left out
+/// (an onboarded app sends it to Home); the tasks view of the Habits tab is a
+/// query and no path of its own, so it is added.
 final List<String> _pages = <String>{
-  AppRoutes.home,
-  AppRoutes.analysis,
-  AppRoutes.habits,
+  for (final path in allRoutePaths(buildAppRoutes(modules: bundledModules)))
+    if (!path.contains(':') && path != AppRoutes.onboarding) path,
   AppRoutes.habitsTasks,
-  AppRoutes.profile,
-  AppRoutes.profileEdit,
-  AppRoutes.goals,
-  AppRoutes.settings,
-  AppRoutes.modules,
-  AppRoutes.data,
-  AppRoutes.licenses,
-  for (final module in bundledModules) ..._paths(module.routes),
-}.where((path) => !path.contains(':')).toList()..sort();
+}.toList()..sort();
 
 void main() {
   /// Runs [body] in the running app of the given [size] and takes the app down
@@ -115,6 +97,24 @@ void main() {
         containsAll(<String>['/', '/weight/new', '/water', '/settings']),
       );
       expect(_pages.length, greaterThan(25));
+    });
+
+    test('the list has the core pages that a hand-kept list lost: Über die App and Ziele heute (BS-114, R1-05, AT33)', () {
+      expect(
+        _pages,
+        containsAll(<String>[
+          AppRoutes.about,
+          DashboardRoutes.goalsToday,
+          AppRoutes.licenses,
+          AppRoutes.habitsTasks,
+        ]),
+      );
+      expect(_pages, isNot(contains(AppRoutes.onboarding)));
+      expect(
+        _pages.where((path) => path.contains(':')),
+        isEmpty,
+        reason: 'a page with an id needs a record to open',
+      );
     });
 
     for (final (name, size, safeArea) in <(String, Size, EdgeInsets)>[
