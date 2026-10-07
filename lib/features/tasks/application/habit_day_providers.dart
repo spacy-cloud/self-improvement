@@ -26,10 +26,28 @@ final selectedHabitDayProvider =
 /// The habit list of the selected day (today by default) and the week strip.
 /// Recomputed when a habit, a check, the selection or the day changes.
 final habitDayProvider = Provider<AsyncValue<HabitDay>>((ref) {
+  final selected = ref.watch(selectedHabitDayProvider);
+  return _habitDay(ref, (today) => effectiveHabitDay(selected, today));
+});
+
+/// The habit list of TODAY, whatever day the habits tab shows: the Home card
+/// follows today, not the selection of the week strip (BS-110). It is the same
+/// model, built by the same function from the same streams as
+/// [habitDayProvider] (which is this list when nothing is selected), so a check
+/// made on Home or in the tab shows up in both without a second calculation.
+final habitTodayProvider = Provider<AsyncValue<HabitDay>>(
+  (ref) => _habitDay(ref, (today) => today),
+);
+
+/// Builds the [HabitDay] of the day [pick] chooses from today, from the habit
+/// and check streams; an error wins, then loading, then the data.
+AsyncValue<HabitDay> _habitDay(
+  Ref ref,
+  LocalDate Function(LocalDate today) pick,
+) {
   final habits = ref.watch(habitsProvider);
   final checks = ref.watch(habitCheckIndexProvider);
   final today = ref.watch(todayProvider);
-  final selected = ref.watch(selectedHabitDayProvider);
   if (habits case AsyncError(:final error, :final stackTrace)) {
     return AsyncError<HabitDay>(error, stackTrace);
   }
@@ -41,10 +59,10 @@ final habitDayProvider = Provider<AsyncValue<HabitDay>>((ref) {
       buildHabitDay(
         habits: value,
         checks: checks.requireValue,
-        date: effectiveHabitDay(selected, today),
+        date: pick(today),
         today: today,
       ),
     );
   }
   return AsyncLoading<HabitDay>();
-});
+}
