@@ -34,8 +34,13 @@ class FocusPastDayCard extends ConsumerWidget {
             icon: AppIcon.focus.data,
             accent: AppAccent.focus,
           ),
-          error: (error, stack) =>
-              ErrorState(onRetry: () => ref.invalidate(goalVersionsProvider)),
+          error: (error, stack) => ErrorState(
+            onRetry: () {
+              ref
+                ..invalidate(focusSessionsOnProvider(day))
+                ..invalidate(goalVersionsProvider);
+            },
+          ),
           data: (summary) => _build(context, summary),
         );
   }

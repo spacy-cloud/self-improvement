@@ -171,7 +171,7 @@ final focusTodaySummaryProvider = Provider<AsyncValue<FocusTodaySummary>>((
 /// shows it.
 final focusDaySummaryProvider = Provider.autoDispose
     .family<AsyncValue<FocusTodaySummary>, LocalDate>((ref, day) {
-      final sessions = ref.watch(_focusSessionsOnProvider(day));
+      final sessions = ref.watch(focusSessionsOnProvider(day));
       final versions = ref.watch(goalVersionsProvider);
       return sessions.when(
         loading: () => const AsyncLoading(),
@@ -194,7 +194,9 @@ final focusDaySummaryProvider = Provider.autoDispose
       );
     });
 
-final _focusSessionsOnProvider = StreamProvider.autoDispose
+/// The sessions completed on one day (BS-93), for the focus card of that day.
+/// Released when no card shows it.
+final focusSessionsOnProvider = StreamProvider.autoDispose
     .family<List<FocusSession>, LocalDate>(
       (ref, day) => ref.watch(focusRepositoryProvider).watchCompletedOn(day),
     );
