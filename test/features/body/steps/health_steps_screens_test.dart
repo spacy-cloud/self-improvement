@@ -624,6 +624,80 @@ void main() {
         findsOneWidget,
       );
     });
+
+    /// Opens the form of [day] with a value of 5.000 typed in for it and taps
+    /// "Tageswert löschen": the confirmation is on screen.
+    Future<void> openDeleteConfirmation(
+      WidgetTester tester,
+      _Env env,
+      LocalDate day,
+    ) async {
+      await _record(tester, env, day, 5000);
+      await _open(tester, env, StepsRoutes.createFor(day));
+      await _settle(tester);
+      await tester.ensureVisible(find.text('Tageswert löschen'));
+      await tester.tap(find.text('Tageswert löschen'));
+      await _settle(tester);
+      expect(find.text('Tageswert löschen?'), findsOneWidget);
+    }
+
+    final refill = find.textContaining('trägt Health den Tag beim nächsten');
+
+    testWidgets('(BS-97, R2-05) the oldest day a comparison reads (six days '
+        'back) names the refill', (tester) async {
+      final env = await _env(tester);
+      await _delivering(tester, env, today: null);
+      await openDeleteConfirmation(tester, env, _today.addDays(-6));
+      expect(refill, findsOneWidget);
+    });
+
+    for (final back in [7, 8]) {
+      testWidgets('(BS-97, R2-05) a day $back days back asks the normal '
+          'question: no comparison reads it, so nothing refills it', (
+        tester,
+      ) async {
+        final env = await _env(tester);
+        await _delivering(tester, env, today: null);
+        await openDeleteConfirmation(tester, env, _today.addDays(-back));
+        expect(refill, findsNothing);
+        expect(find.textContaining('Health den Tag'), findsNothing);
+        expect(
+          find.textContaining('Du kannst es direkt danach rückgängig machen.'),
+          findsOneWidget,
+        );
+      });
+    }
+
+    testWidgets('(BS-97, R2-05) the switch on but no access: nothing is read, '
+        'so the confirmation does not promise a refill', (tester) async {
+      final env = await _env(tester);
+      await _wish(tester, env);
+      env.source.accessValue = HealthAccess.denied;
+      await _compare(tester, env);
+      await openDeleteConfirmation(tester, env, _today.addDays(-1));
+      expect(refill, findsNothing);
+      expect(
+        find.textContaining('Du kannst es direkt danach rückgängig machen.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('(BS-97, R2-05) the switch on but no Health Connect: nothing '
+        'is read, so no refill is promised', (tester) async {
+      final env = await _env(tester);
+      await _wish(tester, env);
+      env.source.availabilityValue = HealthAvailability.missing;
+      await _compare(tester, env);
+      await openDeleteConfirmation(tester, env, _today.addDays(-1));
+      expect(refill, findsNothing);
+    });
+
+    testWidgets('(BS-97, R2-05) the switch off: no refill is promised for a '
+        'day in the window either', (tester) async {
+      final env = await _env(tester);
+      await openDeleteConfirmation(tester, env, _today.addDays(-1));
+      expect(refill, findsNothing);
+    });
   });
 
   group('the card on Home with Health (BS-97, frame 4123:316)', () {

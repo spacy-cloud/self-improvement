@@ -9,6 +9,18 @@ import 'package:self_improvement/shared/local_time.dart';
 /// that reached the health interface late (a watch that synced afterwards).
 const int healthSyncDays = 7;
 
+/// Whether a comparison reads [day]: it is one of the [days] local days ending
+/// [today] (default [healthSyncDays], the window of [healthSyncWindow]). An
+/// older day is never read again, and neither is a day after [today].
+///
+/// What reaches a day outside of it (a total that Health Connect holds for it)
+/// stays out of the app, so nothing refills it after it was deleted.
+bool isInHealthSyncWindow(
+  LocalDate day,
+  LocalDate today, {
+  int days = healthSyncDays,
+}) => !day.isAfter(today) && day.daysUntil(today) < days;
+
 /// The instants of one local calendar day: from its first moment up to (not
 /// including) the first moment of the next day.
 ///

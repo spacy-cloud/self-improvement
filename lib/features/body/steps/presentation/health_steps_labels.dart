@@ -7,9 +7,11 @@
 library;
 
 import 'package:flutter/foundation.dart';
+import 'package:self_improvement/core/health/domain/health_day_range.dart';
 import 'package:self_improvement/core/time/clock_service.dart';
 import 'package:self_improvement/features/body/steps/domain/health_steps_status.dart';
 import 'package:self_improvement/shared/german_date.dart';
+import 'package:self_improvement/shared/local_date.dart';
 
 /// `heute, 09:41`, `gestern, 21:10` or `Mo., 14. Sep., 09:41`: when [utc] was
 /// in the zone of [clock].
@@ -221,7 +223,23 @@ const String healthDayNoticeText =
     'Wenn du speicherst, gilt dein Wert: Health ändert diesen Tag danach '
     'nicht mehr.';
 
-/// The sentence added to the delete confirmation while the switch is on.
+/// The sentence added to the delete confirmation of a day that Health refills.
 const String healthDeleteRefillText =
     ' Solange „Schritte aus Health übernehmen“ an ist, trägt Health den Tag '
     'beim nächsten Abgleich wieder ein, wenn dort Schritte stehen.';
+
+/// The sentence for the delete confirmation of [day], or an empty text. It is
+/// true only when the next comparison reads [day]: the switch is on and Health
+/// delivers (the state is `ready`: with no access, no Health Connect or after a
+/// failed comparison nothing is read, so nothing is promised) and the day is one
+/// of the days a comparison reads (today and the six before, D-032). For any
+/// other day the normal confirmation stays as it is.
+String healthDeleteRefillTextFor(
+  HealthStepsStatus status, {
+  required LocalDate day,
+  required LocalDate today,
+}) =>
+    status.condition == HealthStepsCondition.ready &&
+        isInHealthSyncWindow(day, today)
+    ? healthDeleteRefillText
+    : '';
