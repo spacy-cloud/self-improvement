@@ -245,6 +245,38 @@ void main() {
     });
   });
 
+  group('the card of a day before today (BS-93, R2-03)', () {
+    test('(BS-93, R2-03) it is data for a day before today, and loading, not '
+        'an error and not built, once that day has become today (the zone '
+        'moved to the west)', () async {
+      start();
+      final dayBefore = yesterday.addDays(-1);
+      container
+        ..listen(dayChecklistProvider(yesterday), (_, _) {})
+        ..listen(dayChecklistProvider(dayBefore), (_, _) {});
+      await settle();
+      expect(container.read(dayChecklistProvider(yesterday)).hasValue, isTrue);
+      expect(container.read(dayChecklistProvider(dayBefore)).hasValue, isTrue);
+
+      // 03:00 on 3 October in Berlin is 21:00 on 2 October in New York: the
+      // day the card was made for is today now.
+      harness.clock.setNow(DateTime.utc(2026, 10, 3, 1));
+      harness.clock.setTimeZone('America/New_York');
+      container.read(todayProvider.notifier).refresh();
+      await pumpEventQueue();
+      expect(container.read(todayProvider), yesterday);
+
+      final card = container.read(dayChecklistProvider(yesterday));
+      expect(card.isLoading, isTrue);
+      expect(card.hasError, isFalse);
+      expect(card.hasValue, isFalse);
+      // The day before it is still a day before today.
+      expect(container.read(dayChecklistProvider(dayBefore)).hasValue, isTrue);
+      // The card of today is the one of today.
+      expect((await checklist()).today, yesterday);
+    });
+  });
+
   group('one model with the habits tab (BS-110, C04)', () {
     test(
       'with nothing selected the list of the tab IS the list of today',

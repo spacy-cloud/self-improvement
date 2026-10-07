@@ -223,7 +223,8 @@ TodayChecklist buildDayChecklist({
 }) {
   assert(
     !habitDay.isToday,
-    'The card of today is built by buildTodayChecklist',
+    'buildDayChecklist builds the card of a day before today; the card of '
+    'today is built by buildTodayChecklist',
   );
   final day = habitDay.date;
   const dayWord = 'an diesem Tag';

@@ -48,6 +48,13 @@ final todayChecklistProvider = Provider<AsyncValue<TodayChecklist>>((ref) {
 /// (see `buildDayChecklist`). It reads the streams the card of today reads, so a
 /// correction made for that day shows up here too. Released when no card shows
 /// it.
+///
+/// The day can become today while a card still asks for it: Home shows the day
+/// before today and the zone changes to the west (or midnight passes), so the
+/// provider is rebuilt with the new "today" before the page replaces the card.
+/// Then nothing is built, because `buildDayChecklist` is for a day before
+/// today and the card of today is [todayChecklistProvider]; the card that asked
+/// is about to be replaced and shows its loading frame meanwhile (R2-03).
 final dayChecklistProvider = Provider.autoDispose
     .family<AsyncValue<TodayChecklist>, LocalDate>((ref, day) {
       final tasks = ref.watch(tasksProvider);
@@ -62,7 +69,8 @@ final dayChecklistProvider = Provider.autoDispose
           );
         }
       }
-      if (inputs.any((input) => !input.hasValue)) {
+      if (inputs.any((input) => !input.hasValue) ||
+          habitDay.requireValue.isToday) {
         return const AsyncLoading<TodayChecklist>();
       }
       return AsyncData<TodayChecklist>(
