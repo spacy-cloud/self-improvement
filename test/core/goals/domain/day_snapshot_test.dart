@@ -99,7 +99,7 @@ void main() {
       expect(build(day: today.addDays(30)), isNotNull);
     });
 
-    test('contains the five daily goals in enum order with defaults', () {
+    test('contains the six daily goals in enum order with defaults (BS-99: "Workout heute" is last and off)', () {
       final snapshot = built();
       expect(snapshot.date, today);
       expect(snapshot.items, [
@@ -132,6 +132,12 @@ void main() {
           module: ModuleId.tasks,
           target: 1,
           applicable: true,
+        ),
+        const GoalSnapshotItem(
+          goalKey: 'workout_daily',
+          module: ModuleId.focus,
+          target: 1,
+          applicable: false,
         ),
       ]);
     });
@@ -242,6 +248,7 @@ void main() {
         'weight_entry': false,
         'focus_minutes': true,
         'task_completion': true,
+        'workout_daily': false,
       });
       expect(snapshot.itemFor('water')?.target, 3000);
       expect(snapshot.itemFor('weight_entry')?.target, 1);
@@ -282,15 +289,22 @@ void main() {
 
   group('buildDaySnapshot: modules', () {
     test('a disabled module makes exactly its goals not applicable', () {
+      // "Workout heute" is switched on here: it is off by default, so without
+      // the version the module would not be the reason it does not apply.
+      final dailyWorkoutOn = GoalVersion(
+        type: GoalType.workoutDaily,
+        effectiveFrom: profileStart,
+      );
       final expected = <ModuleId, Set<String>>{
         ModuleId.nutrition: {'water'},
         ModuleId.body: {'steps', 'weight_entry'},
-        ModuleId.focus: {'focus_minutes'},
+        ModuleId.focus: {'focus_minutes', 'workout_daily'},
         ModuleId.tasks: {'task_completion'},
         ModuleId.gamification: <String>{},
       };
       expected.forEach((disabled, offKeys) {
         final snapshot = built(
+          versions: [dailyWorkoutOn],
           moduleEnabledOn: (module, day) => module != disabled,
         );
         for (final item in snapshot.items) {
@@ -327,7 +341,7 @@ void main() {
 
     test('all modules off leaves a snapshot without applicable goals', () {
       final snapshot = built(moduleEnabledOn: (module, day) => false);
-      expect(snapshot.items, hasLength(5));
+      expect(snapshot.items, hasLength(6));
       expect(snapshot.items.where((item) => item.applicable), isEmpty);
     });
 
@@ -397,6 +411,7 @@ void main() {
         'weight_entry',
         'focus_minutes',
         'task_completion',
+        'workout_daily',
         'habit:a-habit',
         'habit:b-habit',
         'habit:c-habit',
@@ -705,6 +720,7 @@ void main() {
         'weight_entry',
         'focus_minutes',
         'task_completion',
+        'workout_daily',
         'habit:h0-new',
         'habit:h1',
       ]);
@@ -848,6 +864,163 @@ void main() {
             applicable: true,
           ),
         ),
+      );
+    });
+  });
+
+  group('"Workout heute" in the snapshot (BS-99)', () {
+    GoalVersion daily({required LocalDate from, bool enabled = true}) =>
+        GoalVersion(
+          type: GoalType.workoutDaily,
+          enabled: enabled,
+          effectiveFrom: from,
+        );
+
+    test('(BS-99) every snapshot has it, off: no version means off', () {
+      final item = built().itemFor('workout_daily')!;
+      expect(item.type, GoalType.workoutDaily);
+      expect(item.module, ModuleId.focus);
+      expect(item.target, 1, reason: 'a switch goal: the fixed threshold 1');
+      expect(item.applicable, isFalse);
+      expect(
+        built(day: yesterday).itemFor('workout_daily')?.applicable,
+        isFalse,
+      );
+    });
+
+    test('(BS-99, AT24) a version switches it on from its day, earlier days stay off', () {
+      final versions = [daily(from: tomorrow)];
+      expect(
+        built(
+          day: today,
+          versions: versions,
+        ).itemFor('workout_daily')?.applicable,
+        isFalse,
+        reason: 'a change saved today applies from tomorrow',
+      );
+      expect(
+        built(
+          day: tomorrow,
+          versions: versions,
+        ).itemFor('workout_daily')?.applicable,
+        isTrue,
+      );
+      expect(
+        built(
+          day: tomorrow.addDays(30),
+          versions: versions,
+        ).itemFor('workout_daily')?.applicable,
+        isTrue,
+      );
+    });
+
+    test('(BS-99, AT24) switching it off later leaves the days before on', () {
+      final versions = [
+        daily(from: profileStart),
+        daily(from: today, enabled: false),
+      ];
+      expect(
+        built(
+          day: yesterday,
+          versions: versions,
+        ).itemFor('workout_daily')?.applicable,
+        isTrue,
+      );
+      expect(
+        built(
+          day: today,
+          versions: versions,
+        ).itemFor('workout_daily')?.applicable,
+        isFalse,
+      );
+    });
+
+    test('(BS-99) it needs the goal switch AND the focus module', () {
+      final on = [daily(from: profileStart)];
+      bool focusOff(ModuleId module, LocalDate day) => module != ModuleId.focus;
+      expect(built(versions: on).itemFor('workout_daily')?.applicable, isTrue);
+      expect(
+        built(
+          versions: on,
+          moduleEnabledOn: focusOff,
+        ).itemFor('workout_daily')?.applicable,
+        isFalse,
+      );
+      expect(
+        built(moduleEnabledOn: focusOff).itemFor('workout_daily')?.applicable,
+        isFalse,
+      );
+    });
+
+    test('(BS-99) the threshold is the fixed 1 whatever a version stores', () {
+      final snapshot = built(
+        versions: [
+          GoalVersion(
+            type: GoalType.workoutDaily,
+            target: 9,
+            effectiveFrom: profileStart,
+          ),
+        ],
+      );
+      expect(snapshot.itemFor('workout_daily')?.target, 1);
+    });
+
+    test('(BS-99) the weekly workout goal stays out of the snapshot even next to it', () {
+      final snapshot = built(
+        versions: [
+          daily(from: profileStart),
+          GoalVersion(
+            type: GoalType.workoutWeekly,
+            target: 5,
+            effectiveFrom: profileStart,
+          ),
+        ],
+      );
+      expect(snapshot.itemFor('workout_weekly'), isNull);
+      expect(snapshot.itemFor('workout_daily')?.applicable, isTrue);
+    });
+
+    test('(BS-99) masking today: the focus module masks it, enabling restores it with the goal\'s own flag', () {
+      DaySnapshot stored(List<GoalVersion> versions) =>
+          built(versions: versions);
+      DaySnapshot mask(
+        DaySnapshot snapshot,
+        bool Function(ModuleId) enabled,
+        List<GoalVersion> versions,
+      ) => maskTodaySnapshot(
+        today: today,
+        stored: snapshot,
+        versions: versions,
+        habits: const [],
+        isModuleEnabledNow: enabled,
+      );
+
+      final on = [daily(from: profileStart)];
+      final original = stored(on);
+      final masked = mask(original, (module) => module != ModuleId.focus, on);
+      expect(masked.itemFor('workout_daily')?.applicable, isFalse);
+      expect(
+        mask(masked, (module) => true, on).items,
+        original.items,
+        reason: 'the goal is on again with the module',
+      );
+
+      final off = <GoalVersion>[];
+      final originalOff = stored(off);
+      expect(originalOff.itemFor('workout_daily')?.applicable, isFalse);
+      final maskedOff = mask(
+        originalOff,
+        (module) => module != ModuleId.focus,
+        off,
+      );
+      expect(
+        mask(
+          maskedOff,
+          (module) => true,
+          off,
+        ).itemFor('workout_daily')?.applicable,
+        isFalse,
+        reason: 'enabling the module never switches the goal on',
       );
     });
   });

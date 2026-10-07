@@ -3,8 +3,9 @@ const String _habitKeyPrefix = 'habit:';
 
 /// Snapshot goal key of a habit: `habit:<habitId>`.
 ///
-/// Snapshot rows of the five daily goal types use `GoalType.key` instead
-/// (`water`, `steps`, `weight_entry`, `focus_minutes`, `task_completion`).
+/// Snapshot rows of the daily goal types use `GoalType.key` instead (`water`,
+/// `steps`, `weight_entry`, `focus_minutes`, `task_completion`,
+/// `workout_daily`).
 String habitGoalKey(String habitId) => '$_habitKeyPrefix$habitId';
 
 /// Whether [goalKey] is a habit key with a non-empty habit id.

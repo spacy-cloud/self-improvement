@@ -4,9 +4,13 @@ import 'package:self_improvement/features/onboarding/domain/daily_goal_stepper.d
 
 void main() {
   group('suggested goals', () {
-    test('the six goals of the app are listed once, steppers first', () {
-      expect(onboardingGoalTypes.toSet(), GoalType.values.toSet());
-      expect(onboardingGoalTypes, hasLength(GoalType.values.length));
+    test('the six suggested goals are listed once, steppers first; "Workout heute" is not suggested (BS-99)', () {
+      expect(
+        onboardingGoalTypes.toSet(),
+        GoalType.values.toSet()..remove(GoalType.workoutDaily),
+      );
+      expect(onboardingGoalTypes, hasLength(GoalType.values.length - 1));
+      expect(onboardingGoalTypes, isNot(contains(GoalType.workoutDaily)));
       expect(onboardingStepperGoals, <GoalType>[
         GoalType.steps,
         GoalType.water,

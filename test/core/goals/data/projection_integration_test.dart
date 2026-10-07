@@ -454,7 +454,7 @@ void main() {
   });
 
   group('goal snapshots', () {
-    test('the first command of a day creates that day\'s snapshot with the five daily goals', () async {
+    test('the first command of a day creates that day\'s snapshot with the daily goals', () async {
       await addWeight(DateTime.utc(2026, 10, 3, 6));
       final rows = await (db.select(
         db.dailyGoalSnapshots,
@@ -586,9 +586,12 @@ void main() {
         final rows = await db.select(db.dailyGoalSnapshots).get();
         expect(
           rows.length,
-          statuses.length * 5,
-          reason: 'five daily goals per day, no habits',
+          statuses.length * GoalType.dailyTypes.length,
+          reason:
+              'one item per daily goal type per day (six, "Workout heute" '
+              'is stored as off), no habits',
         );
+        expect(GoalType.dailyTypes, hasLength(6));
       },
     );
   });

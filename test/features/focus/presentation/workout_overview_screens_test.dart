@@ -167,7 +167,11 @@ void main() {
     testWidgets('lists the latest workouts with their details', (tester) async {
       final ui = await seeded(tester);
       await pumpFocusApp(tester, ui, initialLocation: '/workouts');
-      expect(tile, findsNWidgets(3 + 1), reason: '3 workouts, 1 goal row');
+      expect(
+        tile,
+        findsNWidgets(3 + 2),
+        reason: '3 workouts, 2 goal rows (weekly goal and "Workout heute")',
+      );
       expect(find.text('Letzte Trainings'), findsOneWidget);
       expect(find.text('Upper Body'), findsOneWidget);
       expect(find.text('Kraft · 60 Min. · Mittel'), findsOneWidget);
@@ -202,7 +206,11 @@ void main() {
       final ui = await createFocusUi(tester);
       await tester.insertWorkouts(ui, 8, newest: DateTime.utc(2026, 10, 3, 7));
       await pumpFocusApp(tester, ui, initialLocation: '/workouts');
-      expect(tile, findsNWidgets(workoutOverviewLatestCount + 1));
+      expect(
+        tile,
+        findsNWidgets(workoutOverviewLatestCount + 2),
+        reason: 'the newest five and the two goal rows',
+      );
     });
 
     testWidgets('names the muscle groups trained last, freshest first', (

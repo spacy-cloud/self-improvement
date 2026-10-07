@@ -23,6 +23,8 @@ class AppSettingsRepository {
     haptics: row.haptics,
     notificationsEnabled: row.notificationsEnabled,
     lastKnownTimezone: row.lastKnownTimezone,
+    healthStepsSyncEnabled: row.healthStepsSyncEnabled,
+    healthStepsLastSyncAtUtc: row.healthStepsLastSyncAtUtc,
     rowVersion: row.rowVersion,
   );
 }

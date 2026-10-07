@@ -124,10 +124,14 @@ class DataHarness {
   /// versions effective from the profile start, default dashboard cards, and
   /// optionally another profile start date.
   ///
+  /// The optional daily workout goal is off like in the real flow (no version
+  /// for it); [workoutDailyGoal] switches it on from the profile start.
+  ///
   /// This writes rows directly (no commands) and is meant for test fixtures.
   Future<void> seedOnboarded({
     Set<String>? enabledModules,
     LocalDate? startedOn,
+    bool workoutDailyGoal = false,
   }) async {
     final now = clock.nowUtc();
     final start = startedOn ?? clock.localDateOf(now);
@@ -152,6 +156,12 @@ class DataHarness {
             );
       }
       for (final type in GoalType.values) {
+        final on =
+            type.defaultEnabled ||
+            (type == GoalType.workoutDaily && workoutDailyGoal);
+        if (!on) {
+          continue; // no version means off (the daily workout goal)
+        }
         await database
             .into(database.goalVersions)
             .insert(

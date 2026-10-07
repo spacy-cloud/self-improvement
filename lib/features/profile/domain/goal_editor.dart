@@ -3,8 +3,9 @@
 ///
 /// The ranges and steps come from [GoalType] (water 250 to 10.000 ml in 50 ml
 /// steps, steps 100 to 100.000, focus 5 to 180 minutes, workouts 1 to 14 per
-/// week; weight entry and task completion are plain on/off switches). Changes
-/// are saved by `GoalsCommands` and take effect from tomorrow.
+/// week; weight entry, task completion and "Workout heute" are plain on/off
+/// switches, the last one off until it is switched on). Changes are saved by
+/// `GoalsCommands` and take effect from tomorrow.
 library;
 
 import 'package:flutter/foundation.dart';
@@ -20,6 +21,7 @@ const List<GoalType> goalDisplayOrder = <GoalType>[
   GoalType.steps,
   GoalType.focusMinutes,
   GoalType.weightEntry,
+  GoalType.workoutDaily,
   GoalType.taskCompletion,
   GoalType.workoutWeekly,
 ];
@@ -93,6 +95,14 @@ GoalEditorSpec goalEditorSpec(GoalType type) {
       unit: '',
       stepAmount: 0,
     ),
+    GoalType.workoutDaily => const GoalEditorSpec(
+      type: GoalType.workoutDaily,
+      title: 'Workout heute',
+      caption: 'Training, Ruhetag oder übersprungen zählt',
+      inputLabel: 'Workout heute',
+      unit: '',
+      stepAmount: 0,
+    ),
     GoalType.taskCompletion => const GoalEditorSpec(
       type: GoalType.taskCompletion,
       title: 'Aufgabe erledigen',
@@ -120,7 +130,9 @@ String goalValueText(GoalType type, int target) {
     GoalType.steps => formatThousands(target),
     GoalType.focusMinutes => '$target Min.',
     GoalType.workoutWeekly => '$target×',
-    GoalType.weightEntry || GoalType.taskCompletion => '',
+    GoalType.weightEntry ||
+    GoalType.taskCompletion ||
+    GoalType.workoutDaily => '',
   };
 }
 
@@ -139,7 +151,9 @@ String goalSummaryText(
     GoalType.steps ||
     GoalType.focusMinutes => '${goalValueText(type, target)} pro Tag',
     GoalType.workoutWeekly => '${goalValueText(type, target)} pro Woche',
-    GoalType.weightEntry || GoalType.taskCompletion => 'Täglich',
+    GoalType.weightEntry ||
+    GoalType.taskCompletion ||
+    GoalType.workoutDaily => 'Täglich',
   };
 }
 
@@ -202,7 +216,9 @@ String goalTargetMessage(GoalType type, GoalTargetValidation validation) {
       'Bitte gib eine Dauer zwischen $min und $max Minuten ein.',
     GoalType.workoutWeekly =>
       'Bitte gib eine Anzahl zwischen $min und $max Workouts pro Woche ein.',
-    GoalType.weightEntry || GoalType.taskCompletion => 'Ungültiger Zielwert.',
+    GoalType.weightEntry ||
+    GoalType.taskCompletion ||
+    GoalType.workoutDaily => 'Ungültiger Zielwert.',
   };
 }
 

@@ -13,6 +13,10 @@ abstract final class TaskRoutes {
   /// The "Aufgaben" tab of the habits screen.
   static const String list = '/habits?tab=tasks';
 
+  /// The settings page, where reminders are switched on (the form of a task
+  /// points there while they are off).
+  static const String settings = '/settings';
+
   static String edit(String id) => '/tasks/$id';
 }
 

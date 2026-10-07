@@ -211,6 +211,53 @@ void main() {
       expect(lines.values.every((l) => l.pending == null), isTrue);
     });
 
+    test('(BS-99) "Workout heute" is Aus without a version, Täglich once on, and names a change from tomorrow', () {
+      ProfileGoalLine dailyWorkout(List<GoalVersion> versions) =>
+          buildProfileOverview(
+            profile: profile(),
+            modules: allOn,
+            goals: buildGoalEditorModel(
+              versions: versions,
+              today: today,
+              modules: allOn,
+            ),
+          ).goals.firstWhere((l) => l.kind == ProfileGoalKind.workoutDaily);
+
+      final off = dailyWorkout(const []);
+      expect(off.title, 'Workout heute');
+      expect(off.value, 'Aus');
+      expect(off.pending, isNull);
+
+      final on = dailyWorkout([
+        GoalVersion(type: GoalType.workoutDaily, effectiveFrom: today),
+      ]);
+      expect(on.value, 'Täglich');
+      expect(on.pending, isNull);
+
+      final later = dailyWorkout([
+        GoalVersion(
+          type: GoalType.workoutDaily,
+          effectiveFrom: today.addDays(1),
+        ),
+      ]);
+      expect(later.value, 'Aus');
+      expect(later.pending, 'Ab morgen: Täglich');
+    });
+
+    test(
+      '(BS-99) "Workout heute" is left out while the focus module is off',
+      () {
+        final overview = build(
+          profile(),
+          modules: {...allOn, ModuleId.focus: false},
+        );
+        expect(
+          overview.goals.map((l) => l.kind),
+          isNot(contains(ProfileGoalKind.workoutDaily)),
+        );
+      },
+    );
+
     test('name the change that starts tomorrow', () {
       final overview = build(
         profile(),

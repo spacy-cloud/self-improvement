@@ -6,6 +6,9 @@ import 'package:self_improvement/core/notifications/domain/notification_routes.d
 enum NotificationEntityKind {
   /// A habit (route `/habits/<uuid>`).
   habit,
+
+  /// A task (route `/tasks/<uuid>`, the form "Aufgabe bearbeiten").
+  task,
 }
 
 /// A record a payload refers to, to be checked for existence by the caller.
@@ -67,9 +70,15 @@ abstract final class NotificationRouteResolver {
   /// payload is `/habits/` plus a 36 character UUID).
   static const int maxPayloadLength = 64;
 
+  static const String _uuid =
+      r'([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$';
+
   static final RegExp _habitDetail = RegExp(
-    '^${RegExp.escape(NotificationRoutes.habitDetailPrefix)}'
-    r'([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$',
+    '^${RegExp.escape(NotificationRoutes.habitDetailPrefix)}$_uuid',
+  );
+
+  static final RegExp _taskEdit = RegExp(
+    '^${RegExp.escape(NotificationRoutes.taskEditPrefix)}$_uuid',
   );
 
   /// Checks [payload] against the whitelist; `null` for anything else (empty,
@@ -93,21 +102,37 @@ abstract final class NotificationRouteResolver {
           route: NotificationRoutes.habits,
           module: ModuleId.tasks,
         );
+      case NotificationRoutes.tasks:
+        return const NotificationTarget(
+          route: NotificationRoutes.tasks,
+          module: ModuleId.tasks,
+        );
       case NotificationRoutes.focusSession:
         return const NotificationTarget(
           route: NotificationRoutes.focusSession,
           module: ModuleId.focus,
         );
     }
-    final match = _habitDetail.firstMatch(payload);
-    if (match == null) {
-      return null;
+    final habit = _habitDetail.firstMatch(payload);
+    if (habit != null) {
+      return NotificationTarget(
+        route: payload,
+        module: ModuleId.tasks,
+        entity: NotificationEntity(
+          NotificationEntityKind.habit,
+          habit.group(1)!,
+        ),
+      );
     }
-    return NotificationTarget(
-      route: payload,
-      module: ModuleId.tasks,
-      entity: NotificationEntity(NotificationEntityKind.habit, match.group(1)!),
-    );
+    final task = _taskEdit.firstMatch(payload);
+    if (task != null) {
+      return NotificationTarget(
+        route: payload,
+        module: ModuleId.tasks,
+        entity: NotificationEntity(NotificationEntityKind.task, task.group(1)!),
+      );
+    }
+    return null;
   }
 
   /// The safe route to open for [payload]:
@@ -115,6 +140,7 @@ abstract final class NotificationRouteResolver {
   /// - unknown or malformed payload: the dashboard `/`
   /// - the owning module is switched off: the dashboard `/`
   /// - the habit does not exist (any more) or is archived: `/habits`
+  /// - the task does not exist (any more): the task list `/habits?tab=tasks`
   /// - otherwise the route of the payload.
   ///
   /// [isModuleEnabled] and [entityExists] are plain synchronous lookups; the
@@ -134,7 +160,10 @@ abstract final class NotificationRouteResolver {
     }
     final entity = target.entity;
     if (entity != null && !entityExists(entity)) {
-      return NotificationRoutes.habits;
+      return switch (entity.kind) {
+        NotificationEntityKind.habit => NotificationRoutes.habits,
+        NotificationEntityKind.task => NotificationRoutes.tasks,
+      };
     }
     return target.route;
   }

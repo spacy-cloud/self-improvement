@@ -18,10 +18,13 @@ final class GoalVersion {
   });
 
   /// The implicit version of a type that has no stored version at all: the
-  /// planning default, enabled, valid since the beginning of the calendar.
+  /// planning default, valid since the beginning of the calendar. It is
+  /// enabled for every goal but the optional daily workout goal
+  /// ([GoalType.defaultEnabled]), where "no version" means off.
   factory GoalVersion.implicitDefault(GoalType type) => GoalVersion(
     type: type,
     target: type.defaultTarget,
+    enabled: type.defaultEnabled,
     effectiveFrom: _beginningOfCalendar,
   );
 
@@ -81,7 +84,8 @@ GoalVersion? resolveGoalVersion(
 }
 
 /// Like [resolveGoalVersion], but falls back to [GoalVersion.implicitDefault]
-/// (default target, enabled) when no version exists for [day] yet.
+/// (default target, enabled unless [GoalType.defaultEnabled] is false) when no
+/// version exists for [day] yet.
 GoalVersion effectiveGoalOrDefault(
   Iterable<GoalVersion> versions,
   GoalType type,

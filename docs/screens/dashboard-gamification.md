@@ -31,10 +31,10 @@ Dark und OLED entstehen aus den Theme-Tokens, es gibt keine eigenen Varianten im
 | Fehler | `ErrorState` mit "Erneut versuchen"; Wiederholen liest Karten, Module, Tagesstatus und Aktivität neu |
 | Erster Tag | Nur wenn heute der Profilstart ist und noch kein Datensatz existiert: Begrüßung (mit Namen, falls vorhanden), "Ersten Eintrag hinzufügen" und "Schnell starten" (Gewicht, Wasser, erstes Habit, jeweils nur bei aktivem Modul). Weder Ring noch Zahlen noch Streak |
 | Leerer Folgetag | Datum, Tagesring bei 0, ehrliche Leerzustände der Karten, Streak 0, XP 0 |
-| Kein anwendbares Tagesziel | Karte "Noch keine Tagesziele" mit "Ziele festlegen", niemals ein Ring "0 von 0" |
+| Kein anwendbares Tagesziel | Karte "Noch keine Tagesziele" mit "Ziele festlegen", niemals ein Ring "0 von 0" und kein Titel. Fragt trotzdem jemand danach, gilt es als "keins erreicht": `ProgressRing.goals` zeichnet nur die Spur und wird nie grün, `GoalsStanding.of` liefert `none` |
 | Alle Module aus | Leerzustand "Alle Module sind ausgeschaltet" mit "Module auswählen" (kein Ring, keine Karten) |
 | Alle Karten ausgeblendet | Leerzustand mit "Karten anpassen"; Ring bleibt |
-| Normal | Datum, "Dein Tag im Überblick", Tagesring mit einem der fünf festen neutralen Texte, Karten, "Karten anpassen" |
+| Normal | Datum, "Dein Tag im Überblick", Tagesring (grau, gelb oder grün nach dem Stand der Ziele) mit dem Titel des Standes (je Stand drei neutrale Texte, siehe Abschnitt 6, Punkt 1), Karten, "Karten anpassen" |
 | Nach Speichern | Ring, Streak, XP und Karten aktualisieren sich aus der Datenbank; das Dashboard zeigt selbst keine Rückmeldung, diese kommt nur aus den speichernden Abläufen |
 | Level-up | Ruhige Karte "Level n erreicht" über dem Ring, schließbar |
 
@@ -55,7 +55,12 @@ Streak-Einstieg, XP-Karte und Level-up-Hinweis erscheinen nur bei aktivem Modul 
 
 ## 6. Abweichungen von Figma und Gründe
 
-1. Motivationsbanner: Die Spezifikation verlangt fünf feste neutrale Texte (Tag des Jahres modulo 5). Statt "Stark unterwegs!" und der Pokalzeile "Weiter so!" steht dort der Tagestext und ein sachlicher Satz zum Stand der Ziele.
+1. Tagesring und Titel der Karte (BS-121, Entscheidung D-026): Beides hängt vom Stand der Tagesziele ab. Die Frames "Ziele-Ring – Zustände" (`4127:316`, Dark `4127:365`, OLED `4127:414`) zeigen die vier Fälle 0 von 4, 2 von 4, 4 von 4 und 1 von 1.
+   - Ring: 0 erreicht grau (nur die Spur, kein Bogen), 1 bis x minus 1 erreicht gelb (`dayRing`, `#E2D11E`), alle erreicht grün (`dayRingComplete`, Wert von `color/primary`, voller Ring). "Alle erreicht" heißt: mindestens ein Ziel gilt und keines fehlt, ein einziges Ziel (1 von 1) zählt. Die Farbe wählt allein `ProgressRing.goals`, die Karte übergibt keine Farbe: So sieht der Ring auf Home und in der Übersicht "Ziele heute" (BS-103) gleich aus. Die Farbe ist nie die einzige Information: "x von y" im Ring, der gesprochene Text ("4 von 4 Zielen erreicht") und der sachliche Satz darunter bleiben unverändert. Kontrast (Light 2,66:1 gegen die Kartenfläche, geprüfte Alternative `primary-button` mit 4,72:1, nicht gewählt): [design-handoff.md](../design-handoff.md) Abschnitt 8.4.
+   - Titel: je Stand drei neutrale Texte, gewählt mit Tag des Jahres modulo 3 innerhalb der Liste des Stands (`motivationTextFor(date, fulfilled:, applicable:)`). Keins erreicht: "Heute ist ein guter Tag, um anzufangen." / "Jeder Tag ist ein neuer Anfang." / "Ein Eintrag nach dem anderen."; teilweise: "Stark unterwegs!" / "Kleine Schritte zählen." / "Bleib in deinem Tempo."; alle erreicht: "Geschafft!" / "Das war ein runder Tag." / "Heute hat alles geklappt." Kein Text einer anderen Liste erscheint im falschen Stand, an keinem Tag des Jahres. Die Wortlaute sind Standardwerte von Joern und dürfen geändert werden (ein Test hält sie fest). Sie ersetzen die fünf festen Texte der Spezifikation (Tag des Jahres modulo 5, die Spezifikation liegt nicht im Repository); die Pokalzeile "Weiter so!" des V1-Entwurfs gibt es weiter nicht.
+   - Ohne anwendbares Ziel zeigt Home "Noch keine Tagesziele" (Abschnitt 3), keinen Ring und keinen Titel. Wird der Stand dennoch erfragt, gilt "keins erreicht": nur die Spur, nie grün, Titelliste "keins".
+   - Vergangene Tage (BS-93, noch nicht gebaut): Die Titel nennen "heute" und gehören nur zum heutigen Tag. Ein vergangener Tag zeigt nur den sachlichen Satz zum Stand und keinen Titel: `DayOverviewCard` nimmt dafür `motivation: null` an, `motivationTextFor` wird für ihn nicht aufgerufen. Der Satz selbst ("Du hast heute …") ist noch an heute gebunden und wird mit BS-93 angepasst; die Ringfarbe nach Stand gilt dort ebenfalls.
+   - Abweichungen im Entwurf (nicht umgesetzt, Figma nicht geändert): `4115:249` ("Home – Karte antippbar") zeigt weiter die Pokalzeile "Weiter so!" und den Zusatz "Bleib dran!"; die App zeigt nur Titel und sachlichen Satz. Die antippbare Karte (Chevron) gehört nicht zu BS-121. Auf den Tafeln steht "Zielen" in 12 px (Caption/Default) und der Abstand zwischen Ring und Text beträgt 20 px; die Karte nutzt wie bisher 14 px (Body/Regular) und 24 px.
 2. Erster Tag: Die Hauptaktion öffnet direkt den ersten sinnvollen Eintrag (Gewicht, sonst Wasser, sonst Habit, sonst der erste Plus-Eintrag), nicht das Plus-Menü, weil dieses zur Shell gehört. "+250 ml Wasser" heißt "Wasser eintragen" und öffnet die Wasser-Seite: Das Dashboard speichert nie ohne Bestätigung. Wie im Frame fehlen Datum, Ring und Streak-Einstieg im Willkommenszustand.
 3. Streak: Die Kacheln "Längste Streak" und "Aktive Tage gesamt" nutzen `MetricCard` (Titel neben dem Symbol statt Symbolkachel darüber). Der heutige Tag ist wie die anderen aktiven Tage gezeichnet und nur durch "Heute" hervorgehoben (Figma: andere Farbe). Marker tragen die Zustände über die Form (Haken, Ring, Strich, leerer Umriss) und nutzen die kontrastgeprüfte Textfarbe des Streak-Akzents. Zusätzlich zeigt die Leiste das Datum (Spezifikation 10.2).
 4. Fortschritt: Die Level-Kachel ist eine umrandete Kachel ohne Verlauf. Die Frame-Werte (Level 4, 640 von 800 XP) sind Platzhalter; gerechnet wird mit 100 XP pro Level. Die Badge-Namen "Dranbleiber" und "Marathon" gibt es nicht, es gelten die drei der Spezifikation (11.3). Die Liste "Heute verdient" ist nicht umgesetzt (siehe offene Punkte). Zusätzlich vorhanden: Streak-Link und der Hinweis "So sammelst du XP" (ohne Zahlenwerte aus dem Widget).
@@ -76,15 +81,15 @@ Streak-Einstieg, XP-Karte und Level-up-Hinweis erscheinen nur bei aktivem Modul 
 
 - Tippflächen mindestens 48 x 48 px; `androidTapTargetGuideline` und `labeledTapTargetGuideline` sind für Dashboard (alle Zustände), Karten anpassen, Streak und Fortschritt bei 320, 360, 393 und 430 px mit Textskalierung 1,0 und 2,0 grün (Messung an einer hohen Ansicht, damit angeschnittene Elemente die Messung nicht verfälschen).
 - Text bis 200 %: Inhalt scrollt, Reihen und Raster stapeln sich (Streak-Wochenleiste wird zur Liste mit Datum und Statuswort, Karten anpassen legt die Pfeile in eine eigene Zeile, Ring und Text stapeln).
-- Zustand nie nur über Farbe: Wochenleiste (Haken, Ring, Strich, Umriss plus Text), Badges ("Erreicht", "Gesperrt"), Karten ("Sichtbar", "Ausgeblendet").
-- Semantics: Ring ("n von m Zielen erreicht"), Streak-Einstieg, jede Zeile der Wochenleiste mit vollem Datum und Status, Balken mit Zahlen, Pfeiltasten und Schalter mit Kartennamen, Level-up als Live-Region, Ansage nach dem Verschieben.
+- Zustand nie nur über Farbe: Tagesring (grau, gelb, grün plus "x von y" im Ring, gesprochener Text, Titel und sachlicher Satz), Wochenleiste (Haken, Ring, Strich, Umriss plus Text), Badges ("Erreicht", "Gesperrt"), Karten ("Sichtbar", "Ausgeblendet").
+- Semantics: Ring ("n von m Zielen erreicht", unabhängig vom Stand und seiner Farbe; die Zahl in der Mitte wird nicht ein zweites Mal gelesen), Streak-Einstieg, jede Zeile der Wochenleiste mit vollem Datum und Status, Balken mit Zahlen, Pfeiltasten und Schalter mit Kartennamen, Level-up als Live-Region, Ansage nach dem Verschieben.
 - Fokus und Modale: Karten anpassen schließt mit Zurück und Android-Zurück; Streak und Fortschritt führen bei Direktaufruf (Deep Link) zum Dashboard statt in eine Sackgasse.
 - Bewegung: nur `AppMotion` (150 bis 250 ms), bei reduzierter Bewegung sofortiger Zustandswechsel, keine Endlosanimation.
 - Kontrast: `textContrastGuideline` ist für Dashboard, Streak, Fortschritt und Karten anpassen in Light, Dark und OLED grün.
 
 ## 9. Tests und Abnahme-IDs
 
-Befehl: `flutter test test/features/dashboard test/features/gamification/presentation` (200 Testfälle, grün). Der Stand des Gesamtlaufs steht in [test-report.md](../test-report.md).
+Befehl: `flutter test test/features/dashboard test/features/gamification/presentation` (270 Testfälle, grün). Der Stand des Gesamtlaufs steht in [test-report.md](../test-report.md).
 
 | Datei | Fälle | Abnahme-IDs |
 |---|---:|---|
@@ -95,7 +100,8 @@ Befehl: `flutter test test/features/dashboard test/features/gamification/present
 | `.../home_themes_test.dart` | 4 | AT35, C06 |
 | `.../dashboard_cards_screen_test.dart` | 21 | AT02, AT03, AT27, AT33, AT34, C03, C04, C06 |
 | `.../level_up_notice_test.dart` | 8 | AT23, AT26, AT27, C04, G02 |
-| `.../day_overview_card_test.dart` | 9 | AT33, C04 |
+| `.../day_overview_card_test.dart` | 49 | AT33, AT34, AT35, C04, C06, Q02, Q03 |
+| `.../home_day_ring_test.dart` | 30 | AT35, C04, C06, Q02, Q03 |
 | `.../screenshots_test.dart` | 5 | AT33, Q03 |
 | `test/features/dashboard/application/dashboard_cards_controller_test.dart` | 9 | AT02, AT03, AT27, C03, C04 |
 | `test/features/dashboard/data/dashboard_activity_repository_test.dart` | 11 | AT01 |
@@ -109,7 +115,9 @@ Befehl: `flutter test test/features/dashboard test/features/gamification/present
 
 Die Modul- und Kartenmatrix (alle Module an, alle aus, eines an, Körpermodul aus und wieder an, Gamification aus und an, alle Karten ausgeblendet) steckt in `home_states_test.dart` und `home_real_modules_test.dart`. Der Neustart wird mit einem zweiten Container über derselben Datenbank nachgestellt, der Tageswechsel mit der `FakeClock`, ein Schreibfehler mit einem Datenbank-Trigger, der das Schreiben abbricht (nichts wird gespeichert, die Wiederholung verwendet dieselbe Befehls-ID).
 
-Visueller Vergleich (Q03): `screenshots_test.dart` schreibt PNGs der Zustände (393 x 852 in Light und Dark, 320 px bei 200 % Text) in den Ordner `build/dashboard_shots`; sie wurden gegen die Nodes `2013:2`, `4045:2`, `4004:2` und `4042:2` geprüft, die Abweichungen stehen in Abschnitt 6.
+Tagesring und Titel nach Stand (BS-121): Die Farbe wird an den Bögen gelesen, die `ProgressRing` auf die Zeichenfläche malt (`test/core/design/support/ring_arcs.dart`), nicht an einem Feld. `day_overview_card_test.dart` prüft die vier Zustände 0 von 4, 2 von 4, 4 von 4 und 1 von 1 in Light, Dark und OLED gegen die Tokens (nicht gegen feste Hex-Werte), dass die Karte und ein einzelnes `ProgressRing.goals` denselben Ring malen (Grundlage für "Ziele heute"), dass Ring und Titel bei jedem Zahlenpaar denselben Stand lesen, die gesprochenen Texte und die Richtlinien (Tippflächen, Beschriftung, Textkontrast) bei vier Breiten mit Textskala 1,0 und 2,0. `home_day_ring_test.dart` prüft die Zustände auf dem echten Home, den Titel je Stand an drei aufeinanderfolgenden Tagen (Tag des Jahres 276 bis 278), den Wegfall von Ring und Titel ohne anwendbares Ziel und einen Ablauf mit echten Daten (eine erledigte Aufgabe färbt das einzige Ziel grün, Wiederöffnen nimmt Farbe und Titel zurück). Die Regeln der Texte und Stände (alle Tage von 2026 und 2028, kein Titel im falschen Stand) stehen in `test/core/dashboard/motivation_test.dart`, die Token- und Kontrastwerte in `test/core/design/tokens_test.dart` und `contrast_test.dart`. Mutationsproben (lokal, nicht eingecheckt): Ohne die Farbwahl in `ProgressRing` scheitern 27 der neuen und geänderten Tests (4 von 4 und 1 von 1 in allen drei Themes, der Ablauf mit echten Daten), mit den alten fünf festen Texten statt der Liste des Stands 22. Auf einem Gerät ist nichts davon gesehen: Die Belege sind Host-Tests.
+
+Visueller Vergleich (Q03): `screenshots_test.dart` schreibt PNGs der Zustände (393 x 852 in Light und Dark, 320 px bei 200 % Text) in den Ordner `build/dashboard_shots`; sie wurden gegen die Nodes `2013:2`, `4045:2`, `4004:2` und `4042:2` geprüft, die Abweichungen stehen in Abschnitt 6. Für BS-121 wurden die vier Zustände einmalig im Host in Light, Dark und OLED (393 px) gerendert und gegen die Tafeln `4127:316`, `4127:365` und `4127:414` verglichen: Farbe und Länge des Bogens und die Titel stimmen, die Unterschiede stehen in Abschnitt 6, Punkt 1 (die Bilder gehören nicht zum Repository).
 
 ## 10. Offene Punkte
 
@@ -118,3 +126,15 @@ Visueller Vergleich (Q03): `screenshots_test.dart` schreibt PNGs der Zustände (
 - Die Ansage nach dem Verschieben einer Karte ("an Position n von m verschoben") wird beim Tippen aus der angezeigten Position gebildet; wird ein zweiter Zug ignoriert, weil der erste noch läuft, nennt die Ansage trotzdem "verschoben". Bekannt, nicht behoben (siehe [known-limitations.md](../known-limitations.md)).
 - Die Karten der Module sind nicht Teil dieses Pakets. Getestet ist ihr Zusammenspiel mit dem Raster (`home_real_modules_test.dart` mit den echten Modulen): Quick-Actions lösen den Kartenklick nicht aus und sind bei 320 px und 200 % Text erreichbar; die echte Wasserkarte speichert mit einem Tap und das Rückgängig nimmt Menge und XP zurück.
 - Erledigt und deshalb keine offenen Punkte mehr: Die Gewichtskarte zeigt bei einer Messung, die älter als sieben Tage ist, "Zuletzt <Datum>" ohne Kurve und ohne Vergleich statt abzustürzen (`weight_dashboard_card_test.dart`); alle acht Karten kommen von den Modulen; `GamificationModule` liefert `/streak` und `/progress`, die Shell registriert sie nicht noch einmal (`findDuplicatePaths` prüft es).
+
+## 11. v0.2.0: Tagesring und Streak mit dem Tagesziel „Workout heute“ (BS-99)
+
+Ticket [BS-99](https://spacy-cloud.atlassian.net/browse/BS-99), Entscheidungen D-024 und D-025 ([../implementation-decisions.md](../implementation-decisions.md)); Karte, Sheet und Workout-Bereich stehen in [focus-workouts.md](focus-workouts.md), Abschnitt 9. Dieser Abschnitt beschreibt nur, was sich für den Tagesring, die Streak und die XP ändert; die Home-Dateien des Rings (Farbe, Titel) gehören BS-121 und sind hier nicht angefasst.
+
+- **Tagesring.** `GoalType.workoutDaily` ist ein sechstes Tagesziel. Ausgeschaltet (Standard: kein Eintrag in `goal_versions`) steht es im Snapshot als nicht anwendbar und zählt nicht in „x von y“; der Nenner ändert sich für vorhandene Nutzer nicht. Eingeschaltet (ab morgen, wie jede Zieländerung) zählt es mit („x von 6“) und ist an einem Tag erreicht, wenn der Tag mindestens ein gültiges Workout, einen Ruhetag oder eine Überspringen-Markierung hat. Die Wochenzahl des Wochenziels hat keinen Einfluss (nur die Fakten des Tages gehen in `computeDayStatus` ein); das Wochenziel selbst ist weiter kein Tagesziel und steht nie im Ring.
+- **Streak.** Ein Tag ist aktiv, wenn mindestens ein anwendbares Ziel erreicht ist; mit eingeschaltetem Ziel halten deshalb auch Ruhetag und Überspringen die Streak, wie ein Workout. Ohne das Ziel halten sie nichts (die Markierung hat dann keine Wirkung, die Oberfläche bietet sie nicht an). Löscht oder nimmt man die Markierung zurück, sinkt die Streak sofort wieder (alle Werte werden aus den Fakten neu gerechnet, auch nach einem Import).
+- **XP.** Ruhetag und Überspringen vergeben keine XP und lösen beim Import keine Neuberechnung aus; ein Workout vergibt weiter 15 XP einmal pro Tag (Regeln unverändert).
+- **Datenfluss.** `DayFactsSource` liest je Tag die Zahl der aktiven Workouts und die aktive Markierung; seine `tables` enthalten `workoutEntries` und `workoutDayMarks`, damit Tagesring und Streak neu laufen, wenn sich eines davon ändert. Der Snapshot eines Tages friert das Ziel mit ein (`goal_key` `workout_daily`), spätere Änderungen schreiben keinen vergangenen Tag um.
+- **Home-Karte Workout.** Mit eingeschaltetem Ziel zeigt sie den Tag (offen, Training, Ruhetag, übersprungen), ohne das Ziel die Woche wie bisher.
+- **Tests.** `test/core/goals/domain/day_status_test.dart`, `day_snapshot_test.dart`, `test/core/goals/data/workout_daily_goal_test.dart` (echte Datenbank: ein Workout bei Wochenziel 3 und 5, Ruhetag, Überspringen, Streak, kein XP, aus, ab morgen, Zeitzone, Streams), `test/core/backup/workout_day_marks_roundtrip_test.dart`.
+

@@ -19,20 +19,22 @@ import 'package:self_improvement/core/time/clock_service.dart';
 /// ## How a run works
 ///
 /// 1. Read the facts once (master switch, permission from the device, module
-///    statuses, water rules, habits, the open focus session, whether today's
-///    water goal is reached) and let the pure [ReminderPlanner] compute the
-///    desired set: at most 40 notifications within seven calendar days.
+///    statuses, water rules, habits, open tasks with a reminder, the open
+///    focus session, whether today's water goal is reached) and let the pure
+///    [ReminderPlanner] compute the desired set: at most 40 notifications,
+///    recurring ones within seven calendar days, a task reminder at any
+///    distance.
 /// 2. Diff it against the projection table `scheduled_notifications`, keyed by
 ///    the semantic key (`water:2026-10-03:10:00`, `habit:<id>:2026-10-03`,
-///    `focus_end:<sessionId>`):
+///    `task:<id>`, `focus_end:<sessionId>`):
 ///    - same key and same fire time: kept, nothing is called;
-///    - same key, other time (habit time edited, time zone changed):
-///      rescheduled under the **same integer id**;
+///    - same key, other time (habit time edited, task reminder moved, time
+///      zone changed): rescheduled under the **same integer id**;
 ///    - new key: the row is inserted first (its autoincrement id is the id the
 ///      system gets), then the notification is scheduled;
-///    - key no longer wanted (module off, habit archived or deleted, slot
-///      switched off, water goal reached, focus paused): cancelled, then the
-///      row is deleted.
+///    - key no longer wanted (module off, habit archived or deleted, task
+///      completed, deleted or its reminder removed, slot switched off, water
+///      goal reached, focus paused): cancelled, then the row is deleted.
 /// 3. With the master switch off or without the system permission nothing is
 ///    scheduled and everything pending is cancelled.
 ///
@@ -80,11 +82,12 @@ import 'package:self_improvement/core/time/clock_service.dart';
 ///   doze mode. The app is not a clock.
 /// - **No background service.** Nothing runs between the planned alarms, so
 ///   reminders only exist for what was planned while the app ran: at most 40
-///   notifications and at most seven days ahead. Anyone who does not open the
-///   app for a long time stops receiving reminders after the planned window.
-///   With very many habit reminders only the nearest part of the seven days is
-///   planned ([ReminderStatus.planLimitReached]); the rest follows when the
-///   app is opened.
+///   notifications; the recurring ones (water, habits) at most seven days
+///   ahead, a task reminder at any distance (it is one moment the user chose).
+///   Anyone who does not open the app for a long time stops receiving
+///   recurring reminders after the planned window. With very many reminders
+///   only the nearest ones are planned ([ReminderStatus.planLimitReached]);
+///   the rest follows when the app is opened.
 /// - **Forced stop.** After "Force stop" in the system settings the system
 ///   cancels all alarms of the app. Delivery resumes only after the user opens
 ///   the app again.

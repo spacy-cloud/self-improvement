@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:self_improvement/core/errors/app_failure.dart';
+import 'package:self_improvement/features/body/steps/domain/step_source.dart';
 import 'package:self_improvement/features/body/steps/domain/steps_input.dart';
 import 'package:self_improvement/shared/local_date.dart';
 
-/// The manual step total of one local date.
+/// The step total of one local date, typed in by hand or taken from the health
+/// interface ([source]).
 @immutable
 final class StepDay {
   const StepDay({
@@ -13,6 +15,7 @@ final class StepDay {
     required this.rowVersion,
     this.reachedGoalEligible,
     this.xpGoalTargetSteps,
+    this.source = StepSource.manual,
   });
 
   final String id;
@@ -22,6 +25,10 @@ final class StepDay {
   final int steps;
 
   final int rowVersion;
+
+  /// Where the total comes from. A value the user types in always makes the
+  /// day [StepSource.manual].
+  final StepSource source;
 
   /// Frozen decision when an applicable goal was first reached (null before).
   final bool? reachedGoalEligible;

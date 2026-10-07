@@ -30,10 +30,12 @@ List<PlusEntry> _resolve({
   labelOf: (action) => action.label,
 );
 
-/// All goal types except [off].
+/// All goal types that are on by default (the planning default, BS-99 added the
+/// optional daily workout goal, which is off until it is switched on) except
+/// [off].
 Set<GoalType> _goals({Set<GoalType> off = const <GoalType>{}}) => {
   for (final type in GoalType.values)
-    if (!off.contains(type)) type,
+    if (type.defaultEnabled && !off.contains(type)) type,
 };
 
 /// The entries of the active modules, filtered by the goals that are on.
@@ -360,7 +362,7 @@ void main() {
           for (final type in GoalType.values)
             _version(type, enabled: true, from: _today, target: type.minTarget),
         ];
-        expect(activeGoalTypes(versions, _today), _goals());
+        expect(activeGoalTypes(versions, _today), GoalType.values.toSet());
       });
 
       test('(BS-117, AT24) the menu follows the state saved for tomorrow at '

@@ -10,14 +10,16 @@ import 'package:self_improvement/core/backup/backup_providers.dart';
 import 'package:self_improvement/core/notifications/application/reminder_providers.dart';
 import 'package:self_improvement/core/providers/core_providers.dart';
 import 'package:self_improvement/core/time/clock_service.dart';
+import 'package:self_improvement/features/body/steps/application/health_steps_controller.dart';
 import 'package:self_improvement/features/focus/application/focus_providers.dart';
 import 'package:self_improvement/features/modules/application/module_lifecycle.dart';
 import 'package:self_improvement/shared/local_time.dart';
 
 /// Everything that keeps running for the lifetime of the app after a
 /// successful start: the module lifecycle (`initialize` for active modules,
-/// `dispose` when one is switched off), the reminder triggers, the clock
-/// (resume and midnight),
+/// `dispose` when one is switched off), the reminder triggers, the triggers of
+/// the comparison with the health interface (start and resume; nothing is read
+/// while the switch is off), the clock (resume and midnight),
 /// the cleanup of temporary export files and the way notifications lead into
 /// the app.
 ///
@@ -53,7 +55,10 @@ final class AppWiring {
     container
       ..read(moduleLifecycleProvider)
       ..read(reminderAutoReconcileProvider)
-      ..read(reminderLifecycleProvider);
+      ..read(reminderLifecycleProvider)
+      // Steps from the health interface: one comparison now (start) and one on
+      // every resume. Ends at once while the switch is off.
+      ..read(healthStepsAutoSyncProvider);
     _clock = _ClockLifecycle(container)..attach();
     // Leftover temporary export copies from an earlier session (never throws).
     unawaited(container.read(backupServiceProvider).cleanUpTemporaryExports());
@@ -81,11 +86,13 @@ final class AppWiring {
 
   /// Opens the in-app route for a notification [payload] (launch or tap). The
   /// resolver turns anything unknown, a switched-off module or a missing
-  /// record into a safe route (the dashboard, or the habit list). A screen
-  /// target is pushed on top of what is open, so back returns to where the
-  /// user was; a tab target selects the tab, but only while a tab is on top (an
-  /// open form is never discarded). Ignored before the start state is known and
-  /// during onboarding.
+  /// record into a safe route (the dashboard, the habit list, or the task
+  /// list). A screen target is pushed on top of what is open, so back returns
+  /// to where the user was; a tab target selects the tab, but only while a tab
+  /// is on top (an open form is never discarded). When the page on top already
+  /// is the target (the form of that task is open) nothing is opened: a second
+  /// copy of a form would only be a second, conflicting way to edit the same
+  /// record. Ignored before the start state is known and during onboarding.
   Future<void> openFromNotification(String? payload) async {
     final state = guard();
     if (!state.ready || !state.onboardingCompleted) {
@@ -106,6 +113,9 @@ final class AppWiring {
       if (AppRoutes.isTabRoot(currentPath(router))) {
         router.go(route);
       }
+      return;
+    }
+    if (currentPath(router) == route) {
       return;
     }
     unawaited(router.push<void>(route));
