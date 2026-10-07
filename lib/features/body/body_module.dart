@@ -7,10 +7,12 @@ import 'package:self_improvement/features/body/presentation/weight_dashboard_car
 import 'package:self_improvement/features/body/presentation/weight_form_screen.dart';
 import 'package:self_improvement/features/body/presentation/weight_history_screen.dart';
 import 'package:self_improvement/features/body/presentation/weight_overview_screen.dart';
+import 'package:self_improvement/features/body/presentation/weight_past_day_card.dart';
 import 'package:self_improvement/features/body/presentation/weight_routes.dart';
 import 'package:self_improvement/features/body/steps/presentation/steps_dashboard_card.dart';
 import 'package:self_improvement/features/body/steps/presentation/steps_form_screen.dart';
 import 'package:self_improvement/features/body/steps/presentation/steps_overview_screen.dart';
+import 'package:self_improvement/features/body/steps/presentation/steps_past_day_card.dart';
 import 'package:self_improvement/features/body/steps/presentation/steps_routes.dart';
 
 /// The `body` module: weight and manual steps.
@@ -68,12 +70,14 @@ final class BodyModule extends SelfImprovementModule {
       title: 'Schritte',
       defaultRank: 0,
       builder: (context, ref) => const StepsDashboardCard(),
+      dayBuilder: (context, ref, day) => StepsPastDayCard(day: day),
     ),
     DashboardCardDescriptor(
       cardId: 'weight',
       title: 'Gewicht',
       defaultRank: 2,
       builder: (context, ref) => const WeightDashboardCard(),
+      dayBuilder: (context, ref, day) => WeightPastDayCard(day: day),
     ),
   ];
 

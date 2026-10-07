@@ -4,6 +4,7 @@ import 'package:self_improvement/core/providers/core_providers.dart';
 import 'package:self_improvement/features/nutrition/data/water_repository.dart';
 import 'package:self_improvement/features/nutrition/domain/water_entry.dart';
 import 'package:self_improvement/features/nutrition/domain/water_overview.dart';
+import 'package:self_improvement/shared/local_date.dart';
 
 final waterRepositoryProvider = Provider<WaterRepository>(
   (ref) => WaterRepository(
@@ -21,6 +22,16 @@ final waterTodayProvider = StreamProvider<WaterToday>((ref) {
   final today = ref.watch(todayProvider);
   return ref.watch(waterRepositoryProvider).watchToday(today);
 });
+
+/// The water model of one local day (BS-93): the same model as
+/// [waterTodayProvider], built by the same function, for the day Home shows
+/// when it is not today. The target is the one that counted on that day (the
+/// frozen snapshot), the total is what was entered for that day. Released when
+/// no card shows it.
+final waterDayProvider = StreamProvider.autoDispose
+    .family<WaterToday, LocalDate>(
+      (ref, day) => ref.watch(waterRepositoryProvider).watchToday(day),
+    );
 
 /// The entries of the last N local days (including today) grouped per day,
 /// newest first, with each day's total. [defaultWaterHistoryDays] is the

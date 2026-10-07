@@ -11,6 +11,7 @@ import 'package:self_improvement/features/focus/application/workout_providers.da
 import 'package:self_improvement/features/focus/domain/workout_daily_goal.dart';
 import 'package:self_improvement/features/focus/domain/workout_day_mark.dart';
 import 'package:self_improvement/features/focus/domain/workout_entry.dart';
+import 'package:self_improvement/shared/local_date.dart';
 
 /// The active workouts logged today, newest first. Follows the calendar day.
 final workoutTodayEntriesProvider = StreamProvider<List<WorkoutEntry>>((ref) {
@@ -44,6 +45,42 @@ final workoutDayStateProvider = Provider<AsyncValue<WorkoutDayState>>((ref) {
     buildWorkoutDayState(date: today, workouts: list, mark: mark.value),
   );
 });
+
+/// The active workouts logged on one day (BS-93), newest first. Released when
+/// no card shows it.
+final workoutEntriesOnProvider = StreamProvider.autoDispose
+    .family<List<WorkoutEntry>, LocalDate>(
+      (ref, day) => ref.watch(workoutRepositoryProvider).watchBetween(day, day),
+    );
+
+/// The active rest or skipped mark of one day (BS-93), or null. Released when
+/// no card shows it.
+final workoutDayMarkOnProvider = StreamProvider.autoDispose
+    .family<WorkoutDayMark?, LocalDate>(
+      (ref, day) => ref.watch(workoutDayMarkRepositoryProvider).watchDay(day),
+    );
+
+/// What one day makes of "Wie war dein Tag?" (BS-93): the workouts and the mark
+/// of that day, built by the same function as [workoutDayStateProvider], for the
+/// day Home shows when it is not today. Released when no card shows it.
+final workoutDayStateOnProvider = Provider.autoDispose
+    .family<AsyncValue<WorkoutDayState>, LocalDate>((ref, day) {
+      final entries = ref.watch(workoutEntriesOnProvider(day));
+      final mark = ref.watch(workoutDayMarkOnProvider(day));
+      if (entries.hasError) {
+        return AsyncError(entries.error!, entries.stackTrace!);
+      }
+      if (mark.hasError) {
+        return AsyncError(mark.error!, mark.stackTrace!);
+      }
+      final list = entries.value;
+      if (list == null || !mark.hasValue) {
+        return const AsyncLoading();
+      }
+      return AsyncData(
+        buildWorkoutDayState(date: day, workouts: list, mark: mark.value),
+      );
+    });
 
 /// Whether the optional daily goal "Workout heute" counts today: it is switched
 /// on in the goal versions of today and the focus module is on (read from the

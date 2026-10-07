@@ -7,6 +7,7 @@ import 'package:self_improvement/core/goals/domain/workout_day_mark_kind.dart';
 import 'package:self_improvement/core/modules/module_registry.dart';
 import 'package:self_improvement/core/providers/command_providers.dart';
 import 'package:self_improvement/core/testing/data_harness.dart';
+import 'package:self_improvement/features/dashboard/application/day_browser_providers.dart';
 import 'package:self_improvement/features/dashboard/presentation/dashboard_routes.dart';
 import 'package:self_improvement/features/focus/data/workout_day_mark_repository.dart';
 import 'package:self_improvement/features/focus/data/workout_repository.dart';
@@ -89,6 +90,71 @@ const List<String> _dailyWorkoutRoutes = <String>[
   '/goals',
   DashboardRoutes.goalsToday,
 ];
+
+/// The pages that show the day Home pages to (BS-93): Home with its day
+/// navigator, the note "Nicht heute" and the cards of that day, and "Ziele
+/// heute" with the same day. They only look like that on a day before today.
+const List<String> _pastDayRoutes = <String>['/', DashboardRoutes.goalsToday];
+
+/// Seeds a month of synthetic data and pages Home to three days before today.
+Future<AppFixture> _pumpOnPastDay(
+  WidgetTester tester, {
+  Size size = const Size(393, 852),
+  double scale = 1.0,
+}) async {
+  final today = LocalDate(2026, 10, 3);
+  final first = today.addDays(-29);
+  final harness = await createTestHarness(
+    tester,
+    onboarded: false,
+    realProjection: true,
+  );
+  final app = await pumpFullApp(
+    tester,
+    reuse: harness,
+    size: size,
+    textScale: scale,
+    onboarded: false,
+    seed: (h) async {
+      await h.seedOnboarded(startedOn: first);
+      await insertSyntheticRecords(
+        h.database,
+        h.ids,
+        first,
+        today,
+        data: const SyntheticData(
+          habitTitles: <String>['Lesen', 'Dehnen'],
+          mealNames: <String>['Frühstück', 'Mittagessen', 'Abendessen'],
+          varied: true,
+        ),
+      );
+      await h.projections.syncDays(<LocalDate>{
+        for (var d = first; !d.isAfter(today); d = d.addDays(1)) d,
+      });
+    },
+  );
+  app.container.read(selectedDayProvider.notifier).select(today.addDays(-3));
+  await app.settle();
+  return app;
+}
+
+/// Runs [body] on [_pumpOnPastDay] and takes the app down again when [body]
+/// throws: a failed expectation with the app running would otherwise hang the
+/// test run in its tear down instead of failing the test.
+Future<void> _onPastDay(
+  WidgetTester tester, {
+  required Future<void> Function(AppFixture app) body,
+  Size size = const Size(393, 852),
+  double scale = 1.0,
+}) async {
+  final app = await _pumpOnPastDay(tester, size: size, scale: scale);
+  try {
+    await body(app);
+  } finally {
+    await tester.pumpWidget(const SizedBox());
+    await app.settle();
+  }
+}
 
 /// Switches "Workout heute" on and puts the day into [state]: `open`, `rest`,
 /// `skipped` or `workout` (a rest day and a skipped day need no workout; the
@@ -290,6 +356,50 @@ void main() {
           );
           await app.settle();
           await _check(tester, app, route);
+        },
+      );
+    }
+  }
+
+  // BS-93: the pages that show another day than today, with a month of data.
+  for (final setup in <_Setup>[_setups.first, _setups[3]]) {
+    for (final route in _pastDayRoutes) {
+      testWidgets(
+        '(BS-93, AT33) $route on a day before today lays out and is operable '
+        'at ${setup.name}',
+        (tester) async {
+          await _onPastDay(
+            tester,
+            size: setup.size,
+            scale: setup.scale,
+            body: (app) => _check(tester, app, route),
+          );
+        },
+      );
+    }
+  }
+
+  for (final mode in <String>['dark', 'oled']) {
+    for (final route in _pastDayRoutes) {
+      testWidgets(
+        '(BS-93, AT35) $route on a day before today lays out and is operable '
+        'in the $mode theme',
+        (tester) async {
+          await _onPastDay(
+            tester,
+            body: (app) async {
+              await app.run(
+                () => app.container
+                    .read(settingsCommandsProvider)
+                    .setThemeMode(
+                      commandId: app.harness.ids.newId(),
+                      themeModeKey: mode,
+                    ),
+              );
+              await app.settle();
+              await _check(tester, app, route);
+            },
+          );
         },
       );
     }

@@ -55,6 +55,7 @@ Frames mit größerer Höhe sind Scroll-Screens. Die Routen sind die im `go_rout
 | Fortschritt (Gamification) | `4042:2` | `/progress` | – |
 | Ziele heute (v0.2.0, BS-103) | `4112:60` | `/goals/today` | Dark `4113:160`, OLED `4113:270`, nichts erreicht `4112:186`, alle erreicht `4112:304`, ein Ziel `4112:444`, kein Ziel `4112:509`, 200 % Schrift `4114:501`, Ruhetag und Wochenziel `4114:327`, vergangener Tag `4114:186` |
 | Home, Tageskarte antippbar (v0.2.0, BS-104) | `4115:249` | `/` | Dark `4115:565`, OLED `4115:881`, gedrückt `4115:407` (Dark `4115:723`, OLED `4115:1039`) |
+| Home, vergangener Tag (v0.2.0, BS-93) | `4116:249` | `/` | Dark `4116:650`, OLED `4116:1051`; Pfeile (48 x 48) `4116:405` und `4116:409`, Hinweis „Nicht heute“ `4116:414`; „Ziele heute“ für einen vergangenen Tag `4114:186`. Abweichungen und Entscheidungen: [screens/dashboard-gamification.md](screens/dashboard-gamification.md) Abschnitt 13 |
 
 ### 2.3 Profil, Einstellungen, Daten, Onboarding
 

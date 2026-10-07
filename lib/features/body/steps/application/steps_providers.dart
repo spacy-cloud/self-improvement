@@ -67,8 +67,20 @@ final class StepsToday {
 }
 
 /// Today's total with the target applying today (frozen in today's snapshot).
-final stepsTodayProvider = StreamProvider<StepsToday>((ref) {
-  final today = ref.watch(todayProvider);
+final stepsTodayProvider = StreamProvider<StepsToday>(
+  (ref) => _watchStepsOn(ref, ref.watch(todayProvider)),
+);
+
+/// The total of one day with the target that applied on THAT day (frozen in the
+/// snapshot of that day), for the day Home shows when it is not today (BS-93).
+/// It is the same model as [stepsTodayProvider], built by the same function.
+/// Released when no card shows it.
+final stepsDayProvider = StreamProvider.autoDispose
+    .family<StepsToday, LocalDate>(_watchStepsOn);
+
+/// The model of [date]: the total (null before one was entered or taken over),
+/// where it comes from and the target frozen in the snapshot of that day.
+Stream<StepsToday> _watchStepsOn(Ref ref, LocalDate date) {
   final database = ref.watch(appDatabaseProvider);
   final repository = ref.watch(stepsRepositoryProvider);
   final snapshots = ref.watch(goalSnapshotServiceProvider);
@@ -82,11 +94,11 @@ final stepsTodayProvider = StreamProvider<StepsToday>((ref) {
       database.profile,
     ],
     () async {
-      await snapshots.ensureForDays([today]);
-      final day = await repository.findDay(today);
-      final snapshot = await snapshots.snapshotFor(today);
+      await snapshots.ensureForDays([date]);
+      final day = await repository.findDay(date);
+      final snapshot = await snapshots.snapshotFor(date);
       return StepsToday(
-        date: today,
+        date: date,
         recorded: day != null,
         source: day?.source,
         progress: StepsProgress(
@@ -96,7 +108,7 @@ final stepsTodayProvider = StreamProvider<StepsToday>((ref) {
       );
     },
   );
-});
+}
 
 /// The last [days] local days ending today, newest first. Every day carries the
 /// target that applied THEN (snapshot) so "reached" never changes retroactively.

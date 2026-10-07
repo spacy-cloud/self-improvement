@@ -7,6 +7,7 @@ import 'package:self_improvement/core/goals/domain/day_status.dart';
 import 'package:self_improvement/core/goals/domain/goal_version.dart';
 import 'package:self_improvement/core/goals/domain/streak.dart';
 import 'package:self_improvement/core/providers/core_providers.dart';
+import 'package:self_improvement/shared/local_date.dart';
 
 final goalVersionRepositoryProvider = Provider<GoalVersionRepository>(
   (ref) => GoalVersionRepository(ref.watch(appDatabaseProvider)),
@@ -44,6 +45,15 @@ final todayStatusProvider = StreamProvider<DayStatus?>((ref) {
   final today = ref.watch(todayProvider);
   return ref.watch(dayStatusRepositoryProvider).watchDay(today);
 });
+
+/// Status of one day (BS-93): the ring and the goals of that day, from the
+/// snapshot of that day (the goals and thresholds that counted THEN) and the
+/// facts of that day. For today it is the same status as [todayStatusProvider].
+/// Null for a day before the profile start. Released when no page shows it.
+final dayStatusProvider = StreamProvider.autoDispose
+    .family<DayStatus?, LocalDate>(
+      (ref, day) => ref.watch(dayStatusRepositoryProvider).watchDay(day),
+    );
 
 /// The global streak (today, longest, active days, milestone, last seven days).
 final streakProvider = StreamProvider<StreakSummary?>((ref) {

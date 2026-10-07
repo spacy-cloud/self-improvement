@@ -151,6 +151,35 @@ String workoutDaySpoken(WorkoutDayState state) {
   return '${workoutDayValue(state)}, ${workoutDayCaption(state)}$reached';
 }
 
+/// The value line of the Workout card for a day that is not today (BS-93): the
+/// workout of that day, the mark, or a dash for a day without either (nothing
+/// was recorded, which is not "0 Trainings").
+String workoutPastDayValue(WorkoutDayState state) => switch (state.outcome) {
+  WorkoutDayOutcome.open => '–',
+  WorkoutDayOutcome.trained => state.latest!.displayTitle,
+  WorkoutDayOutcome.rest => 'Ruhetag',
+  WorkoutDayOutcome.skipped => 'Übersprungen',
+};
+
+/// The line below [workoutPastDayValue]: the muscle groups (or the meta line)
+/// of the latest workout, how many workouts the day had, what the mark is worth,
+/// or that nothing was recorded.
+String workoutPastDayCaption(WorkoutDayState state) => switch (state.outcome) {
+  WorkoutDayOutcome.open => 'Kein Training eingetragen',
+  WorkoutDayOutcome.trained =>
+    state.workouts.length > 1
+        ? '${state.workouts.length} Trainings an diesem Tag'
+        : (muscleGroupsText(state.latest!.muscleGroups) ??
+              workoutMetaLine(state.latest!)),
+  WorkoutDayOutcome.rest || WorkoutDayOutcome.skipped => workoutDayMarkCounts,
+};
+
+/// What a screen reader says for the Workout card of a day that is not today.
+String workoutPastDaySpoken(WorkoutDayState state) =>
+    state.outcome == WorkoutDayOutcome.open
+    ? workoutPastDayCaption(state)
+    : '${workoutPastDayValue(state)}, ${workoutPastDayCaption(state)}';
+
 /// Spoken label of the "Rückgängig" action of a marked day.
 String workoutDayTakeBackLabel(WorkoutDayState state) =>
     switch (state.outcome) {

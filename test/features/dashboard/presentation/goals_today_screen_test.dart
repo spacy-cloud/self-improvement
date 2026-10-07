@@ -9,9 +9,12 @@ import 'package:self_improvement/app/router/navigation.dart' show currentPath;
 import 'package:self_improvement/core/dashboard/domain/motivation.dart';
 import 'package:self_improvement/core/design/design.dart' hide HabitIcon;
 import 'package:self_improvement/core/goals/application/goal_providers.dart'
-    show todayStatusProvider;
+    show dayStatusProvider, todayStatusProvider;
 import 'package:self_improvement/core/goals/domain/goal_type.dart';
 import 'package:self_improvement/core/goals/domain/workout_day_mark_kind.dart';
+import 'package:self_improvement/core/providers/core_providers.dart'
+    show todayProvider;
+import 'package:self_improvement/features/dashboard/application/day_browser_providers.dart';
 import 'package:self_improvement/features/dashboard/domain/goals_day.dart';
 import 'package:self_improvement/features/dashboard/presentation/widgets/goals_day_view.dart';
 import 'package:self_improvement/features/dashboard/presentation/widgets/not_today_banner.dart';
@@ -38,6 +41,22 @@ import '../support/goals_today_kit.dart';
 
 /// A day after the profile start: no welcome, the real data.
 final LocalDate _secondDay = LocalDate(2026, 10, 2);
+
+/// Two days before the day of the host tests (3 October 2026).
+final LocalDate _pastDay = LocalDate(2026, 10, 1);
+
+/// The day Home shows, chosen before the page opens (BS-93).
+class _ChosenDay extends SelectedDayController {
+  _ChosenDay(this.day);
+
+  final LocalDate day;
+
+  @override
+  LocalDate? build() {
+    ref.watch(todayProvider);
+    return day;
+  }
+}
 
 /// The arcs the ring paints for [fulfilled] of [applicable] goals in [colors]:
 /// the track, then (when something is reached) the arc in yellow or, with all
@@ -955,16 +974,22 @@ void main() {
     });
   });
 
-  group('a day that is not today (BS-103, BS-93 prepared)', () {
-    testWidgets('(C04) a status of another day, as BS-93 will put it into the '
-        'dashboard view, is shown as that day', (tester) async {
-      final harness = await createHarness(tester, startedOn: _secondDay);
+  group('a day that is not today (BS-103, BS-93)', () {
+    testWidgets('(C04) the day Home shows is the day of the page: another day '
+        'is shown as that day, with its own status', (tester) async {
+      final harness = await createHarness(
+        tester,
+        startedOn: LocalDate(2026, 9, 20),
+      );
       await pumpGoalsToday(
         tester,
         harness,
         overrides: <Override>[
-          todayStatusOverride(
-            statusOf(goalStates['some']!, date: LocalDate(2026, 10, 1)),
+          selectedDayProvider.overrideWith(() => _ChosenDay(_pastDay)),
+          dayStatusProvider.overrideWith(
+            (ref, day) => Stream<DayStatus?>.value(
+              statusOf(goalStates['some']!, date: day),
+            ),
           ),
         ],
       );
@@ -973,13 +998,41 @@ void main() {
       expect(find.text('Donnerstag, 1. Oktober'), findsOneWidget);
       expect(find.text('2 von 5 erreicht'), findsOneWidget);
       expect(find.text('Du siehst die Werte dieses Tages.'), findsOneWidget);
-      // The words of the past, no weekly goal, and no way back yet: the page
-      // that pages through the days wires it.
+      // The words of the past and no weekly goal.
       expect(find.text('Gewogen'), findsOneWidget);
       expect(find.text('Workouts diese Woche'), findsNothing);
-      expect(find.text('Zurück zu heute'), findsNothing);
+      // The way back is there now: the page pages through the days.
+      expect(find.text('Zurück zu heute'), findsOneWidget);
       // The rows still lead to their modules.
       expect(find.byIcon(AppIcon.chevronRight.data), findsNWidgets(5));
+    });
+
+    testWidgets('(C04) "Zurück zu heute" puts the page on today: the note is '
+        'gone and the numbers are the ones of today', (tester) async {
+      final harness = await createHarness(
+        tester,
+        startedOn: LocalDate(2026, 9, 20),
+      );
+      await pumpGoalsToday(
+        tester,
+        harness,
+        overrides: <Override>[
+          selectedDayProvider.overrideWith(() => _ChosenDay(_pastDay)),
+          todayStatusOverride(statusOf(goalStates['all']!)),
+          dayStatusProvider.overrideWith(
+            (ref, day) => Stream<DayStatus?>.value(
+              statusOf(goalStates['some']!, date: day),
+            ),
+          ),
+        ],
+      );
+      expect(find.text('2 von 5 erreicht'), findsOneWidget);
+      await tester.tap(find.text('Zurück zu heute'));
+      await settle(tester);
+      expect(find.text('Nicht heute'), findsNothing);
+      expect(find.text('Zurück zu heute'), findsNothing);
+      expect(find.text('5 von 5 erreicht'), findsOneWidget);
+      expect(find.text('Samstag, 3. Oktober'), findsOneWidget);
     });
 
     Future<void> pumpPast(

@@ -231,3 +231,10 @@ Gesamtzahl: 245 neue Tests gegenüber der Basis (PR 8: 6657, danach 6902). Beste
 - Die Seite „Ziele heute“ (BS-100) liest später `DayStatus.progressOf(GoalType.workoutDaily)` und `workoutDayStateProvider` (Zustand, Art, `takeBackMark`).
 - Das Plus-Menü führt für „Workout“ weiter direkt zum Formular.
 
+## 10. v0.2.0: Karten an einem vergangenen Tag (BS-93)
+
+Zeigt Home einen der letzten sieben Tage ([dashboard-gamification.md](dashboard-gamification.md) Abschnitt 13), bauen sich die Karten „Workout“ und „Fokus“ für diesen Tag und nur lesend (`WorkoutPastDayCard`, `FocusPastDayCard`; die Karten von heute sind unverändert).
+
+- **Workout** zeigt, was der **Tag** war (`workoutDayStateOnProvider`: dieselbe Funktion `buildWorkoutDayState` wie bei `workoutDayStateProvider`, mit dem Tag): den Titel des neuesten Trainings und die Muskelgruppen, bei mehreren „2 Trainings an diesem Tag“, einen Ruhetag oder „Übersprungen“ mit dem Satz, was sie wert sind („Zählt als erreicht, keine XP. Die Streak bleibt.“), oder „–“ mit „Kein Training eingetragen“. Die Woche ist kein Tageswert und bleibt auf der Karte von heute. **Keine Aktion:** „Wie war dein Tag?“, „Training eintragen“ und „Rückgängig“ gibt es an einem vergangenen Tag nicht (Ruhetag und Überspringen lassen sich nur für heute setzen und zurücknehmen, 9.2); die Karte öffnet den Workout-Bereich.
+- **Fokus** zeigt die gespeicherte Fokuszeit der an diesem Tag abgeschlossenen Sitzungen gegen das Ziel, das an diesem Tag galt (`focusDaySummaryProvider`, dieselbe Funktion `buildFocusTodaySummary`), mit Sätzen der Vergangenheit („Tagesziel erreicht“, „Es fehlten 5 Min. bis zum Tagesziel“, „2 Sitzungen“); eine offene Sitzung gehört zur Gegenwart und fehlt, ebenso „Fokus fortsetzen“. Ein Tag ohne Sitzung zeigt „–“ mit dem Ziel und „Keine Sitzung an diesem Tag“, keine „0 Min.“.
+- Auf „Ziele heute“ für einen vergangenen Tag beantwortet `workoutDayStateOnProvider` die Zeile „Workout heute“ mit dem Workout und der Markierung **dieses** Tages.

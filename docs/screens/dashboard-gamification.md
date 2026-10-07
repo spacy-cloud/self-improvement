@@ -13,6 +13,7 @@ Umsetzung von BS-74 (Dashboard und gemeinsame Live-Projektionen), BS-58 (Kartenk
 | Streak | `/streak` | `4004:2` (Dark `4056:1046`) | `StreakScreen` |
 | Fortschritt | `/progress` | `4042:2` | `ProgressScreen` |
 | Ziele heute | `/goals/today` | `4112:60` (Dark `4113:160`, OLED `4113:270`), alle Zustände in Abschnitt 12.1 | `GoalsTodayScreen` (v0.2.0, Abschnitt 12) |
+| Dashboard, vergangener Tag | `/` | `4116:249` (Dark `4116:650`, OLED `4116:1051`); „Ziele heute“ für einen vergangenen Tag `4114:186` | `HomeScreen` mit `DayNavigator` und `NotTodayBanner` (v0.2.0, Abschnitt 13) |
 
 Dark und OLED entstehen aus den Theme-Tokens, es gibt keine eigenen Varianten im Code.
 
@@ -20,7 +21,7 @@ Dark und OLED entstehen aus den Theme-Tokens, es gibt keine eigenen Varianten im
 
 - Das Dashboard rendert die Karten der aktiven Module (`SelfImprovementModule.dashboardCards`) in der gespeicherten Reihenfolge und Sichtbarkeit (`DashboardCardRepository`). Es baut keine Karte eines anderen Moduls. Die einzige eigene Karte ist die XP- und Level-Karte (`xp`) des Moduls Fortschritt. Alle acht Karten sind vorhanden: `steps` und `weight` (Körper), `water` und `nutrition` (Ernährung), `workout` und `focus` (Fokus), `tasks` (Aufgaben und Gewohnheiten, ab v0.2.0 „Heute abhaken“, volle Breite) und `xp` (Fortschritt, volle Breite); die Standardreihenfolge ist Schritte, Wasser, Gewicht, Workout, Fokus, Aufgaben, Ernährung, XP.
 - Quellen sind ausschließlich vorhandene Datenbank-Streams und gemeinsame Projektionen: Kartenkonfiguration, Modulstatus, Tagesstatus (`todayStatusProvider`), Streak (`streakProvider`), XP und Badges (`gamificationSummaryProvider`). Das Widget rechnet nichts neu. Die einzige neue Abfrage ist `hasAnyEntryProvider` (existiert irgendein Datensatz?), sie steuert den Willkommenszustand.
-- Datum und Tageswechsel laufen über `todayProvider` und die injizierte Uhr, nie über `DateTime.now()`.
+- Datum und Tageswechsel laufen über `todayProvider` und die injizierte Uhr, nie über `DateTime.now()`. Seit v0.2.0 zeigt Home einen gewählten Tag (heute oder einer der sieben Tage davor, Abschnitt 13); `DashboardView` trägt ihn und den Status dieses Tages.
 - Das Raster (`DashboardCardGrid`) setzt kleine Karten zu zweit in eine Reihe (ab 360 px und Textskalierung bis 1,3), große Karten (`fullWidth`) nehmen eine eigene Reihe und beenden die laufende Gruppe, damit die Reihenfolge des Nutzers immer erhalten bleibt. Jede Karte baut sich in einem eigenen `Consumer`, eine Datenänderung baut nur diese Karte neu.
 - Das Modul `GamificationModule` liefert die Routen `/streak` und `/progress` und die Karte `xp` (volle Breite, Rang 7), aber keinen Plus-Eintrag.
 
@@ -35,7 +36,8 @@ Dark und OLED entstehen aus den Theme-Tokens, es gibt keine eigenen Varianten im
 | Kein anwendbares Tagesziel | Karte "Noch keine Tagesziele" mit "Ziele festlegen", niemals ein Ring "0 von 0" und kein Titel. Fragt trotzdem jemand danach, gilt es als "keins erreicht": `ProgressRing.goals` zeichnet nur die Spur und wird nie grün, `GoalsStanding.of` liefert `none` |
 | Alle Module aus | Leerzustand "Alle Module sind ausgeschaltet" mit "Module auswählen" (kein Ring, keine Karten) |
 | Alle Karten ausgeblendet | Leerzustand mit "Karten anpassen"; Ring bleibt |
-| Normal | Datum, "Dein Tag im Überblick", Tagesring (grau, gelb oder grün nach dem Stand der Ziele) mit dem Titel des Standes (je Stand drei neutrale Texte, siehe Abschnitt 6, Punkt 1), Karten, "Karten anpassen" |
+| Normal | Datum (zwischen zwei Pfeilen, sobald es einen früheren Tag zum Ansehen gibt, Abschnitt 13), "Dein Tag im Überblick", Tagesring (grau, gelb oder grün nach dem Stand der Ziele) mit dem Titel des Standes (je Stand drei neutrale Texte, siehe Abschnitt 6, Punkt 1), Karten, "Karten anpassen" |
+| Vergangener Tag (BS-93) | Zeile mit Datum und zwei Pfeilen, Hinweis „Nicht heute“ mit „Zurück zu heute“ (statt der Überschrift), Ring dieses Tages mit dem Satz „An diesem Tag hast du …“ (ohne Titel), die Karten dieses Tages (nur lesend, ohne Schnellzugriffe), kein Hinweis „Level n erreicht“. Ein Tag ohne Eintrag sagt das und zeigt keine „0“ (Abschnitt 13) |
 | Nach Speichern | Ring, Streak, XP und Karten aktualisieren sich aus der Datenbank; das Dashboard zeigt selbst keine Rückmeldung, diese kommt nur aus den speichernden Abläufen |
 | Level-up | Ruhige Karte "Level n erreicht" über dem Ring, schließbar |
 
@@ -60,7 +62,7 @@ Streak-Einstieg, XP-Karte und Level-up-Hinweis erscheinen nur bei aktivem Modul 
    - Ring: 0 erreicht grau (nur die Spur, kein Bogen), 1 bis x minus 1 erreicht gelb (`dayRing`, `#E2D11E`), alle erreicht grün (`dayRingComplete`, Wert von `color/primary`, voller Ring). "Alle erreicht" heißt: mindestens ein Ziel gilt und keines fehlt, ein einziges Ziel (1 von 1) zählt. Die Farbe wählt allein `ProgressRing.goals`, die Karte übergibt keine Farbe: So sieht der Ring auf Home und in der Übersicht "Ziele heute" (BS-103) gleich aus. Die Farbe ist nie die einzige Information: "x von y" im Ring, der gesprochene Text ("4 von 4 Zielen erreicht") und der sachliche Satz darunter bleiben unverändert. Kontrast (Light 2,66:1 gegen die Kartenfläche, geprüfte Alternative `primary-button` mit 4,72:1, nicht gewählt): [design-handoff.md](../design-handoff.md) Abschnitt 8.4.
    - Titel: je Stand drei neutrale Texte, gewählt mit Tag des Jahres modulo 3 innerhalb der Liste des Stands (`motivationTextFor(date, fulfilled:, applicable:)`). Keins erreicht: "Heute ist ein guter Tag, um anzufangen." / "Jeder Tag ist ein neuer Anfang." / "Ein Eintrag nach dem anderen."; teilweise: "Stark unterwegs!" / "Kleine Schritte zählen." / "Bleib in deinem Tempo."; alle erreicht: "Geschafft!" / "Das war ein runder Tag." / "Heute hat alles geklappt." Kein Text einer anderen Liste erscheint im falschen Stand, an keinem Tag des Jahres. Die Wortlaute sind Standardwerte von Joern und dürfen geändert werden (ein Test hält sie fest). Sie ersetzen die fünf festen Texte der Spezifikation (Tag des Jahres modulo 5, die Spezifikation liegt nicht im Repository); die Pokalzeile "Weiter so!" des V1-Entwurfs gibt es weiter nicht.
    - Ohne anwendbares Ziel zeigt Home "Noch keine Tagesziele" (Abschnitt 3), keinen Ring und keinen Titel. Wird der Stand dennoch erfragt, gilt "keins erreicht": nur die Spur, nie grün, Titelliste "keins".
-   - Vergangene Tage (BS-93, noch nicht gebaut): Die Titel nennen "heute" und gehören nur zum heutigen Tag. Ein vergangener Tag zeigt nur den sachlichen Satz zum Stand und keinen Titel: `DayOverviewCard` nimmt dafür `motivation: null` an, `motivationTextFor` wird für ihn nicht aufgerufen. Der Satz selbst ("Du hast heute …") ist noch an heute gebunden und wird mit BS-93 angepasst; die Ringfarbe nach Stand gilt dort ebenfalls.
+   - Vergangene Tage (BS-93, Abschnitt 13): Die Titel nennen "heute" und gehören nur zum heutigen Tag. Ein vergangener Tag zeigt nur den sachlichen Satz zum Stand und keinen Titel: `DayOverviewCard` nimmt dafür `motivation: null` an, `motivationTextFor` wird für ihn nicht aufgerufen. Der Satz selbst heißt dort "An diesem Tag hast du …" (`isToday: false`); die Ringfarbe nach Stand gilt dort ebenfalls.
    - Abweichungen im Entwurf (nicht umgesetzt, Figma nicht geändert): `4115:249` ("Home – Karte antippbar") zeigt weiter die Pokalzeile "Weiter so!" und den Zusatz "Bleib dran!"; die App zeigt nur Titel und sachlichen Satz. Die antippbare Karte (Chevron) gehört nicht zu BS-121. Auf den Tafeln steht "Zielen" in 12 px (Caption/Default) und der Abstand zwischen Ring und Text beträgt 20 px; die Karte nutzt wie bisher 14 px (Body/Regular) und 24 px.
 2. Erster Tag: Die Hauptaktion öffnet direkt den ersten sinnvollen Eintrag (Gewicht, sonst Wasser, sonst Habit, sonst der erste Plus-Eintrag), nicht das Plus-Menü, weil dieses zur Shell gehört. "+250 ml Wasser" heißt "Wasser eintragen" und öffnet die Wasser-Seite: Das Dashboard speichert nie ohne Bestätigung. Wie im Frame fehlen Datum, Ring und Streak-Einstieg im Willkommenszustand.
 3. Streak: Die Kacheln "Längste Streak" und "Aktive Tage gesamt" nutzen `MetricCard` (Titel neben dem Symbol statt Symbolkachel darüber). Der heutige Tag ist wie die anderen aktiven Tage gezeichnet und nur durch "Heute" hervorgehoben (Figma: andere Farbe). Marker tragen die Zustände über die Form (Haken, Ring, Strich, leerer Umriss) und nutzen die kontrastgeprüfte Textfarbe des Streak-Akzents. Zusätzlich zeigt die Leiste das Datum (Spezifikation 10.2).
@@ -95,11 +97,11 @@ Ticket [BS-110](https://spacy-cloud.atlassian.net/browse/BS-110), Entscheidung D
 - **Einbindung unverändert.** Die Karte kommt wie bisher aus `TasksModule.dashboardCards` (`cardId` `tasks`, Platz nach „Fokus“, `fullWidth`); `HomeScreen`, `DashboardCardGrid` und die Kartenkonfiguration sind nicht angefasst, es gibt keine neue Karten-ID (Karten-IDs gehören zum Datenvertrag, D-015). Neu ist nur der Name in „Karten anpassen“: „Aufgaben und Gewohnheiten“ statt „Aufgaben“, weil das Ausblenden der Karte beide ausblendet.
 - **Modul-Tor wie bisher.** Ist das Modul „Aufgaben und Gewohnheiten“ aus, fehlt die Karte (`visibleDashboardEntries`): nichts wird gelesen, nichts geschrieben, die Einträge bleiben und sind mit dem Modul wieder da. Beides prüft ein Test auf dem echten Home (`test/features/tasks/presentation/home_checklist_test.dart`).
 - **Ein Haken wirkt wie in den Listen.** Die Karte ruft dieselben Befehle auf wie der Tab und die Aufgabenliste; XP, Tageslimits, Tagesring und Streak folgen deshalb den Regeln der Engine und rechnen nichts auf der Karte. Der Zähler „x von y erledigt“ der Karte zählt, was heute abzuhaken ist, und ist nicht der Tagesring „Dein Tag im Überblick“, der die Tagesziele zählt.
-- **Vergangene Tage (BS-93).** Die Karte kennt den Zustand „nur lesend“ (`TasksDashboardCard(readOnly: true)`); `DayOverviewCard`, Router und die Seite „Ziele heute“ (BS-100) sind nicht Teil dieses Tickets.
+- **Vergangene Tage (BS-93).** Die Karte kennt den Zustand „nur lesend“ (`TasksDashboardCard(readOnly: true)`). Für einen vergangenen Tag baut `TasksDashboardCard(day: …)` sie als Karte „Aufgaben und Gewohnheiten“ (die an diesem Tag erledigten Aufgaben und die Gewohnheiten dieses Tages mit ihrem Stand, nur lesend; Abschnitt 13.4).
 
 ## 9. Tests und Abnahme-IDs
 
-Befehl: `flutter test test/features/dashboard test/features/gamification/presentation` (270 Testfälle, grün). Der Stand des Gesamtlaufs steht in [test-report.md](../test-report.md).
+Befehl: `flutter test test/features/dashboard test/features/gamification/presentation` (270 Testfälle, grün; die Tests der Tagesauswahl von BS-93 stehen in Abschnitt 13.9). Der Stand des Gesamtlaufs steht in [test-report.md](../test-report.md).
 
 | Datei | Fälle | Abnahme-IDs |
 |---|---:|---|
@@ -175,7 +177,7 @@ Dateien (alle unter `lib/features/dashboard/`): `domain/goals_day.dart` (Modell 
 ### 12.2 Datenfluss: dieselben Zahlen wie der Ring
 
 - `goalsTodayProvider` liest `dashboardViewProvider`, also `DashboardView.dayStatus` mit `DayStatus.goals`: dasselbe Objekt, das der Ring auf Home zählt. Das Modell `GoalsDay` übernimmt `DayStatus.fulfilledCount` und `applicableCount` unverändert („x von y“) und rechnet keine zweite Zahl. Ob eine Zeile „erreicht“ ist, entscheidet allein `GoalProgress.fulfilled`; die übrigen Quellen ändern nur Worte.
-- Es erscheinen nur anwendbare Tagesziele (ausgeschaltete Ziele und Ziele ausgeschalteter Module sind im Tagesstatus nicht anwendbar), also gibt es genau y Zeilen und x erreichte. Zeigt Home einmal einen anderen Tag (BS-93), liest die Seite denselben Status und baut daraus den Zustand „Nicht heute“ (12.10).
+- Es erscheinen nur anwendbare Tagesziele (ausgeschaltete Ziele und Ziele ausgeschalteter Module sind im Tagesstatus nicht anwendbar), also gibt es genau y Zeilen und x erreichte. Zeigt Home einen anderen Tag (BS-93, Abschnitt 13), liest die Seite denselben Status und baut daraus den Zustand „Nicht heute“.
 - Drei weitere Quellen liefern Worte und das Wochenziel, nie Zahlen des Rings, und werden nur gelesen, wenn die Seite sie braucht: die Namen der Gewohnheiten (nur wenn ein Gewohnheitsziel gilt, `habitsProvider`), wie „Workout heute“ beantwortet wurde (Workout, Ruhetag oder Überspringen, nur wenn dieses Ziel heute gilt, `workoutDayStateProvider`) und die Workouts der Woche (nur wenn das Fokus-Modul an ist und ein Tagesziel gilt, `workoutWeekSummaryProvider`). Geladen wird erst, wenn alle da sind; ein Fehler in einer Quelle ist ein Fehler der Seite („Erneut versuchen“ liest alles neu).
 - Die Seite hält keine Regel: Prozent, Einheiten und Texte stehen in `goals_day.dart`; Datum und Tageswechsel laufen über `todayProvider` und die injizierte Uhr.
 
@@ -192,7 +194,7 @@ Dateien (alle unter `lib/features/dashboard/`): `domain/goals_day.dart` (Modell 
 | Kein Tagesziel | `EmptyState` „Noch keine Tagesziele“ mit „Ziele festlegen“ (öffnet `/goals`), kein Ring, nie „0 von 0“; gilt auch, solange noch kein Tagesstatus existiert (vor dem Profilstart) |
 | Wochenziel | Gruppe „Wochenziel · nicht im Tagesring“ unter der Liste, wenn heute mindestens ein Tagesziel gilt und das Fokus-Modul an ist |
 | Aktion „Ziele bearbeiten“ | Schaltfläche am Ende der Seite, nach dem Wochenziel; öffnet den Ziele-Editor `/goals`. Im Zustand „Kein Tagesziel“ steht stattdessen „Ziele festlegen“ |
-| Vergangener Tag (BS-93) | Hinweis „Nicht heute“ mit Datum und „Zurück zu heute“, Kopf „Du siehst die Werte dieses Tages.“, Zeilen mit Wörtern der Vergangenheit („Nicht gewogen“), kein Wochenziel; die Seite zeigt heute, bis BS-93 einen anderen Tag in `DashboardView` legt (12.10) |
+| Vergangener Tag (BS-93) | Hinweis „Nicht heute“ mit Datum und „Zurück zu heute“ (verdrahtet: stellt Seite und Home auf heute), Kopf „Du siehst die Werte dieses Tages.“, Zeilen mit Wörtern der Vergangenheit („Nicht gewogen“), kein Wochenziel; die Seite zeigt den Tag, den Home zeigt (Abschnitt 13) |
 | 200 % Schrift oder unter 300 px Kartenbreite | Ring über den Texten, Zeile gestapelt: Name, darunter das Status-Wort, dann Stand und Balken, ohne Pfeil (wie `4114:501`); die Seite scrollt |
 
 ### 12.4 Zeilen: Stand, Ziel und Status
@@ -286,7 +288,7 @@ Befehl: `flutter test test/features/dashboard test/app/route_sweep_test.dart tes
 
 ### 12.10 Übergabe an BS-93 (vergangene Tage) und offene Punkte
 
-- BS-93 baut auf der Seite auf: `buildGoalsDay` nimmt den Status **irgendeines** Tages (`isToday` folgt aus Datum und heute), `GoalsDayView` zeigt für einen anderen Tag den Hinweis „Nicht heute“ und nimmt `onBackToToday`. Offen für BS-93: `DashboardView.dayStatus` für den gewählten Tag füllen, `onBackToToday` an der Seite verdrahten und für den Tag die Quellen von Workout (`workoutOutcome`) und Gewohnheiten liefern; ohne `workoutOutcome` sagt eine erreichte Workout-Zeile „Eintrag vorhanden“. Der Satz „Du hast heute …“ der Home-Karte ist an heute gebunden (BS-121).
+- BS-93 ([Abschnitt 13](#13-v020-tage-durchblättern-bs-93)) hat die Übergabe eingelöst: `DashboardView.dayStatus` ist der Status des gewählten Tages, `onBackToToday` ist an der Seite verdrahtet, und für den Tag kommen die Quellen von Workout (`workoutOutcome`, Workout und Markierung dieses Tages) und Gewohnheiten (die Namen der Liste; welche Gewohnheit galt, sagt der Snapshot des Tages). Der Satz der Home-Karte heißt an einem vergangenen Tag „An diesem Tag hast du …“.
 - Nur Host-Tests: nichts davon ist auf einem Gerät gesehen (TalkBack, VoiceOver, Systemschrift); BS-107 bleibt offen. Der Sichtvergleich mit Figma war per Augenschein an im Host gerenderten Bildern (Hell, Dunkel, OLED mit 393 px, 200 % mit 320 und 393 px), kein Pixelvergleich; `goals_today_visual_test.dart` schreibt die Bilder mit `GOALS_TODAY_PNG=1` nach `build/goals_today/` (nicht im Repository).
 
 ### 12.11 Checkliste für die Prüfung auf dem Gerät (BS-107)
@@ -311,5 +313,174 @@ Voraussetzung: Ein Gerät mit installiertem Build (Android mit TalkBack, zusätz
 | 14 | „Reduzierte Bewegung“ an | Seitenwechsel ohne Übergang, Ring und Balken springen auf den Wert | |
 | 15 | Eine Zeile mit dem Finger halten und wegziehen | Es öffnet sich nichts | |
 | 16 | iPhone mit VoiceOver: Punkte 1 bis 10 wiederholen, zusätzlich Rotor „Überschriften“ | „Tagesziele“ und „Wochenziel · nicht im Tagesring“ sind über den Rotor erreichbar; sonst wie oben | |
+
+Befunde werden eigene Tickets; das Ergebnis geht danach in `docs/test-report.md` und, wenn es eine Grenze ist, in `docs/known-limitations.md`.
+
+## 13. v0.2.0: Tage durchblättern (BS-93)
+
+Ticket [BS-93](https://spacy-cloud.atlassian.net/browse/BS-93) (Feature, L), Entscheidung D-029 ([../implementation-decisions.md](../implementation-decisions.md)). Home zeigt **einen Tag**: heute oder einen der bis zu sieben Tage davor. Eine Wischgeste und zwei Pfeile wechseln den Tag; ein vergangener Tag trägt den Hinweis „Nicht heute“ mit „Zurück zu heute“. Ring, Ziele und Karten zeigen den gewählten Tag **mit den Zahlen, die der Tag damals hatte** (die Ziele und Schwellen aus dem Snapshot dieses Tages, die Fakten dieses Tages), und ein vergangener Tag ist **nur lesend**. Entwurf (Figma, Datei LF10-Desing-App, Seite „v0.2.0 – Neue Screens“): Home vergangener Tag `4116:249` (Dunkel `4116:650`, OLED `4116:1051`), „Ziele heute“ für einen vergangenen Tag `4114:186`.
+
+### 13.1 Welche Tage es gibt
+
+- **Heute und die sieben Tage davor**, also acht Tage (der älteste ist „vor 7 Tagen“). Der Tag liegt nie in der Zukunft, und ältere Tage sind nicht erreichbar.
+- **Nie vor dem Profilstart.** Vor dem ersten Tag der Nutzung gibt es keinen Snapshot, keine Ziele und keine Einträge; ein solcher Tag wäre ein leerer Bildschirm ohne Aussage. Wer vor drei Tagen angefangen hat, kommt drei Tage zurück. Am **ersten Tag des Profils** gibt es nichts zu blättern: Home zeigt dann weder Pfeile noch Wischgeste, das Datum steht wie bisher als Zeile über der Überschrift.
+- Alles ist Kalenderarithmetik auf `LocalDate` (`BrowsedDay`, `lib/features/dashboard/domain/day_browser.dart`): Ein Tag mit Zeitumstellung (29.03. mit 23 Stunden, 25.10. mit 25 Stunden) ist ein Tag wie jeder andere in der Reihe, nie übersprungen und nie doppelt.
+
+### 13.2 Bedienung
+
+| Bedienung | Verhalten |
+|---|---|
+| Pfeile | Links der Pfeil zum **vorherigen** Tag, rechts der zum **nächsten** (Entwurf `4116:405`, `4116:409`). Jeder ist ein Knopf mit 48 x 48 dp (sichtbarer Kreis 40 dp, wie der Zurück-Pfeil der Seiten) und nennt den Tag, zu dem er führt („Vorheriger Tag, Freitag, 2. Oktober“). An den Enden ist der Pfeil **deaktiviert** und bleibt an seinem Platz (heute hat keinen nächsten, der älteste Tag keinen vorherigen): Das Layout springt nicht, und der Fokus eines Screenreaders bleibt auf ihm. |
+| Datum | In der Mitte, 16 halbfett, als Überschrift **und** Live-Region: Beim Wechsel sagt ein Screenreader den Tag mit Abstand zu heute an („Montag, 5. Oktober, vor 2 Tagen“, „Dienstag, 6. Oktober, gestern“, „Mittwoch, 7. Oktober, heute“). |
+| Wischgeste | Ein Wisch nach **rechts** zeigt den vorherigen Tag, einer nach **links** den nächsten (wie die Pfeile). Er zählt ab 72 dp Weg oder, schnell (ab 700 dp pro Sekunde), ab 24 dp; im Layout von rechts nach links ist es gespiegelt. Die Geste liegt über der ganzen Seite, auch über leerem Platz unter einer kurzen Seite, und wird nicht an den Karten abgefangen. |
+| Hinweis | An einem vergangenen Tag: „Nicht heute“ mit „Zurück zu heute“ (Entwurf `4116:414`, eine Zeile, weil das Datum direkt darüber steht; auf der Seite „Ziele heute“ mit dem Datum und „nur ansehen“, `4114:211`). Die Aktion hat 48 dp Höhe. Bei heute gibt es keinen Hinweis; die Überschrift „Dein Tag im Überblick“ steht dort wie bisher. |
+| „Zurück zu heute“ | Zeigt heute und legt den **Fokus auf das Datum**, weil der Knopf mit dem Hinweis verschwindet; ein Screenreader verliert seinen Platz nicht. Auf der Seite „Ziele heute“ stellt der Knopf Seite **und** Home auf heute. |
+| Übergang | Der neue Tag blendet kurz ein (150 ms, `AppMotion.fast`) und rutscht 24 dp von der Seite herein, von der er kommt: von rechts ein neuerer, von links ein älterer Tag. Der alte Inhalt ist sofort weg (nie zwei Kopien der Seite). Bei **reduzierter Bewegung** (System oder App-Schalter) ist der Tag sofort da; nichts läuft endlos. |
+| Scrollen | Eine Geste gewinnt, bei der die Finger zuerst die Achse verlassen: Ziehen nach oben oder unten scrollt wie immer, ein überwiegend senkrechter Zug mit seitlichem Wackeln blättert nie. Die Scrollposition bleibt beim Wechsel erhalten (wer bei den Schritten ist, vergleicht dort die Tage). |
+| Shell | Die Shell kennt keine seitliche Geste (die vier Tabs wechseln nur über die Leiste), die Wischgeste stört sie also nicht. Die Systemgeste Zurück vom Rand (Android) und die Zurück-Wischgeste vom Rand einer Seite (iPhone) bleiben unberührt: Das Betriebssystem nimmt die Berührung am Rand, bevor die App sie sieht. Auf der Seite „Karten anpassen“ (eine eigene Seite über Home) blättert kein Wisch einen Tag; Ziehen am Griff dort ordnet weiter die Karten. |
+
+### 13.3 Datenfluss
+
+- **Der gewählte Tag** ist `selectedDayProvider` (`lib/features/dashboard/application/day_browser_providers.dart`): `null` folgt heute, sonst der gewählte Tag. `browsedDayProvider` macht daraus ein `BrowsedDay` mit Tag, heute, ältestem erreichbarem Tag, Vorgänger und Nachfolger; er kennt den Profilstart. Gewählt werden können nur erreichbare Tage (`previous`, `next`, `select`, `backToToday`); alles andere wird ignoriert. Der gewählte Tag lebt nur im Speicher.
+- **Ein neuer Kalendertag wirft die Wahl weg** (D-029): Nach Mitternacht oder nach der Rückkehr in die App zeigt Home den neuen heutigen Tag, ob es vorher heute oder ein vergangener Tag war. So öffnet die App nie auf einem veralteten Tag; der Tag „heute“ rutscht also **mit**, ein gewählter älterer Tag fällt zurück auf heute. (Dasselbe tut der Habits-Tab mit seiner Wochenleiste.) Das Fenster verschiebt sich mit dem Tag.
+- **`DashboardView`** trägt jetzt den gewählten Tag (`day`, ein `BrowsedDay`) und den **Status dieses Tages** (`dayStatus`). Für heute liest die Ansicht weiter `todayStatusProvider` (den Strom, den die ganze App liest), für einen anderen Tag `dayStatusProvider(tag)` (`lib/core/goals/application/goal_providers.dart`, `DayStatusRepository.watchDay`). Der Status entsteht aus dem **Snapshot dieses Tages** (die Ziele und Schwellen, die damals galten, eingefroren) und den **Fakten dieses Tages** (Wasser, Schritte, Gewicht, Fokus, Aufgaben, Gewohnheiten, Workouts und Markierung nach dem eingefrorenen lokalen Datum): Eine Zieländerung gilt ab morgen, ein vergangener Tag behält seine Ziele.
+- **`HomeScreen`** behält das zuletzt fertige Modell, solange das Modell des nächsten Tages gelesen wird (`_ready`): Blättern lässt die Seite nie leer werden, wirft den Fokus eines Pfeils nicht weg und setzt die Scrollposition nicht zurück. Erst wenn der neue Tag da ist, wechselt der Inhalt; die Karten des neuen Tages laden danach, jede für sich (kurz steht auf einer Karte noch „–“).
+- **Karten** bekommen den Tag über `DashboardCardDescriptor.dayBuilder` (`lib/core/modules/module.dart`, optional): Ein Modul baut seine Karte für einen anderen Tag selbst. Hat ein Modul keine, fehlt die Karte an diesen Tagen (der Raster-Baustein lässt sie aus, die anderen rücken auf), statt die Zahlen von heute unter dem Datum eines anderen Tages zu zeigen. Alle acht mitgelieferten Karten haben eine.
+- **„Ziele heute“** liest dieselbe `DashboardView`: `goalsTodayProvider` baut die Seite für den gewählten Tag (Zustand „vergangener Tag“, 12.3), mit Workout und Markierung **dieses** Tages (`workoutDayStateOnProvider`) und ohne Wochenziel. Der Knopf „Zurück zu heute“ ist verdrahtet.
+
+### 13.4 Die Karten an einem vergangenen Tag
+
+Jede Karte ist ein eigenes Widget (`*PastDayCard`, bei Gewicht der Körper der Karte von heute, bei Aufgaben die Karte mit dem Parameter `day`), das über denselben Baustein und dieselbe Funktion rechnet wie die Karte von heute, nur für den Tag. **Keine zeigt eine Aktion, die etwas einträgt** (Schnellzugriff, „Training eintragen“, „Wie war dein Tag?“, „Rückgängig“, „Aufgabe anlegen“, Kästchen): Sie ginge auf heute, unter dem Datum eines anderen Tages. Das Antippen der Karte öffnet wie bisher die Seite des Moduls; dort geht das Eintragen für einen früheren Tag über die Formulare. Ein Tag ohne Eintrag sagt das und zeigt **nie „0“**, wo nichts erfasst wurde.
+
+| Karte | Was sie zeigt | Ohne Daten |
+|---|---|---|
+| Schritte (`steps`) | Summe des Tages gegen das Ziel **dieses** Tages, „75 % erreicht“ oder „Ziel erreicht“; „aus Health“ nur im Sprechtext | „–“, „Keine Schritte eingetragen“ (eine erfasste 0 ist ein Wert) |
+| Wasser (`water`) | Summe gegen das Ziel dieses Tages, der wirkliche Prozentwert („Tagesziel erreicht · 104 %“) | „–“ mit dem Ziel, „Nichts eingetragen“ |
+| Gewicht (`weight`) | Das Gewicht **am Ende des Tages**: die letzte Messung bis zu diesem Tag, die Kurve der sieben Tage bis dahin, der Wochenvergleich gegen den Tag eine Woche davor. Eine spätere Messung gehört nicht dazu; eine ältere als die Kurve trägt ihr Datum („Zuletzt Di., 15. Sep.“) | „–“, „Keine Messung bis zu diesem Tag“ |
+| Workout (`workout`) | Das Training **des Tages** (Titel und Muskelgruppen), bei mehreren „2 Trainings an diesem Tag“; Ruhetag oder Überspringen mit dem, was sie wert sind. Die Woche ist kein Tageswert und bleibt auf der Karte von heute | „–“, „Kein Training eingetragen“ |
+| Fokus (`focus`) | Gespeicherte Fokuszeit des Tages gegen das Ziel dieses Tages („Tagesziel erreicht“, „Es fehlten 5 Min. bis zum Tagesziel“); eine offene Sitzung gehört zur Gegenwart und fehlt | „–“ mit dem Ziel, „Keine Sitzung an diesem Tag“ |
+| Ernährung (`nutrition`) | Zahl der Mahlzeiten und nur die bekannten Kalorien („Kalorien unvollständig“ wie heute) | „–“, „Keine Mahlzeit eingetragen“ |
+| Aufgaben und Gewohnheiten (`tasks`) | Überschrift „Aufgaben und Gewohnheiten“ statt „Heute abhaken“: die an diesem Tag **erledigten** Aufgaben und alle Gewohnheiten, die an diesem Tag galten, mit ihrem Stand (erledigt oder offen), „x von y erledigt“ über diese Zeilen, kein Limit. **Offene Aufgaben eines vergangenen Tages werden nicht nachgebaut:** Ob eine fällig war, lässt sich aus dem Gespeicherten nicht wissen (die Fälligkeit kann sich seither geändert haben) | „An diesem Tag wurde keine Aufgabe erledigt, und es gab keine Gewohnheit.“ |
+| XP und Level (`xp`) | Level und XP **am Ende des Tages** (Summe der Vergaben bis zu diesem Datum), mit der Zeile „Stand am Ende dieses Tages“; spätere Vergaben gehören nicht dazu | – (Level 1, 0 XP) |
+
+Die Karte „Dein Tag im Überblick“ trägt an einem vergangenen Tag **keinen Titel** aus den Listen (BS-121: sie nennen „heute“), nur den sachlichen Satz („An diesem Tag hast du 3 von 5 Zielen erreicht.“, „… alle Tagesziele erreicht.“, „… kein Ziel erreicht.“); die Ringfarbe nach Stand gilt dort wie heute. Sie ist antippbar und öffnet „Ziele heute“ für diesen Tag (Sprechtext „Ziele dieses Tages, 3 von 5 erreicht, Details öffnen“). Galt an dem Tag kein Ziel, steht dort „Keine Tagesziele an diesem Tag“ ohne Knopf (Ziele gelten ab morgen). Der Hinweis „Level n erreicht“ erscheint nur heute.
+
+### 13.5 Zeit: Mitternacht, Hintergrund, Sommerzeit
+
+- **Mitternacht bei laufender App:** Der Zeitgeber der Uhr (`AppWiring`) setzt `todayProvider` um Mitternacht neu; Home zeigt den neuen Tag, die Wahl ist weg (13.3).
+- **Die App im Hintergrund über Mitternacht:** Bei der Rückkehr liest `AppWiring` die Uhr neu (`todayProvider.refresh`); Home zeigt den neuen heutigen Tag, das Fenster der sieben Tage gilt vom neuen Tag aus („neuer Tag nach der Rückkehr“).
+- **Sommerzeit** (Europe/Berlin, 29.03.2026 mit 23 Stunden und 25.10.2026 mit 25 Stunden): Die Tage sind Kalendertage der Zone. Ein Eintrag um 00:30 Uhr am 30.03. (in UTC noch der 29.) steht am 30.03.; die beiden Mitternächte des 25.10. und der Eintrag um 23:30 Uhr gehören alle zum 25.10. Die Reihe der acht Tage hat an beiden Tagen genau einen Platz für den Wechseltag.
+
+### 13.6 Barrierefreiheit
+
+- **Alternative zur Geste:** Die Pfeile (48 dp, beschriftet, mit dem Zieltag im Sprechtext). Die eigenen Wischgesten eines Screenreaders erreichen die Seite nicht; die Pfeile sind dort der Weg.
+- **Ansage:** Datum als Überschrift und Live-Region mit dem Abstand zu heute (13.2). **Fokus:** Die Pfeile werden beim Blättern nicht neu gebaut und bleiben an ihrem Platz; nach „Zurück zu heute“ liegt der Fokus auf dem Datum (`Semantics(focused:)` am Datum). Das Datum ist kein Halt der Tab-Taste.
+- **Schrift 200 %:** Die Pfeile liegen in einer eigenen Zeile über dem Datum, damit ein langer Wochentag („Donnerstag“) nie mitten im Wort bricht; der Hinweis stapelt sich wie der der Seite „Ziele heute“. `androidTapTargetGuideline` und `labeledTapTargetGuideline` sind für Home an einem vergangenen Tag (mit Daten in jeder Karte) bei 320, 360, 393 und 430 px mit 100 und 200 % grün, ebenso `textContrastGuideline` in Light, Dark und OLED.
+- **Bewegung:** nur `AppMotion`, bei reduzierter Bewegung sofort (13.2). **TalkBack und VoiceOver:** Die Semantik ist im Host geprüft (Rollen, Beschriftungen, Live-Region, Fokus); wie es sich auf einem Gerät anhört, zeigt die Checkliste in 13.10.
+
+### 13.7 Abweichungen vom Entwurf und Gründe (Q03)
+
+Der Entwurf ist nicht freigegeben, Figma wurde nicht verändert; bei einer Abweichung wurde nichts still entschieden:
+
+1. **Antippbare Karte an einem vergangenen Tag.** `4116:249` zeichnet die Ringkarte ohne Pfeil; die App lässt sie antippbar (mit Pfeil, wie `4115:249`), weil die Seite `4114:186` sonst nicht erreichbar wäre.
+2. **Hinweis höher.** `4116:414` ist 44 px hoch mit einer Aktion von 44 px; die Aktion hat in der App 48 dp (Vorgabe 48 mal 48), der Hinweis ist 56 px hoch.
+3. **Kachelzeile „Fokus und Aufgaben“ am unteren Rand von `4116:249`** ist der Rest des V1-Entwurfs (wie bei BS-110): nicht gebaut; die Karten „Fokus“ und „Aufgaben und Gewohnheiten“ sind die des Tages.
+4. **Heute mit Pfeilen ist nicht gezeichnet.** Die App zeigt für heute dieselbe Zeile (Datum zwischen den Pfeilen, der nächste Pfeil deaktiviert) und darunter die Überschrift „Dein Tag im Überblick“ (der Entwurf lässt sie am vergangenen Tag weg, dort steht der Hinweis).
+5. **Der deaktivierte Pfeil** hat im Entwurf kein Bild: Symbol in der Farbe `textTertiary`, Kreis und Rand bleiben.
+6. **Karten:** Die Beispieltexte des Entwurfs (Workout „Lower Body“ mit „Gesäß“) sind Platzhalter; die App zeigt den Titel und die Muskelgruppen aus den Daten. Die Karte „XP und Level“ ist im Entwurf nicht gezeichnet; die App zeigt den Stand am Ende des Tages.
+7. **Seitenrand 16 px** (Entwurf 14 px), wie bei den übrigen Seiten (12.7, Punkt 1).
+
+### 13.8 Entscheidungen (Lücken ohne Vorgabe, kleinste sinnvolle Lösung; D-029)
+
+- Acht Tage (heute und sieben davor), nie vor dem Profilstart, ein neuer Kalendertag setzt Home auf heute (13.1, 13.3).
+- Das Datum bleibt vorn: Die Zeile mit den Pfeilen **ersetzt** die Datumszeile; am ersten Tag ohne Pfeile bleibt die Datumszeile.
+- Einträge über das Plus-Menü gelten weiter für jetzt, nicht für den gezeigten Tag (das Eintragen für einen früheren Tag läuft über die Formulare, wie das Ticket sagt).
+- Gewicht und XP gelten **am Ende des Tages**; das Training und die Fokuszeit sind Werte des Tages; offene Aufgaben werden nicht nachgebaut (13.4).
+- Eine Karte ohne `dayBuilder` fehlt an einem vergangenen Tag (13.3).
+- Die Wahl des Tages wird nicht gespeichert.
+
+### 13.9 Tests und Nachweise
+
+Befehl: `flutter test test/features/dashboard test/features/tasks/domain/day_checklist_test.dart test/features/nutrition/domain/water_day_label_test.dart test/features/focus/presentation/focus_day_labels_test.dart test/features/focus/presentation/workout_past_day_labels_test.dart test/app/home_day_browser_clock_test.dart test/app/route_sweep_test.dart`. Der Stand des Gesamtlaufs steht in [test-report.md](../test-report.md) (vom Koordinator geführt).
+
+| Datei | Inhalt |
+|---|---|
+| `test/features/dashboard/domain/day_browser_test.dart` | Fenster, Grenzen, Profilstart, Sprechtexte, die beiden Tage mit Zeitumstellung |
+| `.../application/day_browser_providers_test.dart` | Blättern, Grenzen, „Zurück zu heute“, neuer Tag, Hintergrund über Mitternacht, Sommerzeit (`FakeClock`, Europe/Berlin) |
+| `.../application/dashboard_view_day_test.dart` | Status des gezeigten Tages (Snapshot-Treue: Ziel „ab morgen“ geändert, aus-, eingeschaltet), „Ziele heute“ für den Tag |
+| `.../presentation/home_day_browser_test.dart` | Pfeile, Wischgeste, Scrollen, Hinweis, „Zurück zu heute“ mit Fokus, Semantik, Übergang, reduzierte Bewegung, „nie leer“, Karten anpassen |
+| `.../presentation/home_day_cards_test.dart` | jede Karte für heute und für einen vergangenen Tag über der echten Datenbank |
+| `.../presentation/home_day_goals_test.dart` | Ring, „Ziele heute“, Snapshot-Treue über die Oberfläche, Wege hin und zurück |
+| `.../presentation/home_day_browser_layout_test.dart` | vier Breiten bei 100 und 200 %, drei Themes |
+| `.../presentation/home_day_cards_error_test.dart` | jede Karte eines vergangenen Tages und der Status des Tages, wenn das Lesen scheitert: Hinweis und „Erneut versuchen“ liest genau das noch einmal, was gescheitert war |
+| `.../presentation/day_navigator_test.dart`, `day_swipe_test.dart`, `day_browser_components_test.dart` | die Bausteine einzeln |
+| `test/app/home_day_browser_clock_test.dart` | die ganze App: Mitternacht, Hintergrund, Sommerzeit (29.03., 25.10.) |
+| `test/app/route_sweep_test.dart` (neue Fälle) | Home und „Ziele heute“ an einem vergangenen Tag: zwei Größen, dunkel, OLED |
+| `test/features/tasks/domain/day_checklist_test.dart`, `.../nutrition/domain/water_day_label_test.dart`, `.../focus/presentation/focus_day_labels_test.dart`, `workout_past_day_labels_test.dart` | die Regeln und Texte der Karten eines vergangenen Tages |
+
+**Mutationsproben** (BS-93, 28 Stück): Für die Tageswahl, die Bedienung und die Snapshot-Treue wurde der Produktivcode **vorübergehend** an einer Stelle verändert und danach mit `git checkout` zurückgenommen (nie eingecheckt); jedes Mal scheitern Tests (Spalte rechts: Zahl der scheiternden Tests und die Dateien, in denen sie liegen). Die Skripte und Logs liegen nicht im Repository. Drei erste Fassungen waren unbrauchbar und sind ersetzt: Ein Mutant von T12 war gleichwertig (bei reduzierter Bewegung ist die Dauer ohnehin null), einer von S1 übersetzte nicht, und T10 überlebte zunächst, weil der Test jeden Fokusbereich über dem Datum gelten ließ; er prüft jetzt den Fokusknoten und das Semantik-Flag des Datums selbst.
+
+| Nr. | Änderung | Scheiternde Tests |
+|---|---|---|
+| T1 | `BrowsedDay.resolve`: Jede Wahl gilt als erreichbar (auch die Zukunft, ältere als sieben Tage, vor dem Profilstart) | 3 (Tagesmodell) |
+| T2 | Der Pfeil nach vorn gilt auch an heute (`canGoForward` immer wahr) | 8 (Tagesmodell, Wahl, Navigator, Home) |
+| T3 | Acht statt sieben Tage zurück | 15 (Tagesmodell, Wahl, Navigator, Home, App mit Uhr) |
+| T4 | Der Profilstart begrenzt das Fenster nicht | 7 (Tagesmodell, Wahl, Home) |
+| T5 | Die Wahl überlebt den Kalendertag (`SelectedDayController` beobachtet heute nicht) | 4 (Wahl, App mit Uhr) |
+| T6 | „Vorheriger Tag“ springt zwei Tage | 14 (Wahl, Home) |
+| T7 | Die Wischrichtungen sind vertauscht | 11 (Wischgeste, Home) |
+| T8 | Jede Bewegung blättert (Schwelle 1 dp statt 72 dp) | 5 (Wischgeste, Home) |
+| T9 | „Zurück zu heute“ ändert den Tag nicht | 1 (Home) |
+| T10 | „Zurück zu heute“ legt den Fokus nicht auf das Datum | 1 (Home) |
+| T11 | Home wird leer, solange das Modell des nächsten Tages gelesen wird | 2 (Home) |
+| T12 | Der Übergang beachtet reduzierte Bewegung nicht | 1 (Home) |
+| T13 | Das Raster baut die Karten von heute statt die des Tages | 24 (Karten, Ziele, Bausteine) |
+| T14 | Eine Karte ohne `dayBuilder` bleibt im Raster | 3 (Bausteine) |
+| T15 | Der Pfeil nach vorn ist an heute nicht deaktiviert | 4 (Navigator, Home) |
+| T16 | Die Ringkarte nennt an einem vergangenen Tag „heute“ | 9 (Bausteine, Ziele) |
+| T17 | Die Ringkarte trägt an einem vergangenen Tag einen Titel | 1 (Ziele) |
+| S1 | `DayStatusRepository.statusFor`: Der Tag rechnet mit den Zielen von heute | 6 (Ansicht des Tages, Ziele) |
+| S2 | Die Home-Ansicht liest immer den Status von heute | 17 (Ansicht des Tages, Ziele) |
+| S3 | Die Wasserkarte liest heute | 3 (Karten, Ziele) |
+| S4 | Die Gewichtskarte zählt spätere Messungen mit | 2 (Karten) |
+| S5 | Die XP-Karte ignoriert das Datum | 1 (Karten) |
+| S6 | Die Schrittekarte liest heute | 2 (Karten) |
+| S7 | „Ziele heute“ liest Workout und Markierung von heute | 3 (Ansicht des Tages, Ziele) |
+| S8 | Die Aufgabenkarte lässt an einem vergangenen Tag das Abhaken zu | 1 (Karten) |
+| S9 | Die Liste eines vergangenen Tages nennt offene Aufgaben | 2 (Regeln der Aufgabenliste) |
+| S10 | Die Fokuskarte eines Tages ohne Sitzung sagt das nicht | 2 (Texte, Karten) |
+| E1 | Das Wiederholen der Fokuskarte eines Tages fragt nur die Zielversionen | 1 (Fehlerfall der Karten) |
+
+
+### 13.10 Offene Punkte, Grenzen und Checkliste für das Gerät
+
+- **Nur Host-Tests.** Nichts davon ist auf einem Gerät gesehen (Samsung S25 mit TalkBack, iPhone mit VoiceOver, echte Wischgeste, Systemschrift, Zurück-Geste vom Rand); die CI wurde nicht abgewartet. Die Bilder des Sichtvergleichs liegen nicht im Repository.
+- **Fokus auf dem Gerät:** Dass der Fokus nach „Zurück zu heute“ am Datum liegt, ist im Host über Fokusknoten und Semantik-Flags belegt; ob TalkBack und VoiceOver ihn dort aufnehmen, zeigt erst das Gerät.
+- **Kurzes „–“ auf den Karten** beim ersten Besuch eines Tages (jede Karte lädt für sich); ein bereits besuchter Tag ist nicht zwischengespeichert.
+- **Einträge für den gezeigten Tag** (Plus-Menü, Formulare) gelten für jetzt. Ein Vorbelegen mit dem gezeigten Tag ist ein eigenes Ticket wert.
+- **Offene Aufgaben** eines vergangenen Tages fehlen (13.4); Ruhetag und Überspringen lassen sich weiter nur für heute setzen (BS-99).
+- **Fenster:** nicht vor dem Profilstart und höchstens sieben Tage; ältere Tage zeigen weiter die Analyse und die Verläufe der Module.
+
+Checkliste für die Prüfung auf dem Gerät (BS-93; Voraussetzung: Profil seit mehr als sieben Tagen, an mehreren Tagen Einträge in den Karten, ein Ruhetag mit „Workout heute“; Ergebnis je Punkt **ok**, **Fehler** oder **nicht geprüft**, mit Gerät und Version):
+
+| Nr. | Schritt | Erwartung | Ergebnis |
+|---|---|---|---|
+| 1 | Home öffnen, Datum und Pfeile ansehen | Zeile mit Datum und zwei Pfeilen, darunter „Dein Tag im Überblick“; der Pfeil nach rechts ist deaktiviert | |
+| 2 | Mit dem Finger nach rechts wischen | Der Vortag erscheint, „Nicht heute“ mit „Zurück zu heute“, die Karten zeigen den Vortag; kurzes Einblenden von links | |
+| 3 | Nach links wischen | Zurück zum heutigen Tag, der Hinweis verschwindet | |
+| 4 | Senkrecht scrollen und schräg ziehen | Die Seite scrollt, es wechselt kein Tag | |
+| 5 | Sieben Tage zurück, dann weiter | Beim ältesten Tag (vor 7 Tagen) stoppt der Wisch, der linke Pfeil ist deaktiviert | |
+| 6 | Vom linken Rand wischen (Systemgeste Zurück) | Das System handelt, Home wechselt keinen Tag | |
+| 7 | TalkBack: Pfeil „Vorheriger Tag“ per Doppeltipp | Der Tag wechselt, die Ansage nennt ihn („Freitag, 2. Oktober, gestern“), der Fokus bleibt am Pfeil | |
+| 8 | TalkBack: durch den vergangenen Tag wischen | Datum (Überschrift), Hinweis, Ring als **ein** Knopf („Ziele dieses Tages, …“), Karten ohne Schnellzugriffe | |
+| 9 | „Zurück zu heute“ per Doppeltipp | Heute erscheint, der Fokus liegt am Datum, die Ansage nennt „heute“ | |
+| 10 | VoiceOver: dasselbe (7 bis 9), dazu der Rotor „Überschriften“ | Das Datum ist über den Rotor erreichbar; sonst wie oben | |
+| 11 | Karten an einem vergangenen Tag antippen (Wasser, Schritte, Gewicht, Workout, Fokus, Ernährung, XP) | Die Seite des Moduls öffnet; auf der Karte selbst gibt es nichts zum Eintragen | |
+| 12 | Ring antippen, auf „Ziele heute“ „Zurück zu heute“ | Die Seite zeigt den Tag mit „Nicht heute“, danach heute; Zurück führt nach Home auf heute | |
+| 13 | Ziel „ab morgen“ ändern, am nächsten Tag den Vortag ansehen | Der Vortag behält seine Ziele (Ring, Karte, „Ziele heute“) | |
+| 14 | App über Mitternacht im Hintergrund lassen, zurückkehren | Home zeigt den neuen Tag, nicht den gestern gewählten | |
+| 15 | Systemschrift auf die größte Stufe | Pfeile in eigener Zeile über dem Datum, nichts bricht mitten im Wort, alles erreichbar | |
+| 16 | Hell, Dunkel, OLED | Datum, Hinweis, deaktivierter Pfeil und Karten lesbar | |
+| 17 | „Reduzierte Bewegung“ an | Der Tag wechselt ohne Einblenden | |
 
 Befunde werden eigene Tickets; das Ergebnis geht danach in `docs/test-report.md` und, wenn es eine Grenze ist, in `docs/known-limitations.md`.

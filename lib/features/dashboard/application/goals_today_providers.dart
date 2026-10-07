@@ -13,11 +13,16 @@ import 'package:self_improvement/features/tasks/application/habit_providers.dart
 /// object the day ring on Home counts, so the numbers always agree) put into
 /// rows.
 ///
+/// The day is the one Home shows (BS-93): today, or one of the days before it.
+/// For another day the status is that of the snapshot of THAT day, so the goals
+/// and thresholds are the ones that counted then, and the page is the state "vergangener
+/// Tag": "Nicht heute", rows in the past tense, no weekly goal.
+///
 /// Three more sources add words and the weekly goal, never numbers of the ring,
 /// and each is read only when the page needs it: the names of the habits (when
 /// a habit goal applies), how "Workout heute" was answered (when that goal
-/// applies today) and the workouts of the week (when the focus module is on and
-/// a daily goal applies).
+/// applies on the day, read for that day) and the workouts of the week (today
+/// only, when the focus module is on and a daily goal applies).
 /// Loading until all of them arrived; an error in one of them is an error of
 /// the page.
 final goalsTodayProvider = Provider<AsyncValue<GoalsDay>>((ref) {
@@ -31,7 +36,9 @@ final goalsTodayProvider = Provider<AsyncValue<GoalsDay>>((ref) {
   final status = model.dayStatus;
   if (status == null) {
     // No snapshot (before the profile start): nothing counts yet.
-    return AsyncData<GoalsDay>(GoalsDay.none(date: model.today, isToday: true));
+    return AsyncData<GoalsDay>(
+      GoalsDay.none(date: model.day.date, isToday: model.day.isToday),
+    );
   }
 
   final isToday = status.date == model.today;
@@ -39,14 +46,17 @@ final goalsTodayProvider = Provider<AsyncValue<GoalsDay>>((ref) {
     (goal) => goal.applicable && isHabitGoalKey(goal.goalKey),
   );
   final workoutGoalCounts =
-      isToday &&
-      (status.progressOf(GoalType.workoutDaily)?.applicable ?? false);
+      status.progressOf(GoalType.workoutDaily)?.applicable ?? false;
   final focusIsOn = model.moduleStatuses[ModuleId.focus] ?? true;
 
   final habits = hasHabitGoals ? ref.watch(habitsProvider) : null;
-  final workoutDay = workoutGoalCounts
-      ? ref.watch(workoutDayStateProvider)
-      : null;
+  // Today keeps its own read model; another day reads the workouts and the mark
+  // of that day.
+  final workoutDay = !workoutGoalCounts
+      ? null
+      : (isToday
+            ? ref.watch(workoutDayStateProvider)
+            : ref.watch(workoutDayStateOnProvider(status.date)));
   final week = isToday && focusIsOn && status.hasApplicableGoals
       ? ref.watch(workoutWeekSummaryProvider)
       : null;
@@ -87,6 +97,8 @@ void reloadGoalsToday(WidgetRef ref) {
     ..invalidate(habitsProvider)
     ..invalidate(workoutTodayEntriesProvider)
     ..invalidate(workoutDayMarkTodayProvider)
+    ..invalidate(workoutEntriesOnProvider)
+    ..invalidate(workoutDayMarkOnProvider)
     ..invalidate(workoutWeekEntriesProvider)
     ..invalidate(goalVersionsProvider);
 }
