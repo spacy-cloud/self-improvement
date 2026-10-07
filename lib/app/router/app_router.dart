@@ -17,6 +17,7 @@ import 'package:self_improvement/features/onboarding/presentation/onboarding_scr
 import 'package:self_improvement/features/profile/presentation/goals_screen.dart';
 import 'package:self_improvement/features/profile/presentation/profile_edit_screen.dart';
 import 'package:self_improvement/features/profile/presentation/profile_screen.dart';
+import 'package:self_improvement/features/settings/presentation/about_screen.dart';
 import 'package:self_improvement/features/settings/presentation/data_screen.dart';
 import 'package:self_improvement/features/settings/presentation/licenses_screen.dart';
 import 'package:self_improvement/features/settings/presentation/settings_screen.dart';
@@ -131,6 +132,10 @@ List<RouteBase> buildAppRoutes({
     appRoute(
       path: AppRoutes.licenses,
       builder: (context, state) => const LicensesScreen(),
+    ),
+    appRoute(
+      path: AppRoutes.about,
+      builder: (context, state) => const AboutScreen(),
     ),
     appRoute(
       path: AppRoutes.onboarding,

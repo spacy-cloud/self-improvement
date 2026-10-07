@@ -93,6 +93,48 @@ void main() {
           handle.dispose();
         });
 
+        testWidgets(
+          'the about page fits, scrolls to its end, tap targets 48 px and '
+          'labelled (AT33, BS-118)',
+          (tester) async {
+            final handle = tester.ensureSemantics();
+            final env = await newEnv(tester);
+            await openScreen(
+              tester,
+              env,
+              SettingsRoutes.about,
+              size: size,
+              textScale: scale,
+            );
+            expect(tester.takeException(), isNull, reason: 'no overflow');
+            expect(find.text('Über die App'), findsOneWidget);
+            await expectLater(
+              tester,
+              meetsGuideline(androidTapTargetGuideline),
+            );
+            await expectLater(
+              tester,
+              meetsGuideline(labeledTapTargetGuideline),
+            );
+            // Scroll to the end: the last row is reachable and still labelled.
+            await tester.scrollUntilVisible(
+              find.text('Lizenzen der verwendeten Pakete'),
+              300,
+              scrollable: find.byType(Scrollable).first,
+            );
+            expect(tester.takeException(), isNull);
+            await expectLater(
+              tester,
+              meetsGuideline(androidTapTargetGuideline),
+            );
+            await expectLater(
+              tester,
+              meetsGuideline(labeledTapTargetGuideline),
+            );
+            handle.dispose();
+          },
+        );
+
         testWidgets('the licence list fits and its texts wrap (AT33)', (
           tester,
         ) async {

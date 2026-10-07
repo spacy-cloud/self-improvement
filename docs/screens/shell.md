@@ -40,6 +40,7 @@ Dieses Dokument beschreibt den tatsächlich umgesetzten Zustand von Start, Route
 | `/settings/modules` | `ModulesScreen` | Unterseite | Modulverwaltung (Abschnitt 7) |
 | `/settings/data` | `DataScreen` | Unterseite | |
 | `/settings/licenses` | `LicensesScreen` | Unterseite | |
+| `/settings/about` | `AboutScreen` | Unterseite | „Über die App“, öffnet über die Zeile „Version“ der Einstellungen (BS-118, [profile-settings.md](profile-settings.md)) |
 | `/onboarding` | `OnboardingScreen` | eigener Fluss | die fünf Schritte laufen innerhalb dieser einen Route |
 | `/not-found` | `NotFoundScreen` | Unterseite | Ziel für ungültige Kennungen; unbekannte Pfade zeigen dieselbe Seite |
 
@@ -152,6 +153,7 @@ Die Navigations-Einstiege des Shells (Plus-Menü, Benachrichtigungen) öffnen Se
 | `test/app/bootstrap_smoke_test.dart` | Start, Onboarding-Fluss, neutrale Ladeseite, Startfehler mit Wiederholen, 200 % | AT01, AT33 |
 | `test/app/route_guard_test.dart` | Guard-Regeln, ID-Prüfung, Routentabelle ohne Doppelungen | AT01 |
 | `test/app/router_guards_test.dart` | unbekannte Routen, ungültige IDs, ausgeschaltete Module, Kernrouten | C02, AT03 |
+| `test/app/about_route_test.dart` | Seite „Über die App“ (`/settings/about`) in der laufenden App: Zeile „Version“, Zurück, keine Navigationsleiste, Seitenwechsel mit und ohne reduzierte Bewegung (BS-118) | AT35 |
 | `test/app/app_shell_test.dart` | Tabs mit Zustand, Plus-Modal, Filter nach Modulen, Fokus fortsetzen, Rückkehr zum Einstieg, Fokus-Rückgabe | C02, AT04 |
 | `test/app/back_order_test.dart` | Zurück-Reihenfolge, Verwerfen-Verhalten | C02 |
 | `test/app/app_wiring_test.dart` | Benachrichtigungs-Einstieg, Erinnerungen, Backup, Uhr | AT29, AT32, AT25 |

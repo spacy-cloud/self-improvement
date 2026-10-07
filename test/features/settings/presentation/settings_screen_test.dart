@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:self_improvement/core/config/app_config.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/core/providers/core_providers.dart';
 import 'package:self_improvement/features/profile/presentation/profile_routes.dart';
@@ -59,11 +60,12 @@ void main() {
       ]) {
         expect(find.text(row), findsOneWidget, reason: row);
       }
-      expect(find.text('1.0.0'), findsOneWidget);
+      expect(find.text(AppConfig.appVersion), findsOneWidget);
       expect(find.text('Nur lokal'), findsOneWidget);
 
       // Seven rows and two switches: nothing without a function, no account
-      // or cloud switch, no export/import/reset shortcuts.
+      // or cloud switch, no export/import/reset shortcuts. The Version row
+      // opens the page "Über die App" (BS-118), so it is a working row too.
       // The reminders block draws its own controls and is counted separately.
       int outsideReminders(Type type) =>
           find.byType(type).evaluate().length -
@@ -81,6 +83,42 @@ void main() {
       expect(find.text('Alle Daten zurücksetzen'), findsNothing);
       await savePng(tester, 'build/profile_shots/settings.png');
     });
+
+    testWidgets(
+      'the Version row shows the version with a chevron and is a link (BS-118)',
+      (tester) async {
+        final env = await createScreenEnv(tester);
+        await openScreen(tester, env, SettingsRoutes.settings);
+        final row = tester.widget<EntryListTile>(
+          find.widgetWithText(EntryListTile, 'Version'),
+        );
+        expect(row.onTap, isNotNull, reason: 'the row is tappable');
+        expect(row.showChevron, isTrue, reason: 'it opens a page');
+        expect(row.valueText, AppConfig.appVersion);
+      },
+    );
+
+    testWidgets(
+      'at 200 % text the Version row keeps its link and shows the version '
+      'under the title (BS-118)',
+      (tester) async {
+        final env = await createScreenEnv(tester);
+        await openScreen(tester, env, SettingsRoutes.settings, textScale: 2);
+        await tester.scrollUntilVisible(
+          find.text('Version'),
+          300,
+          scrollable: find.byType(Scrollable).first,
+        );
+        final row = tester.widget<EntryListTile>(
+          find.widgetWithText(EntryListTile, 'Version'),
+        );
+        expect(row.onTap, isNotNull);
+        expect(row.subtitle, AppConfig.appVersion);
+        await tester.tap(find.text('Version'));
+        await settle(tester);
+        expect(find.text('Über die App'), findsOneWidget, reason: 'page title');
+      },
+    );
 
     testWidgets('embeds the reminders block exactly once (AT28)', (
       tester,
