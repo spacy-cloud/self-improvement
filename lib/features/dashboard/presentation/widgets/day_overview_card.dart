@@ -2,19 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/features/dashboard/presentation/widgets/text_scale.dart';
 
-/// The day overview: the ring with "x von y" in the middle, one of the five
-/// fixed neutral motivation texts and a factual sentence about today's goals.
+/// The day overview: the ring with "x von y" in the middle, the title of the day
+/// (one of the three neutral texts of the stand of the goals) and a factual
+/// sentence about today's goals.
 ///
 /// Only for a day with at least one applicable goal; without one the dashboard
 /// shows "Noch keine Tagesziele" instead, never a 0/0 ring. The ring is a
 /// picture of the same numbers that the text says, and it has its own spoken
-/// label.
+/// label. Its arc colour follows the stand (grey, yellow, green) and is chosen
+/// by `ProgressRing.goals`, not here, so that every day ring looks the same.
 class DayOverviewCard extends StatelessWidget {
   /// Creates the card for [fulfilled] of [applicable] goals (applicable >= 1).
   const DayOverviewCard({
     required this.fulfilled,
     required this.applicable,
-    required this.motivation,
+    this.motivation,
     super.key,
   }) : assert(applicable >= 1, 'The ring needs at least one applicable goal');
 
@@ -24,8 +26,9 @@ class DayOverviewCard extends StatelessWidget {
   /// Goals that apply today.
   final int applicable;
 
-  /// The neutral motivation text of the day.
-  final String motivation;
+  /// The title of the day (`motivationTextFor`), or `null` for no title: the
+  /// texts speak of "today", so a past day shows only the factual sentence.
+  final String? motivation;
 
   /// The spoken text of the ring.
   String get ringLabel => applicable == 1
@@ -71,15 +74,20 @@ class DayOverviewCard extends StatelessWidget {
         ],
       ),
     );
+    final title = motivation;
     final texts = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        Text(
-          motivation,
-          style: AppTextStyles.titleSection.copyWith(color: colors.textPrimary),
-        ),
-        const SizedBox(height: AppSpacing.s4),
+        if (title != null) ...<Widget>[
+          Text(
+            title,
+            style: AppTextStyles.titleSection.copyWith(
+              color: colors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.s4),
+        ],
         Text(
           summary,
           style: AppTextStyles.bodyRegular.copyWith(

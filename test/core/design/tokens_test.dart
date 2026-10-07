@@ -128,6 +128,29 @@ void main() {
       }
     });
 
+    test('day ring arc for all goals reached is color/primary (BS-121)', () {
+      // Figma "Ziele-Ring – Zustände": Light 4127:316, Dark 4127:365, OLED
+      // 4127:414 draw the full ring with color/primary.
+      for (var mode = 0; mode < 3; mode++) {
+        expect(
+          palettes[mode].dayRingComplete,
+          Color(0xFF000000 | _figmaColors['color/primary']![mode]),
+          reason: modeNames[mode],
+        );
+      }
+      // The values themselves, so that a changed table cannot hide a change of
+      // the ring.
+      expect(AppColors.light.dayRingComplete, const Color(0xFF20B65C));
+      expect(AppColors.dark.dayRingComplete, const Color(0xFF2FCB6E));
+      expect(AppColors.oled.dayRingComplete, const Color(0xFF2FCB6E));
+    });
+
+    test('track, partial arc and complete arc are three colours (BS-121)', () {
+      for (final p in palettes) {
+        expect(<Color>{p.track, p.dayRing, p.dayRingComplete}, hasLength(3));
+      }
+    });
+
     test('snack bar colours are the fixed Figma values in all modes', () {
       for (final p in palettes) {
         expect(p.snackBarSurface, const Color(0xFF1F2328));
@@ -236,6 +259,9 @@ void main() {
       final mid = AppColors.lerp(AppColors.light, AppColors.oled, 0.5);
       expect(mid.background, isNot(AppColors.light.background));
       expect(mid.background, isNot(AppColors.oled.background));
+      // The complete ring colour is blended too (BS-121).
+      expect(mid.dayRingComplete, isNot(AppColors.light.dayRingComplete));
+      expect(mid.dayRingComplete, isNot(AppColors.oled.dayRingComplete));
     });
 
     test('AppTokens copyWith and lerp keep the variant of the nearer end', () {

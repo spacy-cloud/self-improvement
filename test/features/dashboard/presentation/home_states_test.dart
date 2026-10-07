@@ -208,14 +208,23 @@ void main() {
       semantics.dispose();
     });
 
-    testWidgets('the motivation text is one of the five fixed texts', (
-      tester,
-    ) async {
-      final harness = await createHarness(tester, startedOn: _secondDay);
-      await pumpHome(tester, harness);
-      // 3 October is day 276 of the year, 276 % 5 == 1.
-      expect(find.text('Ein Eintrag nach dem anderen.'), findsOneWidget);
-    });
+    testWidgets(
+      '(BS-121) the title is a text of the stand "no goal reached" and fits '
+      'the sentence below it',
+      (tester) async {
+        final harness = await createHarness(tester, startedOn: _secondDay);
+        await pumpHome(tester, harness);
+        // 3 October is day 276 of the year, 276 % 3 == 0: the first text.
+        expect(
+          find.text('Heute ist ein guter Tag, um anzufangen.'),
+          findsOneWidget,
+        );
+        expect(
+          find.text('Du hast heute noch kein Ziel erreicht.'),
+          findsOneWidget,
+        );
+      },
+    );
   });
 
   group('modules', () {

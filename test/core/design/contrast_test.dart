@@ -181,6 +181,16 @@ final List<_Pair> _controlPairs = <_Pair>[
     (c) => c.dayRing,
     (c) => c.track,
   ),
+  _p(
+    'day ring complete arc vs surface (Dark and OLED only)',
+    (c) => c.dayRingComplete,
+    (c) => c.surface,
+  ),
+  _p(
+    'day ring complete arc vs track (Dark and OLED only)',
+    (c) => c.dayRingComplete,
+    (c) => c.track,
+  ),
 ];
 
 /// Pairs that are known to be below 3:1. They are decorative or always paired
@@ -192,6 +202,8 @@ const Map<String, double> _documentedLowContrast = <String, double>{
   'light water-chart vs track': 2.45,
   'light streak (flame) vs surface': 2.86,
   'light day ring arc vs track': 1.36,
+  'light day ring complete arc vs surface': 2.66,
+  'light day ring complete arc vs track': 2.30,
   'light on-primary on primary (accent fill)': 2.66,
   'dark on-primary on primary (accent fill)': 2.12,
 };
@@ -300,6 +312,14 @@ void main() {
           light.surface,
         ),
         'light day ring arc vs track': roundedRatio(light.dayRing, light.track),
+        'light day ring complete arc vs surface': roundedRatio(
+          light.dayRingComplete,
+          light.surface,
+        ),
+        'light day ring complete arc vs track': roundedRatio(
+          light.dayRingComplete,
+          light.track,
+        ),
         'light on-primary on primary (accent fill)': roundedRatio(
           light.onPrimary,
           light.primary,
@@ -325,6 +345,50 @@ void main() {
         }
       },
     );
+  });
+
+  group('day ring complete: chosen colour and its alternative (BS-121)', () {
+    // The full ring is drawn with color/primary (Figma "Ziele-Ring – Zustände").
+    // The alternative color/primary-button was measured as well and not chosen
+    // (D-026). Both against the card surface and the track; the full ring hides
+    // the track, so the pair against the surface is the one that is seen.
+    // Order: chosen vs surface, chosen vs track, alternative vs surface,
+    // alternative vs track. Keep in sync with docs/design-handoff.md section
+    // 8.4.
+    const expected = <AppThemeVariant, (double, double, double, double)>{
+      AppThemeVariant.light: (2.66, 2.30, 4.72, 4.09),
+      AppThemeVariant.dark: (7.85, 6.33, 3.65, 2.94),
+      AppThemeVariant.oled: (8.96, 7.06, 4.17, 3.29),
+    };
+
+    for (final variant in variants) {
+      test('${variant.name}: the measured values are the documented ones', () {
+        final colors = variant.colors;
+        final (chosenSurface, chosenTrack, altSurface, altTrack) =
+            expected[variant]!;
+        expect(
+          roundedRatio(colors.dayRingComplete, colors.surface),
+          chosenSurface,
+        );
+        expect(roundedRatio(colors.dayRingComplete, colors.track), chosenTrack);
+        expect(roundedRatio(colors.primaryButton, colors.surface), altSurface);
+        expect(roundedRatio(colors.primaryButton, colors.track), altTrack);
+      });
+    }
+
+    test('the chosen colour is the accent fill, so its Light pair is the '
+        'already documented decorative one', () {
+      const light = AppColors.light;
+      expect(light.dayRingComplete, light.primary);
+      expect(
+        roundedRatio(light.dayRingComplete, light.surface),
+        _documentedLowContrast['light primary (accent fill) vs surface'],
+      );
+      expect(
+        roundedRatio(light.dayRingComplete, light.track),
+        _documentedLowContrast['light primary (accent fill) vs track'],
+      );
+    });
   });
 
   group('corrections (Soll-Ist)', () {
