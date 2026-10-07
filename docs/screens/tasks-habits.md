@@ -151,7 +151,7 @@ Der Sichtvergleich war ein Augenschein an im Host gerenderten Bildern (393 px in
 
 ## 6. Tests
 
-Befehle: `flutter test test/features/tasks` (970 Tests, 162 davon neu mit BS-111), `flutter test` (gesamt), `dart run tool/at_coverage.dart`. Die Tests der Engine für BS-111 stehen in [data-reminders.md](data-reminders.md), Abschnitt 6.
+Befehle: `flutter test test/features/tasks` (1114 Tests, davon 162 neu mit BS-111 und 144 neu mit BS-110), `flutter test` (gesamt), `dart run tool/at_coverage.dart`. Die Tests der Engine für BS-111 stehen in [data-reminders.md](data-reminders.md), Abschnitt 6.
 
 | Datei (unter `test/features/tasks/`, sonst mit Pfad) | Inhalt | Akzeptanz |
 |---|---|---|
@@ -167,8 +167,8 @@ Befehle: `flutter test test/features/tasks` (970 Tests, 162 davon neu mit BS-111
 | `presentation/habits_dashboard_card_test.dart` (37) | Gewohnheiten auf der Karte: Abhaken, Rückgängig, Doppeltipp, Wiederholung mit gleicher ID, Gleichstand mit dem Tab in beide Richtungen, Typen und Sprechtexte, Zustände, nur lesend, große Schrift | AT12, AT21, AT25, AT27, AT33, AT34, C04, T02 |
 | `presentation/home_checklist_test.dart` (13) | echtes Home mit echtem Tab: Platz der Karte, Gleichstand über die Navigation, XP, Weg zur ersten Gewohnheit, Modul-Tor, Breiten, Dunkel und OLED | AT03, AT21, AT33, AT35, C04 |
 | `presentation/tasks_module_test.dart` (7) | Karte, Plus-Einträge, Routenreihenfolge (`/tasks/new` ist nie eine ID) | BS-53 |
-| `presentation/responsive_a11y_test.dart` (100) | alle Screens bei 320, 360, 393, 430 px mit 100 % und 200 % Text ohne Überlauf, Tap-Ziele und Labels, Themes Light, Dark und OLED, Screenreader-Texte, reduzierte Bewegung | AT33 |
-| `presentation/contrast_test.dart` (132) | Kontrast der verwendeten Farbpaare in drei Themes, mit BS-111 auch die des Blocks „Erinnerung“ (Hinweis, seine Aktion, Entfernen: 12 neue Tests) | AT33 |
+| `presentation/responsive_a11y_test.dart` (128) | alle Screens bei 320, 360, 393, 430 px mit 100 % und 200 % Text ohne Überlauf, Tap-Ziele und Labels, Themes Light, Dark und OLED, Screenreader-Texte, reduzierte Bewegung | AT33 |
+| `presentation/contrast_test.dart` (153) | Kontrast der verwendeten Farbpaare in drei Themes, mit BS-111 auch die des Blocks „Erinnerung“ (Hinweis, seine Aktion, Entfernen: 12 neue Tests), mit BS-110 auch die der Zeilen der Karte „Heute abhaken“ (Typ-Chip, Symbole, Kästchen, Häkchen, Zähler) | AT33 |
 | `domain/task_reminder_test.dart` (13, BS-111) | Schnellwahl (vor und nach 18:00, kurz nach Mitternacht, vor und an der Zeitumstellung, andere Zone, eine Uhrzeit, die es nicht gibt), Text des Zeitpunkts, Regel „Zeitpunkt muss in der Zukunft liegen“ | T01, AT25 |
 | `data/task_reminder_repository_test.dart` (27, BS-111) | Erinnerung in den Commands: Anlegen, Setzen, Verschieben, Entfernen, eingefrorener Tag und eingefrorene Zone (auch in anderer Zone), derselbe Zeitpunkt behält sie, eine abgelaufene blockiert nichts, Vergangenheit wird abgewiesen, Rückgängig stellt sie genau wieder her, Erledigen und Löschen behalten sie, die Datenbank weist einen Teilzustand ab | T01, AT12, AT25 |
 | `application/task_reminder_form_controller_test.dart` (25, BS-111) | Wählen, Ablehnen, Datum und Uhrzeit der Gerätezone, Zeitumstellung (nicht vorhanden, doppelt), Speichern, Wiederholung mit gleicher Command-ID, Bearbeiten (nur eine Änderung macht das Formular „schmutzig“), Konflikt | T01, AT12, AT25, AT27 |
