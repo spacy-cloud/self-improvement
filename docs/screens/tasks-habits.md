@@ -153,7 +153,7 @@ Der Sichtvergleich war ein Augenschein an im Host gerenderten Bildern (393 px in
 
 ## 6. Tests
 
-Befehle: `flutter test test/features/tasks` (1128 Tests, davon 162 neu mit BS-111, 144 neu mit BS-110 und 14 neu mit BS-93), `flutter test` (gesamt), `dart run tool/at_coverage.dart`. Die Tests der Engine für BS-111 stehen in [data-reminders.md](data-reminders.md), Abschnitt 6.
+Befehle: `flutter test test/features/tasks` (1129 Tests, davon 162 neu mit BS-111, 144 neu mit BS-110 und 15 neu mit BS-93), `flutter test` (gesamt), `dart run tool/at_coverage.dart`. Die Tests der Engine für BS-111 stehen in [data-reminders.md](data-reminders.md), Abschnitt 6.
 
 | Datei (unter `test/features/tasks/`, sonst mit Pfad) | Inhalt | Akzeptanz |
 |---|---|---|
