@@ -159,7 +159,7 @@ Regeln für jede Mutation: erst `validate...` (wirft `ValidationFailure` mit Fel
 
 ## 10. iOS-Vorbereitung
 
-Keine Android-Imports in Domain und Daten; Benachrichtigungen und Dateien liegen hinter Schnittstellen; Projektdateien für iOS sind vorhanden. Ein CI-Workflow baut eine unsignierte IPA (BS-95); Tyler hat sie am 2026-10-04 auf einem iPhone 15 Pro ohne blockierende Fehler ausprobiert (BS-96, Rückmeldung des Testers, drei Folgetickets); VoiceOver und weitere Geräte sind ungeprüft (siehe [known-limitations.md](known-limitations.md)).
+Keine Android-Imports in Domain und Daten; Benachrichtigungen und Dateien liegen hinter Schnittstellen; Projektdateien für iOS sind vorhanden. Ein CI-Workflow baut eine unsignierte IPA (BS-95); Der iOS-Tester hat sie am 2026-10-04 auf einem iPhone 15 Pro ohne blockierende Fehler ausprobiert (BS-96, Rückmeldung des Testers, drei Folgetickets); VoiceOver und weitere Geräte sind ungeprüft (siehe [known-limitations.md](known-limitations.md)).
 
 ## 11. Start der App
 
