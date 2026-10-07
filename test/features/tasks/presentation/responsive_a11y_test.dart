@@ -131,6 +131,44 @@ final List<_Screen> _screens = <_Screen>[
     return cardHost();
   }),
   _Screen('dashboard card, empty', (tester, env) async => cardHost()),
+  // BS-110: the card "Heute abhaken" with tasks AND habits.
+  _Screen('dashboard card, tasks and habits', (tester, env) async {
+    await _seedHabits(tester, env);
+    await _seedTasks(tester, env);
+    return cardHost();
+  }),
+  _Screen('dashboard card, many habits', (tester, env) async {
+    env.moveTo(LocalDate(2026, 9, 20));
+    for (var i = 1; i <= 8; i++) {
+      await env.addHabit(
+        tester,
+        'Gewohnheit Nummer $i mit etwas längerem Namen',
+      );
+    }
+    env.moveTo(_today);
+    await _seedTasks(tester, env);
+    return cardHost();
+  }),
+  _Screen('dashboard card, everything done', (tester, env) async {
+    await _seedHabits(tester, env);
+    for (final habit in await env.allHabits(tester)) {
+      await env.checkHabit(tester, habit.id, _today);
+    }
+    final done = await env.addTask(tester, 'Präsentation abgeben');
+    await tester.runAsync(
+      () => env.tasks.setCompleted(
+        commandId: env.harness.ids.newId(),
+        id: done,
+        completed: true,
+      ),
+    );
+    return cardHost();
+  }),
+  _Screen('dashboard card, read only', (tester, env) async {
+    await _seedHabits(tester, env);
+    await _seedTasks(tester, env);
+    return cardHost(readOnly: true);
+  }),
 ];
 
 void main() {
