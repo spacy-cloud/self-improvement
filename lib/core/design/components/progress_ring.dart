@@ -12,6 +12,12 @@ import 'package:self_improvement/core/design/tokens/app_tokens.dart';
 /// The ring is a picture: it always has a text alternative ([semanticLabel])
 /// and the centre usually shows the same value as text. On large text the ring
 /// grows (up to 1.6 times) and the centre content scales down to fit.
+///
+/// The day ring ([ProgressRing.goals]) also shows the stand of the goals by the
+/// colour of its arc: no goal reached draws no arc (only the track), some but
+/// not all goals the day ring colour (yellow), all goals the "complete" colour
+/// (green). The colour is chosen here and nowhere else, so that every day ring
+/// of the app looks the same; it never carries the information alone.
 class ProgressRing extends StatelessWidget {
   /// Creates a ring for a fraction [value] from 0 to 1.
   const ProgressRing({
@@ -23,10 +29,14 @@ class ProgressRing extends StatelessWidget {
     this.strokeWidth = AppSizes.progressRingStroke,
     this.color,
     this.trackColor,
+    this.complete = false,
   });
 
   /// Creates the day ring from the number of [fulfilled] of [applicable]
   /// goals. Without applicable goals the ring stays empty.
+  ///
+  /// The arc colour follows the stand ([isComplete]): green when all goals are
+  /// reached, yellow before that; an explicit [color] wins.
   ProgressRing.goals({
     required int fulfilled,
     required int applicable,
@@ -40,6 +50,7 @@ class ProgressRing extends StatelessWidget {
   }) : this(
          key: key,
          value: fraction(fulfilled, applicable),
+         complete: isComplete(fulfilled, applicable),
          semanticLabel:
              semanticLabel ??
              (applicable <= 0
@@ -67,11 +78,17 @@ class ProgressRing extends StatelessWidget {
   /// Stroke width.
   final double strokeWidth;
 
-  /// Arc colour; defaults to the day ring colour of the tokens.
+  /// Arc colour; defaults to the day ring colour of the tokens
+  /// ([AppColors.dayRing]), or to [AppColors.dayRingComplete] when [complete].
   final Color? color;
 
   /// Track colour; defaults to the track token.
   final Color? trackColor;
+
+  /// Whether the arc takes the colour of a finished day
+  /// ([AppColors.dayRingComplete]) instead of the day ring colour. Only
+  /// [ProgressRing.goals] sets it, from [isComplete]; an explicit [color] wins.
+  final bool complete;
 
   /// `fulfilled / applicable` clamped to 0..1; 0 when nothing is applicable.
   static double fraction(int fulfilled, int applicable) {
@@ -81,6 +98,14 @@ class ProgressRing extends StatelessWidget {
     return math.min(1, fulfilled / applicable);
   }
 
+  /// Whether [fulfilled] of [applicable] goals mean "all goals reached": at
+  /// least one goal applies and none is missing, so exactly the full ring (one
+  /// of one counts). Like [fraction] it clamps: more reached than applicable
+  /// still counts as all. Without an applicable goal there is nothing to
+  /// complete, the ring stays empty and never turns green.
+  static bool isComplete(int fulfilled, int applicable) =>
+      applicable > 0 && fulfilled >= applicable;
+
   @override
   Widget build(BuildContext context) {
     final colors = context.tokens.colors;
@@ -88,6 +113,8 @@ class ProgressRing extends StatelessWidget {
     final scale = context.textScaleFactor.clamp(1.0, 1.6);
     final diameter = size * scale;
     final fraction = value.isNaN ? 0.0 : value.clamp(0.0, 1.0);
+    final arcColor =
+        color ?? (complete ? colors.dayRingComplete : colors.dayRing);
     return Semantics(
       container: true,
       label: semanticLabel,
@@ -102,7 +129,7 @@ class ProgressRing extends StatelessWidget {
             return CustomPaint(
               painter: _RingPainter(
                 value: animated,
-                color: color ?? colors.dayRing,
+                color: arcColor,
                 trackColor: trackColor ?? colors.track,
                 strokeWidth: strokeWidth,
               ),

@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' show Tristate;
 
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/core/design/design.dart';
 
 import '../support/design_test_harness.dart';
+import '../support/ring_arcs.dart';
 
 void main() {
   setUpAll(loadInterFont);
@@ -430,6 +432,291 @@ void main() {
         ),
       );
       expect(tester.takeException(), isNull);
+    });
+
+    group('the arc colour follows the stand of the goals (BS-121)', () {
+      test('isComplete: a goal applies and none is missing (C04)', () {
+        expect(ProgressRing.isComplete(4, 4), isTrue);
+        expect(
+          ProgressRing.isComplete(1, 1),
+          isTrue,
+          reason: 'a single goal is all goals',
+        );
+        expect(
+          ProgressRing.isComplete(5, 4),
+          isTrue,
+          reason: 'clamps like fraction()',
+        );
+        expect(ProgressRing.isComplete(0, 4), isFalse);
+        expect(ProgressRing.isComplete(1, 4), isFalse);
+        expect(ProgressRing.isComplete(2, 4), isFalse);
+        expect(
+          ProgressRing.isComplete(3, 4),
+          isFalse,
+          reason: 'one goal short is not all',
+        );
+        expect(ProgressRing.isComplete(0, 1), isFalse);
+        expect(
+          ProgressRing.isComplete(0, 0),
+          isFalse,
+          reason: 'nothing applies, so there is nothing to complete',
+        );
+        expect(ProgressRing.isComplete(3, 0), isFalse);
+        expect(ProgressRing.isComplete(-1, -1), isFalse);
+        expect(ProgressRing.isComplete(1, -2), isFalse);
+      });
+
+      test('isComplete is exactly the full ring (C04)', () {
+        for (var applicable = -2; applicable <= 6; applicable++) {
+          for (var fulfilled = -2; fulfilled <= 8; fulfilled++) {
+            expect(
+              ProgressRing.isComplete(fulfilled, applicable),
+              ProgressRing.fraction(fulfilled, applicable) == 1,
+              reason: '$fulfilled of $applicable',
+            );
+          }
+        }
+      });
+
+      for (final variant in allVariants) {
+        final colors = variant.colors;
+        const full = 2 * math.pi;
+
+        Future<List<PaintedArc>> arcsOf(
+          WidgetTester tester,
+          Widget ring,
+        ) async {
+          await pumpDesign(tester, ring, variant: variant);
+          // A ring that changes its value animates; look at the final state.
+          await tester.pumpAndSettle();
+          return paintedArcs(tester);
+        }
+
+        testWidgets(
+          '(C06) ${variant.name}: 0 of 4 paints only the track, no arc',
+          (tester) async {
+            final arcs = await arcsOf(
+              tester,
+              ProgressRing.goals(fulfilled: 0, applicable: 4),
+            );
+            expect(arcs, <PaintedArc>[(color: colors.track, sweep: full)]);
+          },
+        );
+
+        testWidgets(
+          '(C06) ${variant.name}: 2 of 4 paints the half arc in the day ring '
+          'colour (yellow)',
+          (tester) async {
+            final arcs = await arcsOf(
+              tester,
+              ProgressRing.goals(fulfilled: 2, applicable: 4),
+            );
+            expect(arcs, <PaintedArc>[
+              (color: colors.track, sweep: full),
+              (color: colors.dayRing, sweep: math.pi),
+            ]);
+          },
+        );
+
+        testWidgets(
+          '(C06) ${variant.name}: one goal short of all stays yellow (3 of 4, '
+          '1 of 4)',
+          (tester) async {
+            expect(
+              await arcsOf(
+                tester,
+                ProgressRing.goals(fulfilled: 3, applicable: 4),
+              ),
+              <PaintedArc>[
+                (color: colors.track, sweep: full),
+                (color: colors.dayRing, sweep: 2 * math.pi * 0.75),
+              ],
+            );
+            expect(
+              await arcsOf(
+                tester,
+                ProgressRing.goals(fulfilled: 1, applicable: 4),
+              ),
+              <PaintedArc>[
+                (color: colors.track, sweep: full),
+                (color: colors.dayRing, sweep: 2 * math.pi * 0.25),
+              ],
+            );
+          },
+        );
+
+        testWidgets(
+          '(C06) ${variant.name}: 4 of 4 paints the full ring in the complete '
+          'colour (green)',
+          (tester) async {
+            final arcs = await arcsOf(
+              tester,
+              ProgressRing.goals(fulfilled: 4, applicable: 4),
+            );
+            expect(arcs, <PaintedArc>[
+              (color: colors.track, sweep: full),
+              (color: colors.dayRingComplete, sweep: full),
+            ]);
+            expect(colors.dayRingComplete, isNot(colors.dayRing));
+          },
+        );
+
+        testWidgets(
+          '(C06) ${variant.name}: a single goal reached (1 of 1) is all goals: '
+          'full green ring',
+          (tester) async {
+            final arcs = await arcsOf(
+              tester,
+              ProgressRing.goals(fulfilled: 1, applicable: 1),
+            );
+            expect(arcs, <PaintedArc>[
+              (color: colors.track, sweep: full),
+              (color: colors.dayRingComplete, sweep: full),
+            ]);
+          },
+        );
+
+        testWidgets(
+          '(C06) ${variant.name}: without an applicable goal only the track '
+          'is painted and the ring never turns green',
+          (tester) async {
+            for (final (fulfilled, applicable) in const <(int, int)>[
+              (0, 0),
+              (3, 0),
+            ]) {
+              final arcs = await arcsOf(
+                tester,
+                ProgressRing.goals(
+                  fulfilled: fulfilled,
+                  applicable: applicable,
+                ),
+              );
+              expect(arcs, <PaintedArc>[
+                (color: colors.track, sweep: full),
+              ], reason: '$fulfilled of $applicable');
+            }
+          },
+        );
+
+        testWidgets(
+          '(C06) ${variant.name}: more reached than applicable is the full '
+          'green ring, like the full fraction',
+          (tester) async {
+            final arcs = await arcsOf(
+              tester,
+              ProgressRing.goals(fulfilled: 5, applicable: 4),
+            );
+            expect(arcs, <PaintedArc>[
+              (color: colors.track, sweep: full),
+              (color: colors.dayRingComplete, sweep: full),
+            ]);
+          },
+        );
+
+        testWidgets(
+          '(C06) ${variant.name}: an explicit colour wins over the stand',
+          (tester) async {
+            final arcs = await arcsOf(
+              tester,
+              ProgressRing.goals(
+                fulfilled: 4,
+                applicable: 4,
+                color: colors.moduleWaterChart,
+                trackColor: colors.tintWater,
+              ),
+            );
+            expect(arcs, <PaintedArc>[
+              (color: colors.tintWater, sweep: full),
+              (color: colors.moduleWaterChart, sweep: full),
+            ]);
+          },
+        );
+
+        testWidgets(
+          '(C06) ${variant.name}: the plain constructor keeps the day ring '
+          'colour, also for a full ring (only goals() decides about green)',
+          (tester) async {
+            final arcs = await arcsOf(
+              tester,
+              const ProgressRing(value: 1, semanticLabel: '100 %'),
+            );
+            expect(arcs, <PaintedArc>[
+              (color: colors.track, sweep: full),
+              (color: colors.dayRing, sweep: full),
+            ]);
+          },
+        );
+
+        testWidgets(
+          '(C06) ${variant.name}: complete: true takes the complete colour, '
+          'an explicit colour still wins',
+          (tester) async {
+            expect(
+              await arcsOf(
+                tester,
+                const ProgressRing(
+                  value: 1,
+                  semanticLabel: '100 %',
+                  complete: true,
+                ),
+              ),
+              <PaintedArc>[
+                (color: colors.track, sweep: full),
+                (color: colors.dayRingComplete, sweep: full),
+              ],
+            );
+            expect(
+              await arcsOf(
+                tester,
+                ProgressRing(
+                  value: 1,
+                  semanticLabel: '100 %',
+                  complete: true,
+                  color: colors.moduleWaterChart,
+                ),
+              ),
+              <PaintedArc>[
+                (color: colors.track, sweep: full),
+                (color: colors.moduleWaterChart, sweep: full),
+              ],
+            );
+          },
+        );
+      }
+
+      testSemantics(
+        '(AT34) the stand is read aloud as before, whatever the colour: '
+        '"N von M Zielen erreicht"',
+        (tester) async {
+          await pumpDesign(
+            tester,
+            Column(
+              children: <Widget>[
+                ProgressRing.goals(
+                  key: const ValueKey<String>('none'),
+                  fulfilled: 0,
+                  applicable: 4,
+                ),
+                ProgressRing.goals(
+                  key: const ValueKey<String>('some'),
+                  fulfilled: 2,
+                  applicable: 4,
+                ),
+                ProgressRing.goals(
+                  key: const ValueKey<String>('all'),
+                  fulfilled: 4,
+                  applicable: 4,
+                ),
+              ],
+            ),
+          );
+          String label(String key) =>
+              tester.getSemantics(find.byKey(ValueKey<String>(key))).label;
+          expect(label('none'), '0 von 4 Zielen erreicht');
+          expect(label('some'), '2 von 4 Zielen erreicht');
+          expect(label('all'), '4 von 4 Zielen erreicht');
+        },
+      );
     });
   });
 
