@@ -38,7 +38,7 @@ abstract final class ReminderLabels {
           status.wanted
               ? 'Systemstatus: Benachrichtigungen sind blockiert.'
               : 'Systemstatus: Benachrichtigungen sind noch nicht erlaubt. '
-                    'Android fragt erst, wenn du Erinnerungen einschaltest.',
+                    'Das System fragt erst, wenn du Erinnerungen einschaltest.',
         NotificationPermission.unavailable =>
           'Systemstatus: Der Status der Benachrichtigungen ist nicht '
               'verfügbar.',
@@ -48,7 +48,8 @@ abstract final class ReminderLabels {
   static String schedulingErrorText(ReminderErrorCategory? category) {
     final cause = switch (category) {
       ReminderErrorCategory.permission =>
-        'Android hat das Einplanen wegen fehlender Berechtigung abgelehnt.',
+        'Das System hat das Einplanen wegen fehlender Berechtigung '
+            'abgelehnt.',
       ReminderErrorCategory.platform =>
         'Das System hat das Einplanen abgelehnt.',
       ReminderErrorCategory.storage =>

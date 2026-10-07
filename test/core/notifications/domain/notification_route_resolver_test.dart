@@ -230,9 +230,13 @@ void main() {
   });
 
   group('reminder kinds', () {
-    test('the kind keys are exactly the schema keys', () {
+    test('the kind keys are the schema keys of the rules plus the task', () {
+      // A task reminder (schema 2, BS-111) belongs to the task itself
+      // (`tasks.reminder_at_utc`) and is no row of `reminder_rules`: its kind
+      // exists only as the prefix of the semantic key, so the kinds of the
+      // rules are all the schema knows.
       expect(
-        ReminderKind.values.map((k) => k.key).toSet(),
+        ReminderKind.values.map((k) => k.key).toSet().difference({'task'}),
         SchemaKeys.reminderKinds.toSet(),
       );
     });

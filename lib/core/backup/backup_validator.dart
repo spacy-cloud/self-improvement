@@ -25,8 +25,9 @@ final class BackupValidationResult {
 /// Stages, each reporting every problem it finds (at most
 /// [BackupFormat.maxReportedProblems] in total):
 /// 1. file: size limit, UTF-8, JSON syntax, root is an object;
-/// 2. root: format marker and schema version (a wrong one ends validation),
-///    the other root fields, no unknown fields;
+/// 2. root: format marker and schema version (a wrong one ends validation;
+///    a readable older version is brought to the current one by
+///    `BackupUpgrade`), the other root fields, no unknown fields;
 /// 3. data: required sections, record limit (ends validation when exceeded);
 /// 4. records: types, formats, ranges, enums, record-level rules (see the
 ///    DTOs);
@@ -236,6 +237,22 @@ final class BackupValidator {
       (r) => r.id,
       'ID kommt mehrfach vor',
       'id',
+    );
+    _unique(
+      p,
+      BackupTable.workoutDayMarks,
+      d.workoutDayMarks,
+      (r) => r.id,
+      'ID kommt mehrfach vor',
+      'id',
+    );
+    _unique(
+      p,
+      BackupTable.workoutDayMarks,
+      d.workoutDayMarks,
+      (r) => r.localDate,
+      'Für dieses Datum gibt es mehrere Markierungen',
+      'local_date',
     );
     _unique(
       p,

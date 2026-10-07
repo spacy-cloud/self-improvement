@@ -130,8 +130,8 @@ final class ProfileDto {
 
 /// Backup record of the singleton `app_settings` (database id is `app`).
 ///
-/// `notifications_enabled` is a desired state only; the real permission is
-/// never taken from a file.
+/// `notifications_enabled` and `health_steps_sync_enabled` are desired states
+/// only; the real permissions are never taken from a file.
 @immutable
 final class AppSettingsDto {
   const AppSettingsDto({
@@ -139,10 +139,12 @@ final class AppSettingsDto {
     required this.reduceMotion,
     required this.haptics,
     required this.notificationsEnabled,
+    required this.healthStepsSyncEnabled,
     required this.createdAtUtc,
     required this.updatedAtUtc,
     required this.rowVersion,
     this.lastKnownTimezone,
+    this.healthStepsLastSyncAtUtc,
   });
 
   factory AppSettingsDto.fromJson(Map<String, Object?> json) =>
@@ -154,6 +156,8 @@ final class AppSettingsDto {
     haptics: row.haptics,
     notificationsEnabled: row.notificationsEnabled,
     lastKnownTimezone: row.lastKnownTimezone,
+    healthStepsSyncEnabled: row.healthStepsSyncEnabled,
+    healthStepsLastSyncAtUtc: row.healthStepsLastSyncAtUtc,
     createdAtUtc: row.createdAtUtc,
     updatedAtUtc: row.updatedAtUtc,
     rowVersion: row.rowVersion,
@@ -173,6 +177,14 @@ final class AppSettingsDto {
         'last_known_timezone',
         'Zuletzt bekannte Zeitzone',
       ),
+      healthStepsSyncEnabled: r.boolean(
+        'health_steps_sync_enabled',
+        'Schritte aus Health übernehmen',
+      ),
+      healthStepsLastSyncAtUtc: r.optionalInstant(
+        'health_steps_last_sync_at_utc',
+        'Letzter Schritteabgleich',
+      ),
       createdAtUtc: r.instant('created_at_utc', 'Erstellzeitpunkt'),
       updatedAtUtc: r.instant('updated_at_utc', 'Änderungszeitpunkt'),
       rowVersion: r.integer('row_version', 'Zeilenversion', min: 1),
@@ -184,6 +196,13 @@ final class AppSettingsDto {
   final bool haptics;
   final bool notificationsEnabled;
   final String? lastKnownTimezone;
+
+  /// Desired state of "Schritte aus Health übernehmen" (schema 2).
+  final bool healthStepsSyncEnabled;
+
+  /// When the last comparison with the health app finished (schema 2);
+  /// informational.
+  final DateTime? healthStepsLastSyncAtUtc;
   final DateTime createdAtUtc;
   final DateTime updatedAtUtc;
   final int rowVersion;
@@ -195,6 +214,10 @@ final class AppSettingsDto {
     'haptics': haptics,
     'notifications_enabled': notificationsEnabled,
     'last_known_timezone': lastKnownTimezone,
+    'health_steps_sync_enabled': healthStepsSyncEnabled,
+    'health_steps_last_sync_at_utc': healthStepsLastSyncAtUtc == null
+        ? null
+        : BackupValues.formatInstant(healthStepsLastSyncAtUtc!),
     'created_at_utc': BackupValues.formatInstant(createdAtUtc),
     'updated_at_utc': BackupValues.formatInstant(updatedAtUtc),
     'row_version': rowVersion,
@@ -207,6 +230,8 @@ final class AppSettingsDto {
     haptics: Value(haptics),
     notificationsEnabled: Value(notificationsEnabled),
     lastKnownTimezone: Value(lastKnownTimezone),
+    healthStepsSyncEnabled: Value(healthStepsSyncEnabled),
+    healthStepsLastSyncAtUtc: Value(healthStepsLastSyncAtUtc),
     createdAtUtc: createdAtUtc,
     updatedAtUtc: updatedAtUtc,
     rowVersion: Value(rowVersion),

@@ -60,7 +60,8 @@ final class BackupImporter {
   /// The local dates that carry facts relevant to goals and XP, in ascending
   /// order: weight, step, water and workout dates, the completion dates of
   /// focus sessions and tasks, and habit check dates. Meals do not count
-  /// (no goals, no XP); snapshot-only days have nothing to award.
+  /// (no goals, no XP); snapshot-only days have nothing to award, and neither
+  /// do rest and skipped days (`workout_day_marks` earn no XP).
   static Set<LocalDate> factDays(BackupData data) {
     final days = <LocalDate>{
       for (final r in data.weightEntries) r.localDate,
@@ -119,6 +120,10 @@ final class BackupImporter {
         ..insertAll(
           db.workoutEntries,
           data.workoutEntries.map((r) => r.toCompanion()),
+        )
+        ..insertAll(
+          db.workoutDayMarks,
+          data.workoutDayMarks.map((r) => r.toCompanion()),
         )
         ..insertAll(db.tasks, data.tasks.map((r) => r.toCompanion()))
         ..insertAll(db.habits, data.habits.map((r) => r.toCompanion()))

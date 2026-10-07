@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:self_improvement/core/backup/backup_format.dart';
 import 'package:self_improvement/core/backup/import_preview.dart';
 import 'package:self_improvement/core/backup/import_validation_report.dart';
 import 'package:self_improvement/core/backup/reset_service.dart';
@@ -137,10 +136,7 @@ class _ImportPreviewSheetState extends ConsumerState<ImportPreviewSheet> {
                 formatThousands(userEntryCount(preview.counts)),
               ),
               _InfoRowData('App-Version', preview.appVersion),
-              const _InfoRowData(
-                'Format',
-                'Version ${BackupFormat.schemaVersion}',
-              ),
+              _InfoRowData('Format', 'Version ${preview.schemaVersion}'),
             ],
           ),
           if (areas.isNotEmpty) ...<Widget>[

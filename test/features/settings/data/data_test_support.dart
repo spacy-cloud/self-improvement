@@ -55,7 +55,7 @@ class DataEnv {
   final RecordingBackupListener listener;
   final RecordingProjectionSynchronizer projection;
 
-  /// All rows of the sixteen backup tables, as text.
+  /// All rows of the seventeen backup tables, as text.
   Future<Map<String, List<String>>> dump(WidgetTester tester) async =>
       (await tester.runAsync(() => backupTablesDump(harness.database)))!;
 

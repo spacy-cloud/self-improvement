@@ -254,7 +254,7 @@ void main() {
     test(
       'a rejected file carries the report and an unsupported_backup failure',
       () async {
-        final root = decoded(await validBackupBytes())..['schemaVersion'] = 2;
+        final root = decoded(await validBackupBytes())..['schemaVersion'] = 3;
         final preparation = await service.prepareImport(
           Uint8List.fromList(utf8.encode(jsonEncode(root))),
         );

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:self_improvement/core/backup/backup_format.dart';
+import 'package:self_improvement/core/backup/backup_upgrade.dart';
 import 'package:self_improvement/core/backup/backup_values.dart';
 import 'package:self_improvement/core/backup/dto/body_nutrition_dtos.dart';
 import 'package:self_improvement/core/backup/dto/core_dtos.dart';
@@ -24,6 +25,7 @@ final class BackupData {
     this.mealEntries = const [],
     this.focusSessions = const [],
     this.workoutEntries = const [],
+    this.workoutDayMarks = const [],
     this.tasks = const [],
     this.habits = const [],
     this.habitChecks = const [],
@@ -42,6 +44,7 @@ final class BackupData {
   final List<MealEntryDto> mealEntries;
   final List<FocusSessionDto> focusSessions;
   final List<WorkoutEntryDto> workoutEntries;
+  final List<WorkoutDayMarkDto> workoutDayMarks;
   final List<TaskDto> tasks;
   final List<HabitDto> habits;
   final List<HabitCheckDto> habitChecks;
@@ -61,6 +64,7 @@ final class BackupData {
     BackupTable.mealEntries: mealEntries.length,
     BackupTable.focusSessions: focusSessions.length,
     BackupTable.workoutEntries: workoutEntries.length,
+    BackupTable.workoutDayMarks: workoutDayMarks.length,
     BackupTable.tasks: tasks.length,
     BackupTable.habits: habits.length,
     BackupTable.habitChecks: habitChecks.length,
@@ -92,6 +96,9 @@ final class BackupData {
     BackupTable.workoutEntries.key: [
       for (final r in workoutEntries) r.toJson(),
     ],
+    BackupTable.workoutDayMarks.key: [
+      for (final r in workoutDayMarks) r.toJson(),
+    ],
     BackupTable.tasks.key: [for (final r in tasks) r.toJson()],
     BackupTable.habits.key: [for (final r in habits) r.toJson()],
     BackupTable.habitChecks.key: [for (final r in habitChecks) r.toJson()],
@@ -104,12 +111,18 @@ final class BackupData {
 /// Record-level rules (types, ranges, enums, formats) hold for every object
 /// that [fromJson] returns. Cross-record rules (unique ids, foreign keys, at
 /// most one open session) are checked by `BackupValidator`.
+///
+/// A document always has the shape of the current version. One that was read
+/// from an older file ([sourceSchemaVersion]) went through `BackupUpgrade`
+/// and carries the values that older file means; writing it gives a current
+/// file.
 @immutable
 final class BackupDocument {
   const BackupDocument({
     required this.exportedAtUtc,
     required this.appVersion,
     required this.data,
+    this.sourceSchemaVersion = BackupFormat.schemaVersion,
   });
 
   /// Strict parser for the decoded root object; throws
@@ -132,7 +145,11 @@ final class BackupDocument {
 
   final BackupData data;
 
-  /// Root object in file order.
+  /// The `schemaVersion` of the file this document was read from; the current
+  /// version for a document made from the database.
+  final int sourceSchemaVersion;
+
+  /// Root object in file order. Always the current version.
   Map<String, Object?> toJson() => {
     BackupFormat.rootFormat: BackupFormat.marker,
     BackupFormat.rootSchemaVersion: BackupFormat.schemaVersion,
@@ -146,6 +163,8 @@ final class BackupDocument {
 /// that list positions still equal the positions in the file. Used by the
 /// validator to run cross-record checks on the valid records.
 final class BackupDraft {
+  /// The `schemaVersion` of the file, once it was accepted.
+  int? sourceSchemaVersion;
   DateTime? exportedAtUtc;
   String? appVersion;
   ProfileDto? profile;
@@ -160,6 +179,7 @@ final class BackupDraft {
   final List<MealEntryDto?> mealEntries = [];
   final List<FocusSessionDto?> focusSessions = [];
   final List<WorkoutEntryDto?> workoutEntries = [];
+  final List<WorkoutDayMarkDto?> workoutDayMarks = [];
   final List<TaskDto?> tasks = [];
   final List<HabitDto?> habits = [];
   final List<HabitCheckDto?> habitChecks = [];
@@ -206,6 +226,7 @@ final class BackupDraft {
     final meals = all(mealEntries);
     final focus = all(focusSessions);
     final workouts = all(workoutEntries);
+    final marks = all(workoutDayMarks);
     final taskList = all(tasks);
     final habitList = all(habits);
     final checks = all(habitChecks);
@@ -220,6 +241,7 @@ final class BackupDraft {
         meals == null ||
         focus == null ||
         workouts == null ||
+        marks == null ||
         taskList == null ||
         habitList == null ||
         checks == null ||
@@ -229,6 +251,7 @@ final class BackupDraft {
     return BackupDocument(
       exportedAtUtc: exportedAt,
       appVersion: version,
+      sourceSchemaVersion: sourceSchemaVersion ?? BackupFormat.schemaVersion,
       data: BackupData(
         profile: profileDto,
         appSettings: settings,
@@ -242,6 +265,7 @@ final class BackupDraft {
         mealEntries: meals,
         focusSessions: focus,
         workoutEntries: workouts,
+        workoutDayMarks: marks,
         tasks: taskList,
         habits: habitList,
         habitChecks: checks,
@@ -255,8 +279,9 @@ final class BackupDraft {
 ///
 /// The format marker and the schema version are checked first; if either is
 /// wrong the file is not interpreted any further (its other fields mean
-/// nothing). Likewise an exceeded record limit stops before any record is
-/// parsed.
+/// nothing). A file of an older readable version is then brought to the
+/// current version by `BackupUpgrade` and read like a current file. Likewise
+/// an exceeded record limit stops before any record is parsed.
 final class BackupParser {
   BackupParser(this._problems);
 
@@ -265,6 +290,16 @@ final class BackupParser {
   static final RegExp _appVersionPattern = RegExp(
     r'^[0-9A-Za-z][0-9A-Za-z.+\-]*$',
   );
+
+  /// `Version 1 und 2`, `Version 1, 2 und 3`, ...
+  static String _supportedVersionsText() {
+    final versions = BackupFormat.readableSchemaVersions;
+    if (versions.length == 1) {
+      return 'Version ${versions.single}';
+    }
+    final head = versions.sublist(0, versions.length - 1).join(', ');
+    return 'Version $head und ${versions.last}';
+  }
 
   BackupDraft parse(Map<String, Object?> root) {
     final draft = BackupDraft();
@@ -281,17 +316,22 @@ final class BackupParser {
       return draft;
     }
     final version = root[BackupFormat.rootSchemaVersion];
-    if (version is! int || version != BackupFormat.schemaVersion) {
+    if (version is! int ||
+        !BackupFormat.readableSchemaVersions.contains(version)) {
       _problems.add(
-        const ImportProblem(
+        ImportProblem(
           location: 'root',
           field: BackupFormat.rootSchemaVersion,
           message:
               'Die Schema-Version dieser Datei wird nicht unterstützt '
-              '(unterstützt: Version ${BackupFormat.schemaVersion}).',
+              '(unterstützt: ${_supportedVersionsText()}).',
         ),
       );
       return draft;
+    }
+    draft.sourceSchemaVersion = version;
+    if (version < BackupFormat.schemaVersion) {
+      root = BackupUpgrade.toCurrent(root, from: version, problems: _problems);
     }
 
     final reader = FieldReader(root, 'root', _problems);
@@ -427,6 +467,12 @@ final class BackupParser {
       BackupTable.workoutEntries,
       WorkoutEntryDto.read,
       draft.workoutEntries,
+    );
+    _readList(
+      data,
+      BackupTable.workoutDayMarks,
+      WorkoutDayMarkDto.read,
+      draft.workoutDayMarks,
     );
     _readList(data, BackupTable.tasks, TaskDto.read, draft.tasks);
     draft.habitsSectionRead = _readList(

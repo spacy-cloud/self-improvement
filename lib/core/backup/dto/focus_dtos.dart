@@ -347,3 +347,70 @@ final class WorkoutEntryDto {
     rowVersion: Value(rowVersion),
   );
 }
+
+/// A day marked as a rest day or as a skipped workout (schema 2).
+@immutable
+final class WorkoutDayMarkDto {
+  const WorkoutDayMarkDto({
+    required this.id,
+    required this.localDate,
+    required this.kind,
+    required this.timezoneId,
+    required this.createdAtUtc,
+    required this.updatedAtUtc,
+    required this.rowVersion,
+  });
+
+  factory WorkoutDayMarkDto.fromJson(Map<String, Object?> json) =>
+      parseStrictRecord(BackupTable.workoutDayMarks, json, read);
+
+  factory WorkoutDayMarkDto.fromRow(WorkoutDayMarkRow row) => WorkoutDayMarkDto(
+    id: row.id,
+    localDate: row.localDate,
+    kind: row.kind,
+    timezoneId: row.timezoneId,
+    createdAtUtc: row.createdAtUtc,
+    updatedAtUtc: row.updatedAtUtc,
+    rowVersion: row.rowVersion,
+  );
+
+  static WorkoutDayMarkDto read(FieldReader r) => WorkoutDayMarkDto(
+    id: r.uuid('id', 'ID'),
+    localDate: r.date('local_date', 'Datum'),
+    kind: r.choice('kind', 'Art', SchemaKeys.workoutDayMarkKinds),
+    timezoneId: r.timezone('timezone_id', 'Zeitzone'),
+    createdAtUtc: r.instant('created_at_utc', 'Erstellzeitpunkt'),
+    updatedAtUtc: r.instant('updated_at_utc', 'Änderungszeitpunkt'),
+    rowVersion: r.integer('row_version', 'Zeilenversion', min: 1),
+  );
+
+  final String id;
+  final LocalDate localDate;
+
+  /// `rest` or `skipped` (see `SchemaKeys.workoutDayMarkKinds`).
+  final String kind;
+  final String timezoneId;
+  final DateTime createdAtUtc;
+  final DateTime updatedAtUtc;
+  final int rowVersion;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'local_date': localDate.toIso(),
+    'kind': kind,
+    'timezone_id': timezoneId,
+    'created_at_utc': BackupValues.formatInstant(createdAtUtc),
+    'updated_at_utc': BackupValues.formatInstant(updatedAtUtc),
+    'row_version': rowVersion,
+  };
+
+  WorkoutDayMarksCompanion toCompanion() => WorkoutDayMarksCompanion.insert(
+    id: id,
+    localDate: localDate,
+    kind: kind,
+    timezoneId: timezoneId,
+    createdAtUtc: createdAtUtc,
+    updatedAtUtc: updatedAtUtc,
+    rowVersion: Value(rowVersion),
+  );
+}
