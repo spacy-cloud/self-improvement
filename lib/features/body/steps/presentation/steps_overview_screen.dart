@@ -1,20 +1,29 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/core/providers/core_providers.dart';
 import 'package:self_improvement/features/body/presentation/weight_routes.dart';
+import 'package:self_improvement/features/body/steps/application/health_steps_actions.dart';
+import 'package:self_improvement/features/body/steps/application/health_steps_controller.dart';
 import 'package:self_improvement/features/body/steps/application/steps_providers.dart';
 import 'package:self_improvement/features/body/steps/application/steps_stats.dart';
+import 'package:self_improvement/features/body/steps/domain/health_steps_status.dart';
+import 'package:self_improvement/features/body/steps/domain/step_source.dart';
+import 'package:self_improvement/features/body/steps/presentation/health_notice_card.dart';
+import 'package:self_improvement/features/body/steps/presentation/health_steps_labels.dart';
 import 'package:self_improvement/features/body/steps/presentation/steps_chart.dart';
 import 'package:self_improvement/features/body/steps/presentation/steps_labels.dart';
 import 'package:self_improvement/features/body/steps/presentation/steps_routes.dart';
 import 'package:self_improvement/shared/german_date.dart';
 import 'package:self_improvement/shared/local_date.dart';
 
-/// "Meine Schritte": today's total against the goal, the chart of the chosen
-/// period with its text alternative, the figures of that period and the days
-/// that can be corrected.
+/// "Meine Schritte": the source of the values (Health, when the comparison is
+/// on, or its notice when the values do not arrive), today's total against the
+/// goal, the chart of the chosen period with its text alternative, the figures
+/// of that period and the days that can be corrected.
 class StepsOverviewScreen extends ConsumerWidget {
   const StepsOverviewScreen({super.key});
 
@@ -95,6 +104,7 @@ class _Content extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final stats = computeStepsStats(days);
+    final health = ref.watch(healthStepsStatusProvider);
     final recorded = [
       for (final day in days)
         if (day.recorded) day,
@@ -102,7 +112,8 @@ class _Content extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _TodayCard(state: todayState, today: today),
+        _HealthBlock(status: health),
+        _TodayCard(state: todayState, today: today, health: health),
         const SizedBox(height: 12),
         ChartSummary(
           title: 'Verlauf',
@@ -176,18 +187,60 @@ class _Content extends ConsumerWidget {
           ),
         ],
         const SizedBox(height: 12),
-        const _HintCard(),
+        _HintCard(health: health.reading),
       ],
     );
   }
 }
 
+/// What Health tells at the top of the page: the source card while the values
+/// arrive, the notice with its way out while they do not (design frames
+/// `4122:553`, `4122:667`, `4122:777`). Nothing while the switch is off.
+class _HealthBlock extends ConsumerWidget {
+  const _HealthBlock({required this.status});
+
+  final HealthStepsStatus status;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final actions = ref.read(healthStepsActionsProvider);
+    final Widget? block;
+    if (status.reading) {
+      block = HealthSourceCard(
+        name: status.sourceName,
+        line: healthSourceLine(status, ref.watch(clockProvider)),
+        refreshLabel: healthRefreshLabel(status),
+        onRefresh: status.syncing ? null : () => unawaited(actions.refresh()),
+      );
+    } else {
+      final notice = HealthNotice.of(status);
+      block = notice == null
+          ? null
+          : HealthNoticeCard(
+              notice: notice,
+              onAction: (action) => unawaited(actions.perform(action)),
+            );
+    }
+    return block == null
+        ? const SizedBox.shrink()
+        : Padding(padding: const EdgeInsets.only(bottom: 12), child: block);
+  }
+}
+
 /// "Heute": the total, the remaining steps, the bar and the source.
 class _TodayCard extends StatelessWidget {
-  const _TodayCard({required this.state, required this.today});
+  const _TodayCard({
+    required this.state,
+    required this.today,
+    required this.health,
+  });
 
   final StepsToday state;
   final LocalDate today;
+
+  /// The state of the comparison with Health: it decides what an empty day
+  /// says.
+  final HealthStepsStatus health;
 
   @override
   Widget build(BuildContext context) {
@@ -236,7 +289,9 @@ class _TodayCard extends StatelessWidget {
                 label: state.recorded
                     ? 'Heute $valueText Schritte'
                           '${target == null ? '' : ' $target'}'
-                    : 'Heute noch keine Schritte eingetragen',
+                    : (health.reading
+                          ? 'Heute meldet Health noch keine Schritte'
+                          : 'Heute noch keine Schritte eingetragen'),
                 excludeSemantics: true,
                 child: MediaQuery.withClampedTextScaling(
                   maxScaleFactor: 1.3,
@@ -284,12 +339,14 @@ class _TodayCard extends StatelessWidget {
               Text(
                 state.recorded
                     ? stepsPercentText(progress)
-                    : 'Heute noch nicht eingetragen',
+                    : (health.reading
+                          ? 'Health meldet für heute noch keine Schritte'
+                          : 'Heute noch nicht eingetragen'),
                 style: AppTextStyles.captionDefault.copyWith(
                   color: colors.textSecondary,
                 ),
               ),
-              const _SourceChip(),
+              if (state.source != null) _SourceChip(source: state.source!),
             ],
           ),
         ],
@@ -298,16 +355,22 @@ class _TodayCard extends StatelessWidget {
   }
 }
 
-/// The source of the numbers: V1 only knows manual totals.
+/// Where today's total comes from: typed in by hand or taken from Health.
 class _SourceChip extends StatelessWidget {
-  const _SourceChip();
+  const _SourceChip({required this.source});
+
+  final StepSource source;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.tokens.colors;
+    final (label, icon) = switch (source) {
+      StepSource.manual => ('Von Hand', AppIcon.edit.data),
+      StepSource.health => ('Aus Health', AppIcon.heart.data),
+    };
     return Semantics(
       container: true,
-      label: 'Quelle: Manuell',
+      label: 'Quelle: $label',
       excludeSemantics: true,
       child: DecoratedBox(
         decoration: BoxDecoration(
@@ -319,10 +382,10 @@ class _SourceChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(AppIcon.edit.data, size: 14, color: colors.textSecondary),
+              Icon(icon, size: 14, color: colors.textSecondary),
               const SizedBox(width: 6),
               Text(
-                'Quelle: Manuell',
+                label,
                 style: AppTextStyles.captionStrong.copyWith(
                   color: colors.textSecondary,
                 ),
@@ -400,7 +463,10 @@ class _DayRow extends StatelessWidget {
 }
 
 class _HintCard extends StatelessWidget {
-  const _HintCard();
+  const _HintCard({required this.health});
+
+  /// Health delivers the values: the hint explains the order of the sources.
+  final bool health;
 
   @override
   Widget build(BuildContext context) {
@@ -418,15 +484,22 @@ class _HintCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Einmal am Tag eintragen',
+                    health
+                        ? 'Health liefert den Tageswert'
+                        : 'Einmal am Tag eintragen',
                     style: AppTextStyles.captionStrong.copyWith(
                       color: colors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Trag abends deine Gesamtzahl aus Schrittzähler oder Uhr '
-                    'ein. Ein neuer Wert für denselben Tag ersetzt den alten.',
+                    health
+                        ? 'Ein von Hand eingetragener Wert hat Vorrang und '
+                              'wird nicht überschrieben. Health füllt nur '
+                              'Tage ohne eigenen Wert.'
+                        : 'Trag abends deine Gesamtzahl aus Schrittzähler '
+                              'oder Uhr ein. Ein neuer Wert für denselben Tag '
+                              'ersetzt den alten.',
                     style: AppTextStyles.captionDefault.copyWith(
                       color: colors.textSecondary,
                     ),

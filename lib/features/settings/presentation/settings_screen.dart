@@ -9,6 +9,7 @@ import 'package:self_improvement/core/modules/module_id.dart';
 import 'package:self_improvement/core/profile/user_profile.dart';
 import 'package:self_improvement/core/providers/core_providers.dart';
 import 'package:self_improvement/core/settings/app_settings_value.dart';
+import 'package:self_improvement/features/body/steps/presentation/health_steps_section.dart';
 import 'package:self_improvement/features/profile/presentation/profile_routes.dart';
 import 'package:self_improvement/features/profile/presentation/profile_widgets.dart';
 import 'package:self_improvement/features/reminders/presentation/reminders_section.dart';
@@ -19,8 +20,9 @@ import 'package:self_improvement/features/settings/presentation/neutral_icon_til
 
 /// "Einstellungen" (Figma `4024:2`, reminders block `4055:416`, version row
 /// `4119:254`): profile entry, theme, reduced motion, haptics, the reminders
-/// block (owned by the reminders feature), modules, data and backup, version
-/// (opens "Über die App") and licences.
+/// block (owned by the reminders feature), the steps from Health (owned by the
+/// steps feature, frame `4122:314`), modules, data and backup, version (opens
+/// "Über die App") and licences.
 ///
 /// Every row does something; there are no account or cloud switches. Deviation
 /// from the frame: export, import and reset are one entry "Daten & Sicherung",
@@ -262,6 +264,9 @@ class _SettingsContent extends ConsumerWidget {
         const SizedBox(height: 16),
         const RemindersSection(),
         const SizedBox(height: 16),
+        // "Schritte aus Health übernehmen" (BS-97): owned by the steps feature,
+        // hidden without a health interface; it brings its own spacing.
+        const HealthStepsSection(),
         const AppSectionHeader.group(title: 'Module'),
         const SizedBox(height: 8),
         AppListGroup(
