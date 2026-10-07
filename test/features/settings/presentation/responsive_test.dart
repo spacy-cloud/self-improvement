@@ -94,8 +94,8 @@ void main() {
         });
 
         testWidgets(
-          'the about page fits, scrolls to its end, tap targets 48 px and '
-          'labelled (AT33, BS-118)',
+          'the about page fits, scrolls to its end with the licence text, tap '
+          'targets 48 px and labelled (AT33, BS-118, BS-120)',
           (tester) async {
             final handle = tester.ensureSemantics();
             final env = await newEnv(tester);
@@ -121,6 +121,35 @@ void main() {
               find.text('Lizenzen der verwendeten Pakete'),
               300,
               scrollable: find.byType(Scrollable).first,
+            );
+            expect(tester.takeException(), isNull);
+            await expectLater(
+              tester,
+              meetsGuideline(androidTapTargetGuideline),
+            );
+            await expectLater(
+              tester,
+              meetsGuideline(labeledTapTargetGuideline),
+            );
+            // Below it the licence text of the own code (BS-120): all of it is
+            // reachable, the last line ends inside the screen.
+            await tester.pumpUntil(
+              () => find.text('MIT License').evaluate().isNotEmpty,
+              reason: 'the licence text did not load',
+            );
+            final position = tester
+                .state<ScrollableState>(find.byType(Scrollable).first)
+                .position;
+            position.jumpTo(position.maxScrollExtent);
+            await tester.pump();
+            final lastLine = find.textContaining('DEALINGS IN THE SOFTWARE.');
+            expect(lastLine, findsOneWidget);
+            expect(
+              tester.getRect(lastLine).bottom,
+              lessThanOrEqualTo(size.height - 32 + 0.5),
+              reason:
+                  'the end of the licence is above the card padding and '
+                  'the page margin',
             );
             expect(tester.takeException(), isNull);
             await expectLater(
