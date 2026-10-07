@@ -8,7 +8,10 @@ import 'package:self_improvement/features/onboarding/presentation/widgets/field_
 ///
 /// The card turns green while the field has focus (thicker border and tint) and
 /// red with an error text and icon below when [errorText] is set, so no state
-/// is carried by colour alone. Tapping anywhere on the card focuses the field.
+/// is carried by colour alone. Tapping anywhere on the card focuses the field;
+/// for the keyboard the card counts as part of the field, so moving from the
+/// card of one field to the card of the next never hides the keyboard on the
+/// way (a tap outside every field does, see [dismissKeyboardOnTapOutside]).
 ///
 /// With [stacked] set, with large text or in a narrow column the label sits
 /// above the value instead of beside it, so nothing clips. Screen readers hear
@@ -112,6 +115,7 @@ class ValueFieldRow extends StatelessWidget {
                 focusNode: focusNode,
                 onChanged: onChanged,
                 onSubmitted: onSubmitted,
+                onTapOutside: dismissKeyboardOnTapOutside,
                 keyboardType: keyboardType,
                 inputFormatters: inputFormatters,
                 textInputAction: textInputAction,
@@ -136,7 +140,7 @@ class ValueFieldRow extends StatelessWidget {
                 ),
               ),
             );
-            return GestureDetector(
+            final card = GestureDetector(
               behavior: HitTestBehavior.opaque,
               excludeFromSemantics: true,
               onTap: focusNode.requestFocus,
@@ -198,6 +202,7 @@ class ValueFieldRow extends StatelessWidget {
                 ),
               ),
             );
+            return TextFieldTapRegion(child: card);
           },
         ),
         if (hasError) FieldErrorText(text: error),
