@@ -1,7 +1,7 @@
 name: self_improvement
 description: "Lokale Selbstverbesserungs-App (LF10a, Team IA24)"
 publish_to: "none"
-version: 1.0.0+1
+version: 0.2.0+2
 
 environment:
   sdk: ^3.13.5

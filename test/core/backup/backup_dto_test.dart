@@ -7,6 +7,7 @@ import 'package:self_improvement/core/backup/dto/core_dtos.dart';
 import 'package:self_improvement/core/backup/dto/focus_dtos.dart';
 import 'package:self_improvement/core/backup/dto/task_dtos.dart';
 import 'package:self_improvement/core/backup/import_validation_report.dart';
+import 'package:self_improvement/core/config/app_config.dart';
 import 'package:self_improvement/core/testing/data_harness.dart';
 import 'package:self_improvement/core/time/clock_service.dart';
 import 'package:self_improvement/shared/local_date.dart';
@@ -422,7 +423,7 @@ void main() {
         (backup['data']! as Map<String, Object?>).keys.toList(),
       );
       expect(document.exportedAtUtc, DateTime.utc(2026, 10, 3, 8));
-      expect(document.appVersion, '1.0.0');
+      expect(document.appVersion, AppConfig.appVersion);
     });
 
     test('lists every record-level problem of the whole file', () {

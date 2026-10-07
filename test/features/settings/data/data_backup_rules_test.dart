@@ -6,6 +6,7 @@ import 'package:self_improvement/core/backup/backup_format.dart';
 import 'package:self_improvement/core/backup/backup_validator.dart';
 import 'package:self_improvement/core/backup/import_preview.dart';
 import 'package:self_improvement/core/backup/import_validation_report.dart';
+import 'package:self_improvement/core/config/app_config.dart';
 import 'package:self_improvement/features/settings/application/data_backup_rules.dart';
 
 import '../../../core/backup/support/backup_fixtures.dart';
@@ -217,7 +218,10 @@ void main() {
       'a file of the same version with open work and notifications',
       () async {
         final file = await prepared((_) {});
-        final warnings = importWarnings(file, currentAppVersion: '1.0.0');
+        final warnings = importWarnings(
+          file,
+          currentAppVersion: AppConfig.appVersion,
+        );
         expect(warnings, [
           'Eine offene Fokus-Sitzung wird pausiert wiederhergestellt.',
           contains('Erinnerungen sind in der Sicherung eingeschaltet'),
@@ -252,7 +256,10 @@ void main() {
                 as Map<String, Object?>)['notifications_enabled'] =
             false;
       });
-      final warnings = importWarnings(file, currentAppVersion: '1.0.0');
+      final warnings = importWarnings(
+        file,
+        currentAppVersion: AppConfig.appVersion,
+      );
       expect(warnings, hasLength(1));
       expect(warnings.single, contains('keine Einträge'));
     });
@@ -265,7 +272,10 @@ void main() {
                 as Map<String, Object?>)['notifications_enabled'] =
             false;
       });
-      expect(importWarnings(file, currentAppVersion: '1.0.0'), isEmpty);
+      expect(
+        importWarnings(file, currentAppVersion: AppConfig.appVersion),
+        isEmpty,
+      );
     });
   });
 }
