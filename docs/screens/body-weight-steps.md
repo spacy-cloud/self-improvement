@@ -1,6 +1,6 @@
 # Gewicht und Schritte (BS-61, BS-60)
 
-Oberfläche des Moduls `body`: Gewicht ([BS-61](https://spacy-cloud.atlassian.net/browse/BS-61), P0) und manuell erfasste Schritte ([BS-60](https://spacy-cloud.atlassian.net/browse/BS-60), P1). Fachliche Regeln liegen als reine Dart-Funktionen in `domain/`, Lesen und Befehle in `data/`, Zustand in `application/`, die Oberfläche in `presentation/`. Code: `lib/features/body/` (Gewicht) und `lib/features/body/steps/` (Schritte), Registrierung in `lib/features/body/body_module.dart`. Die Screens enthalten weder SQL noch Regeln; jeder gezeigte Wert stammt aus der Datenbank. Beschrieben ist der Code-Stand `c0ce096`.
+Oberfläche des Moduls `body`: Gewicht ([BS-61](https://spacy-cloud.atlassian.net/browse/BS-61), P0) und manuell erfasste Schritte ([BS-60](https://spacy-cloud.atlassian.net/browse/BS-60), P1). Fachliche Regeln liegen als reine Dart-Funktionen in `domain/`, Lesen und Befehle in `data/`, Zustand in `application/`, die Oberfläche in `presentation/`. Code: `lib/features/body/` (Gewicht) und `lib/features/body/steps/` (Schritte), Registrierung in `lib/features/body/body_module.dart`. Die Screens enthalten weder SQL noch Regeln; jeder gezeigte Wert stammt aus der Datenbank. Beschrieben ist der Code-Stand `c0ce096`, ergänzt um die Aktion der Schritte-Karte aus [BS-108](https://spacy-cloud.atlassian.net/browse/BS-108) (v0.2.0).
 
 ## 1. Screens, Routen und Figma-Knoten
 
@@ -15,7 +15,7 @@ Figma-Datei `K4IWQEjnzuNkRUzkq8JaKz`, Light-Knoten. Dark und OLED ergeben sich a
 | Dashboard-Karte Gewicht | Karte `weight` | Gewichtskarte im Home-Frame `2013:2` | `WeightDashboardCard` (`weight_dashboard_card.dart`) |
 | Schritte, Übersicht „Meine Schritte“ | `/steps` | `4026:2` (Dark `4056:2056`, OLED `4056:3863`) | `StepsOverviewScreen` (`steps/presentation/steps_overview_screen.dart`) |
 | Schritte eintragen | `/steps/new`, mit Datum `/steps/new?date=YYYY-MM-DD` | `4040:141` (200 % Schrift `4057:39`) | `StepsFormScreen` (`steps_form_screen.dart`) |
-| Dashboard-Karte Schritte | Karte `steps` | Schrittekarte im Home-Frame `2013:2` | `StepsDashboardCard` (`steps_dashboard_card.dart`) |
+| Dashboard-Karte Schritte | Karte `steps` | Schrittekarte im Home-Frame `2013:2`; Zustände der Karte mit und ohne Eintrag `4123:316` (Seite „v0.2.0 – Neue Screens“, Entwurf zu BS-108, Zeile „Schritte-Karte auf Home“) | `StepsDashboardCard` (`steps_dashboard_card.dart`) |
 
 `BodyModule` heißt „Gewicht & Körper“ („Gewicht, Zielgewicht, Schritte“) und registriert die Routen in der Reihenfolge `/weight`, `/weight/new`, `/weight/all`, `/weight/:id`, `/steps`, `/steps/new`: statische Pfade vor dem Muster `:id`, damit `/weight/new` und `/weight/all` nie als Kennung gelesen werden. Plus-Menü: `weight` (Position 0, Route `/weight/new`) und `steps` (Position 3, Route `/steps/new`). Dashboard-Karten: `steps` (Rang 0) und `weight` (Rang 2). Eine ungültige Kennung in `/weight/:id` zeigt die Seite „Nicht gefunden“ (Guard der Shell); eine gültige, aber unbekannte Kennung zeigt „Eintrag nicht gefunden“ mit „Zur Übersicht“.
 
@@ -68,7 +68,9 @@ Die Aktion „Gewicht eintragen“ ist unten angeheftet, sobald es Einträge gib
 - Gibt es für den Tag schon einen Wert, sagt eine Hinweiskarte „Für heute sind schon 7.450 eingetragen“ und „Beim Speichern wird der Tageswert ersetzt, nicht addiert.“, der Button heißt „Tageswert ersetzen“ (sonst „Schritte speichern“) und „Tageswert löschen“ erscheint.
 - Nach dem Commit meldet die Snackbar „Schritte gespeichert“, „Schritte aktualisiert“ oder „Tageswert gelöscht“ mit „Rückgängig“ (8 s). Ein Fehler behält die Eingabe und bietet „Erneut“ an. Das Verwerfen ungespeicherter Eingaben wird erfragt.
 
-**Dashboard-Karte.** Vor dem ersten Eintrag des Tages „–“, „Heute noch nicht eingetragen“ und die Aktion „Schritte eintragen“. Danach der Tageswert mit Ziel, Fortschrittsbalken und „75 % erreicht“, „Ziel erreicht“ oder „Kein Tagesziel aktiv“; ein Tipp öffnet die Übersicht.
+**Dashboard-Karte.** Vor dem ersten Eintrag des Tages „–“, „Heute noch nicht eingetragen“ und die Aktion „+ Schritte eintragen“. Danach der Tageswert mit Ziel, Fortschrittsbalken und „75 % erreicht“, „Ziel erreicht“ oder „Kein Tagesziel aktiv“; ein Tipp auf die Karte öffnet die Übersicht.
+
+Die Aktion bleibt auch nach dem ersten Eintrag sichtbar (BS-108, Entscheidung D-023): Sie heißt dann „Schritte aktualisieren“ (ohne Plus, denn sie addiert nichts) und öffnet wie die Aktion davor das Formular `/steps/new` für heute, nicht für einen früheren Tag. Das Formular kennt den vorhandenen Wert („Für heute sind schon 7.450 eingetragen“, „Beim Speichern wird der Tageswert ersetzt, nicht addiert.“, Schaltfläche „Tageswert ersetzen“); nach dem Speichern zeigt die Karte den neuen Wert sofort und behält die Aktion. Eine erfasste 0 ist ein Eintrag: Die Karte zeigt „0“, „0 % erreicht“ und den leeren Balken, die Aktion heißt „Schritte aktualisieren“. Nach „Tageswert löschen“ steht wieder „Heute noch nicht eingetragen“ mit „Schritte eintragen“. Während die Karte lädt und bei einem Lesefehler gibt es keine Aktion (Ladezustand und `ErrorState` mit „Erneut versuchen“). Die Gewichtskarte ändert sich nicht: Sie bietet „Gewicht eintragen“ weiterhin nur ohne Messung an (Abschnitt 2.1).
 
 **Fachregeln.**
 
@@ -92,6 +94,9 @@ Die Aktion „Gewicht eintragen“ ist unten angeheftet, sobald es Einträge gib
 | Dashboard-Karte mit Kurve und Wochenvergleich | Ohne Messung heute oder in den sechs Tagen davor „Zuletzt <Datum>“ ohne Kurve und Vergleich | Ehrlicher Zustand; aus einer leeren Punktliste lässt sich keine Kurve zeichnen |
 | Beispielzahlen (71,5 kg, Start 74,0 kg, Ziel 68,0 kg) | Nirgends angezeigt; alles aus der Datenbank | Keine erfundenen Werte |
 | Zusatzwerte zu den Schritten (Kilometer, Kalorien, Aktivminuten) | Entfallen | Keine Datenquelle ([design-handoff.md](../design-handoff.md) Abschnitt 6) |
+| Schritte-Karte „ohne Eintrag“ als „0 / 10.000“ mit leerem Balken und „0 % erreicht“ (Frame `4123:316`, Karte „Schritte leer“) | Ohne Eintrag „–“ und „Heute noch nicht eingetragen“, ohne Balken. „0“, „0 % erreicht“ und der leere Balken erscheinen nur bei einer erfassten 0 | Eine erfasste 0 ist ein Wert und etwas anderes als „nicht erfasst“ (Abschnitt 2.2, Fachregeln); die Karte erfindet vor dem ersten Eintrag keine Zahl. Das ist der Zustand von V1, BS-108 ändert ihn nicht |
+| Aktionspille der Schritte-Karte in Primärgrün (`color/primary-tint`, `color/primary-text`) über die ganze Kartenbreite, Text zentriert (Frame `4123:316`) | Pille im Modul-Akzent (Schritte: Magenta) in Inhaltsbreite, linksbündig, wie die bisherige Aktion „Schritte eintragen“ und die Aktionen der anderen Karten | Gemeinsame Komponente `MetricCardAction` des Designsystems: BS-108 ändert sie nicht, damit alle Karten gleich bleiben. Eine Angleichung beträfe jede Karte mit Aktion und braucht ein eigenes Ticket |
+| Schritte-Karte mit Quelle „Health · 09:41“, Aktualisieren-Taste und Hinweis „Health: kein Zugriff“ mit „Zugriff erlauben“ (Frame `4123:316`, Karten „Schritte Health“) | Nicht umgesetzt | Gehört zur Health-Synchronisation ([BS-97](https://spacy-cloud.atlassian.net/browse/BS-97)); BS-108 betrifft nur die manuell erfassten Schritte (Beschriftung des Entwurfs: „Von Hand“) |
 
 ## 4. Konflikte und Entscheidungen
 
@@ -105,10 +110,13 @@ Die Aktion „Gewicht eintragen“ ist unten angeheftet, sobald es Einträge gib
 | Der gerundete Schritte-Prozentwert kann bei knapp unter dem Ziel „100“ zeigen | Höchstens 99, solange das Ziel nicht erreicht ist; über 100 bleibt der echte Wert sichtbar |
 | Schritte-Kennzahl „Durchschnitt über erfasste Tage“ gegen eine Summe | Durchschnitt über die erfassten Tage ohne Null-Auffüllung, wie in der [Analyse](analysis.md) |
 | Eine Uhrzeit in der Lücke der Zeitumstellung | Wird nicht stillschweigend verschoben; die Eingabe bleibt mit einem Hinweis, welche Zeit gilt |
+| BS-108: Bleibt die Aktion der Schritte-Karte nach dem ersten Eintrag, und wie heißt sie? | Sie bleibt. Label „Schritte aktualisieren“ (der Vorschlag des Tickets, wie im Entwurf `4123:316`), ohne Plus-Symbol, weil Speichern den Tageswert ersetzt und nichts addiert; sie öffnet `/steps/new` für heute. Entscheidung D-023 in [implementation-decisions.md](../implementation-decisions.md) |
+| BS-108: Verhält sich die Gewichtskarte genauso (Aktion nur ohne Messung)? | Ja, und das bleibt so: Nur die Schritte-Karte wird geändert (Entscheidung des Projektteams, Ticket BS-108). Die Karten Workout und Mahlzeit behalten ihre Aktion ohnehin |
 
 ## 5. Barrierefreiheit
 
 - Tippflächen mindestens 48 x 48 und deutsche Beschriftungen an jeder Schaltfläche (`androidTapTargetGuideline`, `labeledTapTargetGuideline`, geprüft für Übersicht und Formular des Gewichts sowie Übersicht, Formular und Karte der Schritte).
+- Die Aktion der Schritte-Karte ist eine eigene Schaltfläche neben dem Kartenkörper (ein Tipp darauf öffnet nie die Übersicht): vor dem ersten Eintrag „Schritte eintragen“, danach „Schritte aktualisieren“, jeweils mit Schaltflächen-Semantik, dem sichtbaren Text als Sprechtext und mindestens 48 x 48 Tippfläche, geprüft bei 320, 360, 393 und 430 px mit Skala 1,0 und 2,0 allein und auf Home mit den echten Modulen (dort teilen sich zwei Karten eine Zeile; über 130 % Schrift stehen sie untereinander).
 - Gewichtsfeld: Beschriftung „Gewicht in Kilogramm“, Plus und Minus heißen „um 0,1 Kilogramm erhöhen“ und „um 0,1 Kilogramm verringern“. Der große Zahlenwert skaliert bis 130 % und schrumpft darüber auf die verfügbare Breite; alles andere skaliert ohne Grenze.
 - Fehler stehen mit Symbol und Text am Feld (Live-Region) und der Rand wechselt in die Fehlerfarbe: Farbe ist nie der einzige Hinweis. Nach einem abgelehnten Speichern bekommt das erste ungültige Feld des Gewichtsformulars den Fokus, damit der Screenreader Beschriftung und Hinweis zusammen liest.
 - Das Diagramm ist für Screenreader ausgeblendet; der Zusammenfassungssatz („2 Messtage in 7 Tagen. Zuerst 71,8 kg, zuletzt 71,5 kg (−0,3 kg).“) und die Tabelle tragen die Bedeutung. Veränderungen werden in Worten gelesen („minus 0,3 Kilogramm“, „plus“, „unverändert“); Pfeil und Minuszeichen sind zusätzlich sichtbar.
@@ -119,7 +127,7 @@ Die Aktion „Gewicht eintragen“ ist unten angeheftet, sobald es Einträge gib
 
 ## 6. Tests
 
-Befehle: `flutter test test/features/body` (239 Tests, grün), davon `flutter test test/features/body/steps` (79) für die Schritte und 160 für das Gewicht (`application`, `data`, `domain`, `presentation`). Echte In-Memory-Datenbank, feste Uhr 2026-10-03 Europe/Berlin, nur synthetische Gewichte und Schritte. `dart run tool/at_coverage.dart` ordnet die Tests den Abnahmefällen AT05 bis AT09, AT12, AT15, AT23 bis AT27, AT33 und AT34 zu.
+Befehle: `flutter test test/features/body` (252 Tests, grün), davon `flutter test test/features/body/steps` (92) für die Schritte und 160 für das Gewicht (`application`, `data`, `domain`, `presentation`). Echte In-Memory-Datenbank, feste Uhr 2026-10-03 Europe/Berlin, nur synthetische Gewichte und Schritte. `dart run tool/at_coverage.dart` ordnet die Tests den Abnahmefällen AT05 bis AT09, AT12, AT15, AT23 bis AT27, AT33 und AT34 zu.
 
 | Datei in `test/features/body/` | Tests | Schwerpunkt (Abnahme-IDs) |
 |---|---:|---|
@@ -136,13 +144,15 @@ Befehle: `flutter test test/features/body` (239 Tests, grün), davon `flutter te
 | `steps/steps_stats_test.dart` | 14 | Kennzahlen und Texte, erfasste 0, bester Tag, Ziel je Tag (AT15) |
 | `steps/steps_repository_test.dart` | 20 | Ersetzen statt Addieren, erfasste 0, XP mit eingefrorener Schwelle, Löschen und Undo, Atomarität (AT15, AT24, AT26, AT27) |
 | `steps/steps_application_test.dart` | 9 | Heute-Karte und Verlauf live, Formular-Controller |
-| `steps/steps_screens_test.dart` | 28 | Formular, Übersicht, Karte, Modulrouten, Layout 320 bis 430 px, Semantik (AT15, AT24, AT26, AT27, AT33, AT34) |
+| `steps/steps_screens_test.dart` | 41 | Formular, Übersicht, Karte (mit der Aktion „Schritte aktualisieren“ nach dem ersten Eintrag: Aktion bleibt, öffnet das Formular für heute mit Hinweis, Speichern ersetzt und die Karte folgt, erfasste 0, nach dem Löschen wieder „eintragen“; 13 Tests aus BS-108), Modulrouten, Layout 320 bis 430 px, Semantik (AT15, AT24, AT26, AT27, AT33, AT34) |
 
-Sichtvergleich: Das gerenderte Gewichtsformular wurde mit dem Frame `2093:2` verglichen (Anlass der quadratischen Häkchenfelder); einen automatisierten Bildvergleich gegen Figma gibt es nicht.
+Die Karte auf Home mit den echten Modulen prüft zusätzlich `test/features/dashboard/presentation/home_real_modules_test.dart` (18 Tests, 9 davon aus BS-108): Nach einem Eintrag heißt die Aktion „Schritte aktualisieren“ und öffnet das Formular für heute, die Gewichtskarte bietet „Gewicht eintragen“ nur ohne Messung an, und die Karte mit Aktion läuft bei 320, 360, 393 und 430 px mit Skala 1,0 und 2,0 ohne Überlauf mit einer Aktion von mindestens 48 x 48.
+
+Sichtvergleich: Das gerenderte Gewichtsformular wurde mit dem Frame `2093:2` verglichen (Anlass der quadratischen Häkchenfelder); die Schritte-Karte mit Eintrag wurde in Hell, Dunkel und OLED gerendert und mit dem Frame `4123:316` verglichen (Abweichungen: Abschnitt 3). Einen automatisierten Bildvergleich gegen Figma gibt es nicht.
 
 ## 7. Offene Punkte
 
-- Auf einem Gerät nicht geprüft: TalkBack (Beschriftungen, Lesereihenfolge, Ansage der Fehlermeldungen), echte Systemschrift bis 200 %, echte Tastatur, die Material-Dialoge für Datum und Zeit und die Darstellung der Diagramme. Die Host-Tests prüfen Semantics, Tippflächen und Überlauf.
+- Auf einem Gerät nicht geprüft: TalkBack (Beschriftungen, Lesereihenfolge, Ansage der Fehlermeldungen, auch die Aktion „Schritte aktualisieren“ der Karte), echte Systemschrift bis 200 %, echte Tastatur, die Material-Dialoge für Datum und Zeit und die Darstellung der Diagramme. Die Host-Tests prüfen Semantics, Tippflächen und Überlauf.
 - Nach einem abgelehnten Speichern setzt das Schritteformular den Fokus auf das Feld (wie das Gewichtsformular auf Gewicht oder Notiz), damit ein Screenreader Beschriftung und Hinweis zusammen liest; die Meldung steht außerdem als Live-Region am Feld.
 - Der Anker des Wochenvergleichs kann beliebig weit zurückliegen (Wortlaut der Spezifikation), die Beschriftung „seit letzter Woche“ beziehungsweise „in 7 Tagen“ sagt das nicht.
 - Der gewählte Diagrammzeitraum von Gewicht und Schritten wird nicht über einen Prozess-Neustart gespeichert (immer 7 Tage).
