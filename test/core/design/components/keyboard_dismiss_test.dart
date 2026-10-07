@@ -1,5 +1,6 @@
 import 'dart:ui' show Tristate;
 
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/core/design/design.dart';
@@ -15,6 +16,10 @@ import '../support/design_test_harness.dart';
 /// bare number fields pass `dismissKeyboardOnTapOutside`, and the scroll view
 /// of `AppScaffold` closes the keyboard on a drag.
 ///
+/// "Android" and "iOS" are what the pumped screen runs as: the theme carries the
+/// platform of the variant, so the scroll physics and the gestures of the text
+/// fields are those of that platform, in every order of the tests (BS-98, R1-01).
+///
 /// The host has no real keyboard: `testTextInput.isVisible` is what the app
 /// asked the system for (show or hide). That is the evidence these tests give;
 /// how the iPhone keyboard behaves is for the device check.
@@ -25,6 +30,16 @@ void main() {
   });
 
   bool keyboardShown(WidgetTester tester) => tester.testTextInput.isVisible;
+
+  /// The pumped screen runs as the platform of the variant: the platform of its
+  /// theme is the one the test asked for, not the one of the first theme built.
+  void expectRunsAsVariant(WidgetTester tester) {
+    expect(
+      Theme.of(tester.element(find.byType(TextField).first)).platform,
+      defaultTargetPlatform,
+      reason: 'the theme carries the platform of the variant (BS-98, R1-01)',
+    );
+  }
 
   /// Whether the field at [index] (in tree order) has the focus.
   bool hasFocus(WidgetTester tester, [int index = 0]) => tester
@@ -56,6 +71,7 @@ void main() {
             ],
           ),
         );
+        expectRunsAsVariant(tester);
         await tester.tap(find.byType(TextField));
         await tester.pump();
         expect(keyboardShown(tester), isTrue, reason: 'the tap opened it');
@@ -79,6 +95,7 @@ void main() {
             children: <Widget>[bareField(), const Text('Irgendwo daneben')],
           ),
         );
+        expectRunsAsVariant(tester);
         await tester.tap(find.byType(TextField));
         await tester.pump();
         expect(keyboardShown(tester), isTrue);
@@ -101,6 +118,7 @@ void main() {
             children: <Widget>[TextField(), Text('Irgendwo daneben')],
           ),
         );
+        expectRunsAsVariant(tester);
         await tester.tap(find.byType(TextField));
         await tester.pump();
         await tester.tap(find.text('Irgendwo daneben'));
@@ -240,6 +258,7 @@ void main() {
         wrapScaffold: false,
         height: 640,
       );
+      expectRunsAsVariant(tester);
       expect(
         tester
             .widget<SingleChildScrollView>(find.byType(SingleChildScrollView))
@@ -263,7 +282,7 @@ void main() {
         lessThan(top + 8),
         reason: 'the page scrolled',
       );
-    });
+    }, variant: platforms);
 
     testWidgets('does not touch a scroll view while no field has the focus', (
       tester,

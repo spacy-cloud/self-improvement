@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -32,16 +33,33 @@ import 'support/app_harness.dart';
 /// same four steps:
 ///
 /// 1. a tap beside the field closes the keyboard,
-/// 2. a drag that starts on the field closes it (a touch that goes down
-///    anywhere else closes it already by the tap beside the field),
+/// 2. a drag that starts on the field, beside its caret, closes it (a touch
+///    that goes down anywhere else closes it already by the tap beside the
+///    field),
 /// 3. a tap on the save button works the first time although the keyboard
 ///    goes away under the finger and the pinned button moves,
 /// 4. moving to the next field of the form never hides the keyboard on the way.
+///
+/// "Android" and "iOS" are what the app runs as: the theme of the app carries
+/// the platform of the test variant, so the scroll physics and the gestures of
+/// the text fields are those of that platform (BS-98, R1-01). One case is
+/// pinned as a limit and not as a wish: on iOS a drag that starts exactly on the
+/// caret of a focused field moves the caret, neither the page scrolls nor the
+/// keyboard closes (D-018). The big number fields of weight and water are
+/// centered, so the caret of the empty field is in their middle, where a finger
+/// goes down first; a tap beside the field closes the keyboard there as well.
 ///
 /// The host has no keyboard: `testTextInput.isVisible` is what the app asked
 /// the system for. Whether the iPhone keyboard follows is for the device check.
 const Size _screen = Size(360, 640);
 const double _keyboard = 300;
+
+/// How far from the caret a touch still lands on the invisible handle that iOS
+/// puts on the caret of a focused field: the framework gives it at least
+/// [kMinInteractiveDimension] square (`_SelectionHandleOverlay`), centered on
+/// the caret, and lets it win every drag that starts on it. A finger that goes
+/// down farther away than this and a little more is a drag of the page.
+const double _caretReach = kMinInteractiveDimension / 2 + 8;
 
 /// One form: how to open it, which fields it has, how to fill it so that
 /// saving works, and what shows that the save button did its work.
@@ -56,6 +74,7 @@ class _Form {
     this.save,
     this.second,
     this.textScale = 1.0,
+    this.centered = false,
   });
 
   final String name;
@@ -80,6 +99,10 @@ class _Form {
   /// A spot beside every field and every control.
   final Finder outside;
   final double textScale;
+
+  /// Whether the field is a big, centered number field: the caret of the empty
+  /// field is then in its middle (weight, water amount).
+  final bool centered;
 }
 
 Finder _labelled(String label) => find.byWidgetPredicate(
@@ -103,6 +126,64 @@ Future<void> _go(AppFixture app, String location) async {
   await app.settle();
 }
 
+EditableTextState _editableOf(WidgetTester tester, Finder field) =>
+    tester.state<EditableTextState>(
+      find.descendant(of: field, matching: find.byType(EditableText)),
+    );
+
+/// Where the caret of the focused [field] is, in global coordinates.
+Offset _caretOf(WidgetTester tester, Finder field) {
+  final editable = _editableOf(tester, field);
+  final caret = editable.renderEditable.getLocalRectForCaret(
+    editable.textEditingValue.selection.extent,
+  );
+  return editable.renderEditable.localToGlobal(caret.center);
+}
+
+/// The text area of [field] in global coordinates.
+Rect _textAreaOf(WidgetTester tester, Finder field) {
+  final render = _editableOf(tester, field).renderEditable;
+  return MatrixUtils.transformRect(
+    render.getTransformTo(null),
+    Offset.zero & render.size,
+  );
+}
+
+/// Where the finger goes down for a drag of the page that starts on [field]:
+/// in the middle of the text area. On iOS, where the caret is in the middle (a
+/// centered, empty number field) and its handle would take the drag, at the end
+/// of the area that is farther from the caret: out of reach of the handle
+/// ([_caretReach]). The test fails if the field has no such point.
+Offset _besideCaret(WidgetTester tester, Finder field) {
+  final area = _textAreaOf(tester, field);
+  final caret = _caretOf(tester, field);
+  if (defaultTargetPlatform != TargetPlatform.iOS ||
+      (area.center - caret).dx.abs() >= _caretReach) {
+    return area.center;
+  }
+  final left = Offset(area.left + 8, caret.dy);
+  final right = Offset(area.right - 8, caret.dy);
+  final start = (right - caret).dx.abs() >= (left - caret).dx.abs()
+      ? right
+      : left;
+  expect(
+    (start - caret).dx.abs(),
+    greaterThanOrEqualTo(_caretReach),
+    reason: 'a point on the field that is out of reach of the caret',
+  );
+  return start;
+}
+
+/// Whether a touch at [point] lands on the text of [field] (and so does not
+/// count as a tap beside it).
+bool _landsOn(WidgetTester tester, Finder field, Offset point) {
+  final target = _editableOf(tester, field).renderEditable;
+  return tester
+      .hitTestOnBinding(point)
+      .path
+      .any((entry) => entry.target == target);
+}
+
 final List<_Form> _forms = <_Form>[
   _Form(
     name: 'weight',
@@ -115,6 +196,7 @@ final List<_Form> _forms = <_Form>[
     save: find.widgetWithText(PrimaryButton, 'Eintrag speichern'),
     done: find.byType(WeightFormScreen),
     outside: _header(),
+    centered: true,
   ),
   _Form(
     name: 'steps',
@@ -150,6 +232,7 @@ final List<_Form> _forms = <_Form>[
       of: find.byType(WaterCustomSheet),
       matching: find.text('Eigene Menge'),
     ),
+    centered: true,
   ),
   _Form(
     name: 'water, daily goal',
@@ -394,6 +477,11 @@ void main() {
     try {
       await form.open(app);
       expect(form.done, findsOneWidget, reason: '${form.name} is open');
+      expect(
+        Theme.of(tester.element(form.done)).platform,
+        defaultTargetPlatform,
+        reason: 'the app runs as the platform of the variant (BS-98, R1-01)',
+      );
       // The keyboard comes after the form: the layout shrinks around it.
       tester.view.viewInsets = const FakeViewPadding(bottom: _keyboard);
       await tester.pumpAndSettle();
@@ -403,6 +491,13 @@ void main() {
       await app.settle();
     }
   }
+
+  /// The scroll position of the page around [field].
+  ScrollPosition pageOf(WidgetTester tester, Finder field) => tester
+      .state<ScrollableState>(
+        find.ancestor(of: field, matching: find.byType(Scrollable)).first,
+      )
+      .position;
 
   /// Scrolls [field] into view and taps it, then lets the scroll view come to
   /// rest: it brings the caret into view with a short animation during which it
@@ -435,42 +530,95 @@ void main() {
         });
       }, variant: platforms);
 
-      testWidgets('a drag that starts on the field closes it (BS-112, AT33)', (
-        tester,
-      ) async {
-        await inForm(tester, form, (app) async {
-          await tapField(tester, form.first);
-          expect(keyboardShown(tester), isTrue);
-          expect(
-            form.first.hitTestable(),
-            findsOneWidget,
-            reason:
-                'the touch must go down ON the field, or the tap beside '
-                'the field would close the keyboard and not the drag',
-          );
+      testWidgets(
+        'a drag that starts on the field, beside its caret, closes it (BS-112, AT33)',
+        (tester) async {
+          await inForm(tester, form, (app) async {
+            await tapField(tester, form.first);
+            expect(keyboardShown(tester), isTrue);
+            final start = _besideCaret(tester, form.first);
+            expect(
+              _landsOn(tester, form.first, start),
+              isTrue,
+              reason:
+                  'the touch must go down ON the field, or the tap beside '
+                  'the field would close the keyboard and not the drag',
+            );
 
-          // A drag against the end of the page does not scroll and so does not
-          // count as a drag of the page: go the way the page can move.
-          final page = tester
-              .state<ScrollableState>(
-                find
-                    .ancestor(of: form.first, matching: find.byType(Scrollable))
-                    .first,
-              )
-              .position;
-          expect(
-            page.maxScrollExtent,
-            greaterThan(0),
-            reason: 'the form scrolls',
-          );
-          final toEnd = page.pixels < page.maxScrollExtent;
-          await tester.drag(form.first, Offset(0, toEnd ? -120 : 120));
-          await tester.pump();
+            // A drag against the end of the page does not scroll and so does
+            // not count as a drag of the page: go the way the page can move.
+            final page = pageOf(tester, form.first);
+            expect(
+              page.maxScrollExtent,
+              greaterThan(0),
+              reason: 'the form scrolls',
+            );
+            final before = page.pixels;
+            final toEnd = before < page.maxScrollExtent;
+            await tester.dragFrom(start, Offset(0, toEnd ? -120 : 120));
+            await tester.pump();
 
-          expect(keyboardShown(tester), isFalse);
-          expect(anyFieldHasFocus(tester), isFalse);
-        });
-      }, variant: platforms);
+            expect(page.pixels, isNot(before), reason: 'the page scrolled');
+            expect(keyboardShown(tester), isFalse);
+            expect(anyFieldHasFocus(tester), isFalse);
+          });
+        },
+        variant: platforms,
+      );
+
+      if (form.centered) {
+        testWidgets(
+          'a drag that starts exactly on the caret of the centered, empty field moves the caret on iOS and does not scroll or close; on Android it closes (BS-112, R1-01, AT33)',
+          (tester) async {
+            await inForm(tester, form, (app) async {
+              await tapField(tester, form.first);
+              expect(keyboardShown(tester), isTrue);
+              expect(
+                _editableOf(tester, form.first).textEditingValue.text,
+                isEmpty,
+                reason: 'the field is empty: its caret is in the middle',
+              );
+              final caret = _caretOf(tester, form.first);
+              expect(
+                (caret.dx - tester.getCenter(form.first).dx).abs(),
+                lessThan(8),
+                reason: 'the caret of a centered field is in its middle',
+              );
+              expect(_landsOn(tester, form.first, caret), isTrue);
+
+              final page = pageOf(tester, form.first);
+              expect(page.maxScrollExtent, greaterThan(0));
+              final before = page.pixels;
+              final toEnd = before < page.maxScrollExtent;
+              await tester.dragFrom(caret, Offset(0, toEnd ? -120 : 120));
+              await tester.pump();
+
+              if (defaultTargetPlatform == TargetPlatform.iOS) {
+                expect(
+                  page.pixels,
+                  before,
+                  reason: 'the drag moved the caret, the page stayed',
+                );
+                expect(keyboardShown(tester), isTrue);
+                expect(anyFieldHasFocus(tester), isTrue);
+
+                // The tap beside the field closes it always.
+                await tester.ensureVisible(form.outside.first);
+                await tester.pumpAndSettle();
+                await tester.tapAt(tester.getCenter(form.outside.first));
+                await tester.pump();
+                expect(keyboardShown(tester), isFalse);
+                expect(anyFieldHasFocus(tester), isFalse);
+              } else {
+                expect(page.pixels, isNot(before), reason: 'the page scrolled');
+                expect(keyboardShown(tester), isFalse);
+                expect(anyFieldHasFocus(tester), isFalse);
+              }
+            });
+          },
+          variant: platforms,
+        );
+      }
 
       if (form.save != null) {
         testWidgets(
