@@ -342,7 +342,9 @@ void main() {
           find.text('In den letzten 7 Tagen sind keine Schritte erfasst.'),
           findsOneWidget,
         );
-        expect(find.text('Quelle: Manuell'), findsOneWidget);
+        // Without a value there is no source to name (BS-97).
+        expect(find.text('Von Hand'), findsNothing);
+        expect(find.text('Aus Health'), findsNothing);
         expect(find.text('Kein Tagesziel'), findsNothing);
         await tester.tap(find.text('Schritte eintragen'));
         await _settle(tester);
@@ -363,7 +365,11 @@ void main() {
       expect(find.textContaining('7.450'), findsWidgets);
       expect(find.text('Noch 2.550'), findsOneWidget);
       expect(find.text('75 % vom Tagesziel'), findsOneWidget);
-      expect(find.text('Quelle: Manuell'), findsOneWidget);
+      expect(
+        find.text('Von Hand'),
+        findsOneWidget,
+        reason: 'the source (BS-97)',
+      );
       expect(find.text('9.417'), findsOneWidget, reason: 'average of 3 days');
       expect(find.text('12.800'), findsWidgets);
       expect(find.text('Bester Tag (Fr)'), findsOneWidget);
@@ -737,7 +743,7 @@ void main() {
         find.bySemanticsLabel('Fortschritt zum Tagesziel: 75 Prozent'),
         findsOneWidget,
       );
-      expect(find.bySemanticsLabel('Quelle: Manuell'), findsOneWidget);
+      expect(find.bySemanticsLabel('Quelle: Von Hand'), findsOneWidget);
       expect(find.textContaining('1 von 7 Tagen erfasst'), findsOneWidget);
       handle.dispose();
     });
