@@ -86,14 +86,7 @@ Statusleiste, Dynamic Island und Home-Indikator sind nur Figma-Rahmen und werden
 
 ## 8. Tests
 
-Befehle (im Repository-Wurzelverzeichnis):
-
-```bash
-flutter test test/features/onboarding            # 97 Tests
-flutter test test/features/onboarding/domain      # 25
-flutter test test/features/onboarding/application # 20
-flutter test test/features/onboarding/presentation # 52 (Screen 28, Barrierefreiheit und Responsive 24)
-```
+Befehle (im Repository-Wurzelverzeichnis): `flutter test test/features/onboarding` (100 Tests), davon `flutter test test/features/onboarding/domain` (25), `flutter test test/features/onboarding/application` (20) und `flutter test test/features/onboarding/presentation` (55: Screen 28, Barrierefreiheit und Responsive 24, Tastatur 3).
 
 | Bereich | Datei | Abnahme-IDs |
 |---|---|---|

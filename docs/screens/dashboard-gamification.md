@@ -101,14 +101,14 @@ Ticket [BS-110](https://spacy-cloud.atlassian.net/browse/BS-110), Entscheidung D
 
 ## 9. Tests und Abnahme-IDs
 
-Befehl: `flutter test test/features/dashboard test/features/gamification/presentation` (270 Testfälle, grün; die Tests der Tagesauswahl von BS-93 stehen in Abschnitt 13.9). Der Stand des Gesamtlaufs steht in [test-report.md](../test-report.md).
+Befehl: `flutter test test/features/dashboard test/features/gamification/presentation` (639 Testfälle, grün). Die Tabelle nennt die Dateien zu Dashboard, Streak und Fortschritt (BS-74, BS-58, BS-68, BS-69, BS-121); die Tests zu „Heute abhaken“ stehen in [tasks-habits.md](tasks-habits.md), die zu „Ziele heute“ in Abschnitt 12.9, die zum Blättern durch die Tage in Abschnitt 13.9. Der Stand des Gesamtlaufs steht in [test-report.md](../test-report.md).
 
 | Datei | Fälle | Abnahme-IDs |
 |---|---:|---|
 | `test/features/dashboard/presentation/home_states_test.dart` | 21 | AT01, AT03, AT04, AT10, AT26, AT27, C01, C02, C03, C04, Q03 |
 | `.../home_live_data_test.dart` | 9 | AT01, AT02, AT10, AT13, AT20, AT22, AT23, C04 |
 | `.../home_responsive_test.dart` | 16 | AT01, AT04, AT10, AT33, C04, Q02 |
-| `.../home_real_modules_test.dart` | 9 | AT03, AT10, C02, C03, C04, Q02 |
+| `.../home_real_modules_test.dart` | 18 | AT03, AT10, C02, C03, C04, Q02 |
 | `.../home_themes_test.dart` | 4 | AT35, C06 |
 | `.../dashboard_cards_screen_test.dart` | 21 | AT02, AT03, AT27, AT33, AT34, C03, C04, C06 |
 | `.../level_up_notice_test.dart` | 8 | AT23, AT26, AT27, C04, G02 |
@@ -273,7 +273,7 @@ Befehl: `flutter test test/features/dashboard test/app/route_sweep_test.dart tes
 | Datei | Fälle | Abnahme-IDs |
 |---|---:|---|
 | `test/features/dashboard/domain/goals_day_test.dart` | 47 | C04 |
-| `.../presentation/goals_today_screen_test.dart` | 69 | AT33, AT34, AT35, C02, C04, C06, Q01, Q02 |
+| `.../presentation/goals_today_screen_test.dart` | 70 | AT33, AT34, AT35, C02, C04, C06, Q01, Q02 |
 | `.../presentation/goals_today_flow_test.dart` | 23 | AT23, AT33, C02, C03, C04 |
 | `.../presentation/goal_destinations_test.dart` | 19 | C02, C03 |
 | `.../presentation/day_overview_card_tap_test.dart` | 26 | AT33, AT34, AT35, C04, Q02 |
@@ -454,7 +454,7 @@ Befehl: `flutter test test/features/dashboard test/features/tasks/domain/day_che
 
 ### 13.10 Offene Punkte, Grenzen und Checkliste für das Gerät
 
-- **Nur Host-Tests.** Nichts davon ist auf einem Gerät gesehen (Samsung S25 mit TalkBack, iPhone mit VoiceOver, echte Wischgeste, Systemschrift, Zurück-Geste vom Rand); die CI wurde nicht abgewartet. Die Bilder des Sichtvergleichs liegen nicht im Repository.
+- **Nur Host-Tests.** Nichts davon ist auf einem Gerät gesehen (Samsung S25 mit TalkBack, iPhone mit VoiceOver, echte Wischgeste, Systemschrift, Zurück-Geste vom Rand). Die Checkliste für beide Geräte, nach Funktionen geordnet und ohne Doppelungen, steht in [geraete-checkliste-v0.2.0.md](../geraete-checkliste-v0.2.0.md). Die Bilder des Sichtvergleichs liegen nicht im Repository.
 - **Fokus auf dem Gerät:** Dass der Fokus nach „Zurück zu heute“ am Datum liegt, ist im Host über Fokusknoten und Semantik-Flags belegt; ob TalkBack und VoiceOver ihn dort aufnehmen, zeigt erst das Gerät.
 - **Kurzes „–“ auf den Karten** beim ersten Besuch eines Tages (jede Karte lädt für sich); ein bereits besuchter Tag ist nicht zwischengespeichert.
 - **Einträge für den gezeigten Tag** (Plus-Menü, Formulare) gelten für jetzt. Ein Vorbelegen mit dem gezeigten Tag ist ein eigenes Ticket wert.

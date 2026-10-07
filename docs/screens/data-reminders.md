@@ -72,7 +72,7 @@ Weitere Dateien: `lib/features/settings/application/data_backup_actions.dart` (F
 
 ## 6. Tests
 
-Befehl: `flutter test test/features/settings/data test/features/reminders`. Stand `c0ce096`: 89 Tests unter `test/features/settings/data` und 94 unter `test/features/reminders` (je 2 davon sind Bildtests); mit BS-113 sind es 114 unter `test/features/reminders` und 17 Tests des Regeltests unter `test/app` (siehe unten). BS-111 ergänzt 82 Tests unter `test/core/notifications` (540 insgesamt), 162 unter `test/features/tasks` und 22 unter `test/app` und `test/core/backup` (siehe unten und [tasks-habits.md](tasks-habits.md)). Der Gesamtstand steht in [test-report.md](../test-report.md). Reale In-Memory-Datenbank, Uhr 2026-10-03 10:00 Europe/Berlin, Fakes der Plattformadapter (`InMemoryBackupFileGateway`, `FakeBackupFilePicker`, `FakeReminderPlatform`), nur synthetische Daten.
+Befehl: `flutter test test/features/settings/data test/features/reminders` (204 Tests: `test/features/settings/data` (90) und `test/features/reminders` (114), je 2 davon sind Bildtests). Dazu kommt seit BS-113 der Regeltest `test/app/user_text_rules_test.dart` (28; siehe unten). BS-111 ergänzte 82 neue Tests unter `test/core/notifications` (dort insgesamt 540), 162 neue unter `test/features/tasks` und 22 neue unter `test/app` und `test/core/backup` (siehe unten und [tasks-habits.md](tasks-habits.md)). Der Gesamtstand steht in [test-report.md](../test-report.md). Reale In-Memory-Datenbank, Uhr 2026-10-03 10:00 Europe/Berlin, Fakes der Plattformadapter (`InMemoryBackupFileGateway`, `FakeBackupFilePicker`, `FakeReminderPlatform`), nur synthetische Daten.
 
 | Datei | Inhalt | Abnahme-IDs |
 |---|---|---|
@@ -96,7 +96,7 @@ Zwei Mutationsproben bestätigen, dass die Tests greifen (großzügige Wortprüf
 
 ## 7. Verdrahtung beim App-Start
 
-Die Oberflächen setzen voraus, dass die App beim Start einiges verdrahtet. Stand `c0ce096` ist das erledigt (`lib/app/wiring/app_overrides.dart`, `lib/app/wiring/app_wiring.dart`, `lib/app/app.dart`, `lib/app/router/`):
+Die Oberflächen setzen voraus, dass die App beim Start einiges verdrahtet. Stand `577a853` ist das erledigt (`lib/app/wiring/app_overrides.dart`, `lib/app/wiring/app_wiring.dart`, `lib/app/app.dart`, `lib/app/router/`):
 
 1. `feedbackServiceProvider` ist mit der Snackbar-Implementierung überschrieben (`SnackBarFeedbackService`); beide Oberflächen lesen sie.
 2. `notificationCancellerProvider` ist mit `PlatformNotificationCanceller` überschrieben (storniert alle ausstehenden Systembenachrichtigungen der Plattform nach Import und Reset). Es ist dasselbe Verhalten wie `ReminderNotificationCanceller` aus `reminder_data_ports.dart`; die App nutzt ihre eigene Klasse.

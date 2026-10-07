@@ -495,7 +495,7 @@ Frei erfundene Person und Werte. Zur Lesbarkeit steht je Datensatz eine Zeile; d
       {"id":"00000000-0000-4000-8000-000000000072","habit_id":"00000000-0000-4000-8000-000000000071","local_date":"2026-03-03","checked_at_utc":"2026-03-03T20:45:00.000Z","timezone_id":"Europe/Berlin","eligibility":true,"created_at_utc":"2026-03-03T20:45:00.000Z","updated_at_utc":"2026-03-03T20:45:00.000Z","row_version":1}
     ],
     "reminder_rules": [
-      {"id":"00000000-0000-4000-8000-0000000000b1","module_id":"nutrition","kind":"water","local_time":"10:00","enabled":true,"route":"/nutrition/water"}
+      {"id":"00000000-0000-4000-8000-0000000000b1","module_id":"nutrition","kind":"water","local_time":"10:00","enabled":true,"route":"/water"}
     ]
   }
 }
