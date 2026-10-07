@@ -39,7 +39,13 @@ void main() {
 
     expect(find.text('1 von 5'), findsOneWidget);
     expect(find.text('Du hast heute 1 von 5 Zielen erreicht.'), findsOneWidget);
-    expect(find.bySemanticsLabel('1 von 5 Zielen erreicht'), findsOneWidget);
+    // The card is one button for a screen reader (BS-104); the ring inside it
+    // is not read a second time.
+    expect(
+      find.bySemanticsLabel('Ziele heute, 1 von 5 erreicht, Details öffnen'),
+      findsOneWidget,
+    );
+    expect(find.bySemanticsLabel('1 von 5 Zielen erreicht'), findsNothing);
     expect(find.textContaining('71,5'), findsOneWidget);
     expect(find.text('10 / 100 XP'), findsOneWidget);
     expect(

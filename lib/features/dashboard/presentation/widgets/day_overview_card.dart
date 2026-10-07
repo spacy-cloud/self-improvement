@@ -11,12 +11,19 @@ import 'package:self_improvement/features/dashboard/presentation/widgets/text_sc
 /// picture of the same numbers that the text says, and it has its own spoken
 /// label. Its arc colour follows the stand (grey, yellow, green) and is chosen
 /// by `ProgressRing.goals`, not here, so that every day ring looks the same.
-class DayOverviewCard extends StatelessWidget {
+///
+/// With [onTap] the whole card is one button that opens "Ziele heute" (BS-104):
+/// a chevron shows it, while it is pressed the card takes the green tint and
+/// border of the design, and a screen reader hears one element ("Ziele heute,
+/// 2 von 4 erreicht, Details öffnen") instead of the ring, the title and the
+/// sentence one after the other. Without [onTap] it only shows.
+class DayOverviewCard extends StatefulWidget {
   /// Creates the card for [fulfilled] of [applicable] goals (applicable >= 1).
   const DayOverviewCard({
     required this.fulfilled,
     required this.applicable,
     this.motivation,
+    this.onTap,
     super.key,
   }) : assert(applicable >= 1, 'The ring needs at least one applicable goal');
 
@@ -30,10 +37,18 @@ class DayOverviewCard extends StatelessWidget {
   /// texts speak of "today", so a past day shows only the factual sentence.
   final String? motivation;
 
+  /// Opens "Ziele heute"; `null` makes the card a plain display.
+  final VoidCallback? onTap;
+
   /// The spoken text of the ring.
   String get ringLabel => applicable == 1
       ? '$fulfilled von 1 Ziel erreicht'
       : '$fulfilled von $applicable Zielen erreicht';
+
+  /// The spoken text of the whole card as a button (BS-104). It replaces the
+  /// texts inside, so nothing is read twice.
+  String get tapLabel =>
+      'Ziele heute, $fulfilled von $applicable erreicht, Details öffnen';
 
   /// The factual sentence next to the ring.
   String get summary {
@@ -49,24 +64,33 @@ class DayOverviewCard extends StatelessWidget {
   }
 
   @override
+  State<DayOverviewCard> createState() => _DayOverviewCardState();
+}
+
+class _DayOverviewCardState extends State<DayOverviewCard> {
+  /// Whether a finger is down on the card (the pressed look of the design).
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
     final colors = context.tokens.colors;
+    final tappable = widget.onTap != null;
     final ring = ProgressRing.goals(
-      fulfilled: fulfilled,
-      applicable: applicable,
-      semanticLabel: ringLabel,
+      fulfilled: widget.fulfilled,
+      applicable: widget.applicable,
+      semanticLabel: widget.ringLabel,
       center: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Text(
-            '$fulfilled von $applicable',
+            '${widget.fulfilled} von ${widget.applicable}',
             maxLines: 1,
             style: AppTextStyles.titleScreen.copyWith(
               color: colors.textPrimary,
             ),
           ),
           Text(
-            applicable == 1 ? 'Ziel' : 'Zielen',
+            widget.applicable == 1 ? 'Ziel' : 'Zielen',
             style: AppTextStyles.bodyRegular.copyWith(
               color: colors.textSecondary,
             ),
@@ -74,53 +98,103 @@ class DayOverviewCard extends StatelessWidget {
         ],
       ),
     );
-    final title = motivation;
+    final title = widget.motivation;
+    // The chevron sits in the top right corner; the first line of text keeps
+    // clear of it.
+    final firstLineInset = EdgeInsets.only(right: tappable ? 28 : 0);
     final texts = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         if (title != null) ...<Widget>[
-          Text(
-            title,
-            style: AppTextStyles.titleSection.copyWith(
-              color: colors.textPrimary,
+          Padding(
+            padding: firstLineInset,
+            child: Text(
+              title,
+              style: AppTextStyles.titleSection.copyWith(
+                color: colors.textPrimary,
+              ),
             ),
           ),
           const SizedBox(height: AppSpacing.s4),
         ],
-        Text(
-          summary,
-          style: AppTextStyles.bodyRegular.copyWith(
-            color: colors.textSecondary,
+        Padding(
+          padding: title == null ? firstLineInset : EdgeInsets.zero,
+          child: Text(
+            widget.summary,
+            style: AppTextStyles.bodyRegular.copyWith(
+              color: colors.textSecondary,
+            ),
           ),
         ),
       ],
     );
+    final content = LayoutBuilder(
+      builder: (context, constraints) {
+        final stacked = context.isLargeText || constraints.maxWidth < 280;
+        final Widget layout = stacked
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Center(child: ring),
+                  const SizedBox(height: AppSpacing.s16),
+                  texts,
+                ],
+              )
+            : Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  ring,
+                  const SizedBox(width: AppSpacing.s24),
+                  Expanded(child: texts),
+                ],
+              );
+        if (!tappable) {
+          return layout;
+        }
+        return Stack(
+          children: <Widget>[
+            layout,
+            Positioned(
+              top: 0,
+              right: 0,
+              child: Icon(
+                AppIcon.chevronRight.data,
+                size: 20,
+                color: colors.textSecondary,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    if (!tappable) {
+      return AppCard(padding: const EdgeInsets.all(20), child: content);
+    }
     return AppCard(
-      padding: const EdgeInsets.all(20),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final stacked = context.isLargeText || constraints.maxWidth < 280;
-          if (stacked) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Center(child: ring),
-                const SizedBox(height: AppSpacing.s16),
-                texts,
-              ],
-            );
-          }
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              ring,
-              const SizedBox(width: AppSpacing.s24),
-              Expanded(child: texts),
-            ],
-          );
-        },
+      padding: EdgeInsets.zero,
+      borderColor: _pressed ? colors.primary : null,
+      borderWidth: _pressed ? 1.5 : 1,
+      child: Semantics(
+        container: true,
+        button: true,
+        label: widget.tapLabel,
+        onTap: widget.onTap,
+        excludeSemantics: true,
+        child: Material(
+          color: _pressed ? colors.primaryTint : Colors.transparent,
+          child: InkWell(
+            onTap: widget.onTap,
+            onHighlightChanged: (pressed) {
+              if (mounted) {
+                setState(() => _pressed = pressed);
+              }
+            },
+            focusColor: colors.focus.withValues(alpha: 0.2),
+            child: Padding(padding: const EdgeInsets.all(20), child: content),
+          ),
+        ),
       ),
     );
   }
