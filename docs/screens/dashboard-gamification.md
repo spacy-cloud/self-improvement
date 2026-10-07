@@ -17,7 +17,7 @@ Dark und OLED entstehen aus den Theme-Tokens, es gibt keine eigenen Varianten im
 
 ## 2. Aufbau und Datenfluss
 
-- Das Dashboard rendert die Karten der aktiven Module (`SelfImprovementModule.dashboardCards`) in der gespeicherten Reihenfolge und Sichtbarkeit (`DashboardCardRepository`). Es baut keine Karte eines anderen Moduls. Die einzige eigene Karte ist die XP- und Level-Karte (`xp`) des Moduls Fortschritt. Alle acht Karten sind vorhanden: `steps` und `weight` (Körper), `water` und `nutrition` (Ernährung), `workout` und `focus` (Fokus), `tasks` (Aufgaben, volle Breite) und `xp` (Fortschritt, volle Breite); die Standardreihenfolge ist Schritte, Wasser, Gewicht, Workout, Fokus, Aufgaben, Ernährung, XP.
+- Das Dashboard rendert die Karten der aktiven Module (`SelfImprovementModule.dashboardCards`) in der gespeicherten Reihenfolge und Sichtbarkeit (`DashboardCardRepository`). Es baut keine Karte eines anderen Moduls. Die einzige eigene Karte ist die XP- und Level-Karte (`xp`) des Moduls Fortschritt. Alle acht Karten sind vorhanden: `steps` und `weight` (Körper), `water` und `nutrition` (Ernährung), `workout` und `focus` (Fokus), `tasks` (Aufgaben und Gewohnheiten, ab v0.2.0 „Heute abhaken“, volle Breite) und `xp` (Fortschritt, volle Breite); die Standardreihenfolge ist Schritte, Wasser, Gewicht, Workout, Fokus, Aufgaben, Ernährung, XP.
 - Quellen sind ausschließlich vorhandene Datenbank-Streams und gemeinsame Projektionen: Kartenkonfiguration, Modulstatus, Tagesstatus (`todayStatusProvider`), Streak (`streakProvider`), XP und Badges (`gamificationSummaryProvider`). Das Widget rechnet nichts neu. Die einzige neue Abfrage ist `hasAnyEntryProvider` (existiert irgendein Datensatz?), sie steuert den Willkommenszustand.
 - Datum und Tageswechsel laufen über `todayProvider` und die injizierte Uhr, nie über `DateTime.now()`.
 - Das Raster (`DashboardCardGrid`) setzt kleine Karten zu zweit in eine Reihe (ab 360 px und Textskalierung bis 1,3), große Karten (`fullWidth`) nehmen eine eigene Reihe und beenden die laufende Gruppe, damit die Reihenfolge des Nutzers immer erhalten bleibt. Jede Karte baut sich in einem eigenen `Consumer`, eine Datenänderung baut nur diese Karte neu.
@@ -86,6 +86,15 @@ Streak-Einstieg, XP-Karte und Level-up-Hinweis erscheinen nur bei aktivem Modul 
 - Fokus und Modale: Karten anpassen schließt mit Zurück und Android-Zurück; Streak und Fortschritt führen bei Direktaufruf (Deep Link) zum Dashboard statt in eine Sackgasse.
 - Bewegung: nur `AppMotion` (150 bis 250 ms), bei reduzierter Bewegung sofortiger Zustandswechsel, keine Endlosanimation.
 - Kontrast: `textContrastGuideline` ist für Dashboard, Streak, Fortschritt und Karten anpassen in Light, Dark und OLED grün.
+
+## 8a. v0.2.0: Karte „Heute abhaken“ (BS-110)
+
+Ticket [BS-110](https://spacy-cloud.atlassian.net/browse/BS-110), Entscheidung D-028. Die Karte `tasks` (Modul `tasks`, volle Breite) zeigt die Aufgaben und die Gewohnheiten von heute in einer Liste und lässt beide mit einem Tipp abhaken; Zeilen, Zustände, Unterscheidung von Aufgabe und Gewohnheit und die Abweichungen vom Entwurf (`4116:421`, Dunkel `4116:822`, OLED `4116:1223`) stehen in [tasks-habits.md](tasks-habits.md) Abschnitt 2a. Für das Dashboard gilt:
+
+- **Einbindung unverändert.** Die Karte kommt wie bisher aus `TasksModule.dashboardCards` (`cardId` `tasks`, Platz nach „Fokus“, `fullWidth`); `HomeScreen`, `DashboardCardGrid` und die Kartenkonfiguration sind nicht angefasst, es gibt keine neue Karten-ID (Karten-IDs gehören zum Datenvertrag, D-015). Neu ist nur der Name in „Karten anpassen“: „Aufgaben und Gewohnheiten“ statt „Aufgaben“, weil das Ausblenden der Karte beide ausblendet.
+- **Modul-Tor wie bisher.** Ist das Modul „Aufgaben und Gewohnheiten“ aus, fehlt die Karte (`visibleDashboardEntries`): nichts wird gelesen, nichts geschrieben, die Einträge bleiben und sind mit dem Modul wieder da. Beides prüft ein Test auf dem echten Home (`test/features/tasks/presentation/home_checklist_test.dart`).
+- **Ein Haken wirkt wie in den Listen.** Die Karte ruft dieselben Befehle auf wie der Tab und die Aufgabenliste; XP, Tageslimits, Tagesring und Streak folgen deshalb den Regeln der Engine und rechnen nichts auf der Karte. Der Zähler „x von y erledigt“ der Karte zählt, was heute abzuhaken ist, und ist nicht der Tagesring „Dein Tag im Überblick“, der die Tagesziele zählt.
+- **Vergangene Tage (BS-93).** Die Karte kennt den Zustand „nur lesend“ (`TasksDashboardCard(readOnly: true)`); `DayOverviewCard`, Router und die Seite „Ziele heute“ (BS-100) sind nicht Teil dieses Tickets.
 
 ## 9. Tests und Abnahme-IDs
 
