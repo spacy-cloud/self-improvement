@@ -8,6 +8,7 @@ import 'package:self_improvement/features/body/steps/application/health_steps_ac
 import 'package:self_improvement/features/body/steps/application/health_steps_controller.dart';
 import 'package:self_improvement/features/body/steps/domain/health_steps_status.dart';
 import 'package:self_improvement/features/body/steps/presentation/health_explanation_sheet.dart';
+import 'package:self_improvement/features/body/steps/presentation/health_notice_actions.dart';
 import 'package:self_improvement/features/body/steps/presentation/health_notice_card.dart';
 import 'package:self_improvement/features/body/steps/presentation/health_steps_labels.dart';
 
@@ -17,9 +18,11 @@ import 'package:self_improvement/features/body/steps/presentation/health_steps_l
 ///
 /// Self-contained like the reminders block: the settings screen embeds it and
 /// the steps feature owns the whole flow. The switch is off by default; when it
-/// goes on, the explanation appears first and only then the system dialog.
-/// The group is not shown on a device without a health interface and not while
-/// the module "Gewicht & Körper" is off.
+/// goes on, the explanation appears first and only then the system dialog. The
+/// button "Zugriff erlauben" of the notice takes the same way
+/// ([performHealthNoticeAction]), also after a backup was imported with the
+/// switch on. The group is not shown on a device without a health interface
+/// and not while the module "Gewicht & Körper" is off.
 class HealthStepsSection extends ConsumerStatefulWidget {
   const HealthStepsSection({super.key});
 
@@ -78,7 +81,7 @@ class _HealthStepsSectionState extends ConsumerState<HealthStepsSection> {
     }
     setState(() => _busy = true);
     try {
-      await ref.read(healthStepsActionsProvider).perform(action);
+      await performHealthNoticeAction(context, ref, action);
     } finally {
       if (mounted) {
         setState(() => _busy = false);

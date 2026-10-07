@@ -19,6 +19,7 @@ import 'package:self_improvement/features/body/steps/application/health_steps_sy
 import 'package:self_improvement/features/body/steps/application/steps_providers.dart';
 import 'package:self_improvement/features/body/steps/domain/step_day.dart';
 import 'package:self_improvement/features/body/steps/domain/step_source.dart';
+import 'package:self_improvement/features/body/steps/presentation/health_explanation_sheet.dart';
 import 'package:self_improvement/features/body/steps/presentation/health_notice_card.dart';
 import 'package:self_improvement/features/body/steps/presentation/steps_dashboard_card.dart';
 import 'package:self_improvement/features/body/steps/presentation/steps_routes.dart';
@@ -26,6 +27,7 @@ import 'package:self_improvement/shared/local_date.dart';
 import 'package:self_improvement/shared/local_time.dart';
 
 import '../../../support/pump_app.dart';
+import 'support/explanation_sheet_support.dart';
 
 /// "Meine Schritte", the card on Home and the form with the comparison with
 /// Health on (BS-97, design frames `4122:553`, `4122:667`, `4122:777`,
@@ -382,6 +384,10 @@ void main() {
 
       await tester.tap(find.text('Zugriff erlauben'));
       await _settle(tester);
+      expect(find.byType(HealthExplanationSheet), findsOneWidget);
+      expect(env.source.requestAccessCalls, 0, reason: 'the explanation first');
+      await tester.tap(find.text('Weiter zur Systemabfrage'));
+      await _settle(tester);
       expect(env.source.requestAccessCalls, 1);
       expect(find.byType(HealthNoticeCard), findsNothing);
       expect(find.byType(HealthSourceCard), findsOneWidget);
@@ -406,6 +412,9 @@ void main() {
 
       await tester.tap(find.text('Zugriff erlauben'));
       await _settle(tester);
+      await tester.tap(find.text('Weiter zur Systemabfrage'));
+      await _settle(tester);
+      expect(env.source.requestAccessCalls, 1);
       expect(find.byType(HealthNoticeCard), findsOneWidget);
       expect(env.feedback.last?.kind, 'info');
       expect(env.feedback.last?.message, contains('„Einstellungen öffnen“'));
@@ -731,6 +740,10 @@ void main() {
       env.source.accessAfterRequest = HealthAccess.granted;
       await tester.tap(find.text('Zugriff erlauben'));
       await _settle(tester);
+      expect(find.byType(HealthExplanationSheet), findsOneWidget);
+      expect(env.source.requestAccessCalls, 0, reason: 'the explanation first');
+      await tester.tap(find.text('Weiter zur Systemabfrage'));
+      await _settle(tester);
       expect(env.source.requestAccessCalls, 1);
       expect(find.text('Health: kein Zugriff'), findsNothing);
       expect(find.textContaining('Health ·'), findsOneWidget);
@@ -829,6 +842,80 @@ void main() {
       expect(find.bySemanticsLabel('Health · 10:00'), findsOneWidget);
       handle.dispose();
     });
+  });
+
+  group('"Zugriff erlauben" shows the explanation first on every page that has '
+      'it (BS-97, R2-01, AT28)', () {
+    // The notice in the settings is covered by health_steps_section_test.dart.
+    // All three buttons take the same way (performHealthNoticeAction).
+    final places = <(String, String)>[
+      ('the notice on "Meine Schritte"', StepsRoutes.overview),
+      ('the warning on the card on Home', '/'),
+    ];
+
+    /// The wish came with an imported backup and the system has not been asked.
+    Future<_Env> importedWithoutAccess(
+      WidgetTester tester,
+      String route,
+    ) async {
+      final env = await _env(tester);
+      _noon(env, _today, 4000);
+      await _wish(tester, env);
+      env.source.accessValue = HealthAccess.denied;
+      await _compare(tester, env);
+      await _open(tester, env, route);
+      await _settle(tester);
+      expect(find.text('Zugriff erlauben'), findsOneWidget);
+      expect(find.byType(HealthExplanationSheet), findsNothing);
+      expect(env.source.requestAccessCalls, 0);
+      return env;
+    }
+
+    for (final (place, route) in places) {
+      testWidgets('(BS-97, R2-01, AT28) $place after an import without access: '
+          'the tap shows the explanation and no dialog, "Weiter zur '
+          'Systemabfrage" asks once and compares', (tester) async {
+        final env = await importedWithoutAccess(tester, route);
+        env.source.accessAfterRequest = HealthAccess.granted;
+
+        await tester.tap(find.text('Zugriff erlauben'));
+        await _settle(tester);
+        expect(find.byType(HealthExplanationSheet), findsOneWidget);
+        expect(find.text('Schritte aus Health übernehmen?'), findsOneWidget);
+        expect(env.source.requestAccessCalls, 0, reason: 'no dialog yet');
+        expect(env.source.totalCalls, isEmpty, reason: 'nothing is read yet');
+
+        await tester.tap(find.text('Weiter zur Systemabfrage'));
+        await _settle(tester);
+        expect(find.byType(HealthExplanationSheet), findsNothing);
+        expect(env.source.requestAccessCalls, 1);
+        expect(env.source.totalCalls, hasLength(7));
+        expect(find.text('Zugriff erlauben'), findsNothing);
+        expect(
+          env.feedback.last?.message,
+          'Zugriff erlaubt. Die Schritte werden übernommen.',
+        );
+      });
+
+      for (final how in SheetDismissal.values) {
+        testWidgets('(BS-97, R2-01, AT28) $place: ${how.label} closes the '
+            'explanation and changes nothing', (tester) async {
+          final env = await importedWithoutAccess(tester, route);
+          env.source.accessAfterRequest = HealthAccess.granted;
+
+          await tester.tap(find.text('Zugriff erlauben'));
+          await _settle(tester);
+          expect(find.byType(HealthExplanationSheet), findsOneWidget);
+          await dismissExplanationSheet(tester, how, () => _settle(tester));
+
+          expect(find.byType(HealthExplanationSheet), findsNothing);
+          expect(env.source.requestAccessCalls, 0);
+          expect(env.source.totalCalls, isEmpty);
+          expect(find.text('Zugriff erlauben'), findsOneWidget);
+          expect(env.feedback.last, isNull);
+        });
+      }
+    }
   });
 
   group('layout and accessibility of every state (BS-97, AT33, AT34)', () {
