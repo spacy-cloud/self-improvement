@@ -145,3 +145,18 @@ final class HealthStepsStatus {
       'HealthStepsStatus(${condition.name}, enabled: $enabled, '
       'syncing: $syncing, last: $lastSyncAtUtc)';
 }
+
+/// What a button of a notice does.
+enum HealthNoticeAction {
+  /// Ask the system for the access (the dialog).
+  allowAccess,
+
+  /// Open the system place where the access can be allowed.
+  openSettings,
+
+  /// Open the page where the interface is installed or updated.
+  openInstallPage,
+
+  /// Run the comparison again.
+  retry,
+}

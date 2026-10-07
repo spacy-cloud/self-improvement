@@ -102,6 +102,10 @@ enum AppIcon {
   /// Retry (circular arrow).
   retry(Icons.refresh_rounded),
 
+  /// Health (heart), the symbol of "Schritte aus Health" (BS-97, design
+  /// `icon/heart`).
+  heart(Icons.favorite_border_rounded),
+
   /// Empty state (sprout in Figma).
   sprout(Icons.eco_outlined),
 
