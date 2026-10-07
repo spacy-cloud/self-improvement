@@ -13,11 +13,17 @@ import 'package:self_improvement/features/dashboard/presentation/widgets/not_tod
 /// ring, so the page can never disagree with Home. Without a daily goal it
 /// shows "Noch keine Tagesziele" and the way to the goal editor instead of a
 /// ring that reads 0 of 0. A day that is not today gets the note "Nicht heute".
+///
+/// With [onOpenGoal] every row is a button that opens the module of its goal,
+/// and with [onEditGoals] the page ends with "Ziele bearbeiten" (the goal
+/// editor); without them the view only shows.
 class GoalsDayView extends StatelessWidget {
   /// Creates the view of [day].
   const GoalsDayView({
     required this.day,
     required this.onSetGoals,
+    this.onOpenGoal,
+    this.onEditGoals,
     this.onBackToToday,
     super.key,
   });
@@ -28,8 +34,20 @@ class GoalsDayView extends StatelessWidget {
   /// Opens the goal editor from the empty state ("Ziele festlegen").
   final VoidCallback onSetGoals;
 
+  /// Opens the module of the goal of a row; `null` makes the rows plain.
+  final ValueChanged<GoalsDayRow>? onOpenGoal;
+
+  /// Opens the goal editor ("Ziele bearbeiten", below the lists); `null` hides
+  /// the action.
+  final VoidCallback? onEditGoals;
+
   /// Goes back to today from the note of a past day; `null` hides the action.
   final VoidCallback? onBackToToday;
+
+  VoidCallback? _opener(GoalsDayRow row) {
+    final open = onOpenGoal;
+    return open == null ? null : () => open(row);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +65,8 @@ class GoalsDayView extends StatelessWidget {
           const SizedBox(height: AppSpacing.s4),
           AppListGroup(
             children: <Widget>[
-              for (final row in day.rows) GoalRowTile(row: row),
+              for (final row in day.rows)
+                GoalRowTile(row: row, onTap: _opener(row)),
             ],
           ),
         ] else
@@ -65,7 +84,15 @@ class GoalsDayView extends StatelessWidget {
             title: 'Wochenziel · nicht im Tagesring',
           ),
           const SizedBox(height: AppSpacing.s4),
-          AppListGroup(children: <Widget>[GoalRowTile(row: weekly)]),
+          AppListGroup(
+            children: <Widget>[
+              GoalRowTile(row: weekly, onTap: _opener(weekly)),
+            ],
+          ),
+        ],
+        if (day.hasGoals && onEditGoals != null) ...<Widget>[
+          const SizedBox(height: AppSpacing.s12),
+          SecondaryButton(label: 'Ziele bearbeiten', onPressed: onEditGoals),
         ],
       ],
     );

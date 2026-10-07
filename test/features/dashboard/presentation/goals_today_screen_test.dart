@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' show AsyncData;
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:self_improvement/app/router/navigation.dart' show currentPath;
 import 'package:self_improvement/core/dashboard/domain/motivation.dart';
 import 'package:self_improvement/core/design/design.dart' hide HabitIcon;
 import 'package:self_improvement/core/goals/application/goal_providers.dart'
@@ -54,7 +56,7 @@ List<PaintedArc> _arcs(AppColors colors, int fulfilled, int applicable) {
   ];
 }
 
-Future<void> _pump(
+Future<GoRouter> _pump(
   WidgetTester tester,
   List<GoalProgress> goals, {
   List<Override> overrides = const <Override>[],
@@ -63,7 +65,7 @@ Future<void> _pump(
   AppThemeVariant theme = AppThemeVariant.light,
 }) async {
   final harness = await createHarness(tester, startedOn: _secondDay);
-  await pumpGoalsToday(
+  return pumpGoalsToday(
     tester,
     harness,
     overrides: <Override>[todayStatusOverride(statusOf(goals)), ...overrides],
@@ -72,6 +74,14 @@ Future<void> _pump(
     theme: theme,
   );
 }
+
+/// The path of the page on top, also of a page that was pushed (the router's
+/// own location is only the base).
+String _top(GoRouter router) => currentPath(router);
+
+/// The location with its query, after a `go` (a tab).
+String _uri(GoRouter router) =>
+    router.routerDelegate.currentConfiguration.uri.toString();
 
 Habit _habit(String id, String title, HabitIcon icon) => Habit(
   id: id,
@@ -509,6 +519,203 @@ void main() {
     }
   });
 
+  group('the rows open their module, "Ziele bearbeiten" the editor (BS-105)', () {
+    // A page that is pushed over the page: back returns to it.
+    for (final (title, path) in const <(String, String)>[
+      ('Wasser', '/water'),
+      ('Schritte', '/steps'),
+      ('Fokus', '/focus'),
+      ('Gewicht erfassen', '/weight'),
+    ]) {
+      testWidgets(
+        '(C02) a tap on "$title" opens $path, and back shows the page again',
+        (tester) async {
+          final router = await _pump(tester, goalStates['some']!);
+          await tester.tap(find.text(title));
+          await settle(tester);
+          expect(find.text('Seite $path'), findsOneWidget);
+          expect(_top(router), path);
+          router.pop();
+          await settle(tester);
+          expect(find.text('2 von 5'), findsOneWidget);
+          expect(find.text(title), findsOneWidget);
+        },
+      );
+    }
+
+    testWidgets('(C02) "Aufgabe erledigen" opens the task list, a tab', (
+      tester,
+    ) async {
+      final router = await _pump(tester, goalStates['some']!);
+      await tester.tap(find.text('Aufgabe erledigen'));
+      await settle(tester);
+      expect(find.text('Seite /habits'), findsOneWidget);
+      expect(_uri(router), '/habits?tab=tasks');
+    });
+
+    testWidgets('(C02) a habit opens the habit list, a tab', (tester) async {
+      final router = await _pump(
+        tester,
+        <GoalProgress>[habitGoalOf('a')],
+        overrides: <Override>[
+          habitsProvider.overrideWith(
+            (ref) => Stream<List<Habit>>.value(<Habit>[
+              _habit('a', 'Lesen', HabitIcon.book),
+            ]),
+          ),
+        ],
+      );
+      await tester.tap(find.text('Lesen'));
+      await settle(tester);
+      expect(find.text('Seite /habits'), findsOneWidget);
+      expect(_uri(router), '/habits');
+    });
+
+    testWidgets('(C02) "Workout heute" and the weekly goal open the workout '
+        'area', (tester) async {
+      final overrides = <Override>[
+        _workoutDay(mark: WorkoutDayMarkKind.rest),
+        _weekOf(2),
+      ];
+      final goals = <GoalProgress>[
+        goalOf(GoalType.water),
+        goalOf(GoalType.workoutDaily, current: 1, reached: true),
+      ];
+      var router = await _pump(tester, goals, overrides: overrides);
+      await tester.tap(find.text('Workout heute'));
+      await settle(tester);
+      expect(find.text('Seite /workouts'), findsOneWidget);
+      router.pop();
+      await settle(tester);
+
+      router = await _pump(tester, goals, overrides: overrides);
+      await tester.tap(find.text('Workouts diese Woche'));
+      await settle(tester);
+      expect(find.text('Seite /workouts'), findsOneWidget);
+      expect(_top(router), '/workouts');
+    });
+
+    testWidgets('(C02) "Ziele bearbeiten" opens the goal editor, back shows '
+        'the page as it was', (tester) async {
+      final router = await _pump(
+        tester,
+        goalStates['some']!,
+        overrides: <Override>[_weekOf(2)],
+      );
+      await tester.ensureVisible(find.text('Ziele bearbeiten'));
+      await tester.pump();
+      await tester.tap(find.text('Ziele bearbeiten'));
+      await settle(tester);
+      expect(find.text('Seite /goals'), findsOneWidget);
+      expect(_top(router), '/goals');
+      router.pop();
+      await settle(tester);
+      expect(find.text('2 von 5'), findsOneWidget);
+      expect(find.text('Workouts diese Woche'), findsOneWidget);
+    });
+
+    testWidgets('"Ziele bearbeiten" is the last thing on the page, after the '
+        'weekly goal', (tester) async {
+      await _pump(
+        tester,
+        goalStates['some']!,
+        overrides: <Override>[_weekOf(2)],
+      );
+      final weekly = tester.getTopLeft(find.text('Workouts diese Woche')).dy;
+      final action = tester.getTopLeft(find.text('Ziele bearbeiten')).dy;
+      expect(action, greaterThan(weekly));
+    });
+
+    testWidgets('without a daily goal there is "Ziele festlegen", not '
+        '"Ziele bearbeiten"', (tester) async {
+      await _pump(tester, const <GoalProgress>[]);
+      expect(find.text('Ziele bearbeiten'), findsNothing);
+      expect(find.text('Ziele festlegen'), findsOneWidget);
+    });
+
+    testWidgets('(AT34) every row is a button: its label ends with "öffnen", '
+        'the tap area is at least 48 high', (tester) async {
+      final handle = tester.ensureSemantics();
+      await _pump(tester, goalStates['some']!);
+      for (final label in <String>[
+        'Wasser, 1,5 von 2,5 Litern, 60 Prozent, noch offen, öffnen',
+        'Schritte, 7.450 von 10.000 Schritten, 75 Prozent, noch offen, öffnen',
+        'Fokus, 45 von 60 Minuten, 75 Prozent, noch offen, öffnen',
+        'Gewicht erfassen, Heute gewogen, erreicht, öffnen',
+        'Aufgabe erledigen, 2 Aufgaben erledigt, erreicht, öffnen',
+      ]) {
+        final node = tester.getSemantics(find.bySemanticsLabel(label));
+        expect(
+          node,
+          matchesSemantics(label: label, isButton: true, hasTapAction: true),
+          reason: label,
+        );
+        expect(node.rect.height, greaterThanOrEqualTo(48), reason: label);
+        expect(node.rect.width, greaterThanOrEqualTo(48), reason: label);
+      }
+      handle.dispose();
+    });
+
+    testWidgets('(AT34) "Ziele bearbeiten" is a button of at least 48 x 48', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await _pump(tester, goalStates['some']!);
+      await tester.ensureVisible(find.text('Ziele bearbeiten'));
+      await tester.pump();
+      final node = tester.getSemantics(
+        find.bySemanticsLabel('Ziele bearbeiten'),
+      );
+      expect(
+        node,
+        matchesSemantics(
+          label: 'Ziele bearbeiten',
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+        ),
+      );
+      expect(node.rect.height, greaterThanOrEqualTo(48));
+      handle.dispose();
+    });
+
+    testWidgets('(AT33) a row shows a chevron, and gives it up when it '
+        'stacks at large text', (tester) async {
+      await _pump(tester, goalStates['some']!);
+      // One per goal of the day, and one for the weekly goal.
+      expect(find.byIcon(AppIcon.chevronRight.data), findsNWidgets(6));
+      await _pump(tester, goalStates['some']!, textScale: 2.0);
+      expect(find.byIcon(AppIcon.chevronRight.data), findsNothing);
+    });
+
+    testWidgets('a view without callbacks only shows: no button, no '
+        'chevron, no editor action', (tester) async {
+      final day = buildGoalsDay(
+        status: statusOf(goalStates['some']!),
+        today: goalsTestDay,
+      );
+      await pumpApp(
+        tester,
+        AppScaffold.subpage(
+          title: 'Ziele heute',
+          body: GoalsDayView(day: day, onSetGoals: () {}),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final handle = tester.ensureSemantics();
+      expect(find.byIcon(AppIcon.chevronRight.data), findsNothing);
+      expect(find.text('Ziele bearbeiten'), findsNothing);
+      final node = tester.getSemantics(
+        find.bySemanticsLabel(
+          'Wasser, 1,5 von 2,5 Litern, 60 Prozent, noch offen',
+        ),
+      );
+      expect(node, matchesSemantics(label: node.label));
+      handle.dispose();
+    });
+  });
+
   group('what a screen reader hears (BS-103, AT34)', () {
     testWidgets('the summary is one element and so is every row', (
       tester,
@@ -525,11 +732,11 @@ void main() {
       // The ring is a picture of the same numbers: it is not read again.
       expect(find.bySemanticsLabel('2 von 5 Zielen erreicht'), findsNothing);
       for (final label in <String>[
-        'Wasser, 1,5 von 2,5 Litern, 60 Prozent, noch offen',
-        'Schritte, 7.450 von 10.000 Schritten, 75 Prozent, noch offen',
-        'Fokus, 45 von 60 Minuten, 75 Prozent, noch offen',
-        'Gewicht erfassen, Heute gewogen, erreicht',
-        'Aufgabe erledigen, 2 Aufgaben erledigt, erreicht',
+        'Wasser, 1,5 von 2,5 Litern, 60 Prozent, noch offen, öffnen',
+        'Schritte, 7.450 von 10.000 Schritten, 75 Prozent, noch offen, öffnen',
+        'Fokus, 45 von 60 Minuten, 75 Prozent, noch offen, öffnen',
+        'Gewicht erfassen, Heute gewogen, erreicht, öffnen',
+        'Aufgabe erledigen, 2 Aufgaben erledigt, erreicht, öffnen',
       ]) {
         expect(find.bySemanticsLabel(label), findsOneWidget, reason: label);
       }
@@ -556,7 +763,7 @@ void main() {
       expect(
         find.bySemanticsLabel(
           'Workout heute, Ruhetag, zählt als erreicht, keine XP, die Streak '
-          'bleibt',
+          'bleibt, öffnen',
         ),
         findsOneWidget,
       );
@@ -749,6 +956,32 @@ void main() {
   });
 
   group('a day that is not today (BS-103, BS-93 prepared)', () {
+    testWidgets('(C04) a status of another day, as BS-93 will put it into the '
+        'dashboard view, is shown as that day', (tester) async {
+      final harness = await createHarness(tester, startedOn: _secondDay);
+      await pumpGoalsToday(
+        tester,
+        harness,
+        overrides: <Override>[
+          todayStatusOverride(
+            statusOf(goalStates['some']!, date: LocalDate(2026, 10, 1)),
+          ),
+        ],
+      );
+      expect(find.text('Nicht heute'), findsOneWidget);
+      expect(find.text('1. Oktober · nur ansehen'), findsOneWidget);
+      expect(find.text('Donnerstag, 1. Oktober'), findsOneWidget);
+      expect(find.text('2 von 5 erreicht'), findsOneWidget);
+      expect(find.text('Du siehst die Werte dieses Tages.'), findsOneWidget);
+      // The words of the past, no weekly goal, and no way back yet: the page
+      // that pages through the days wires it.
+      expect(find.text('Gewogen'), findsOneWidget);
+      expect(find.text('Workouts diese Woche'), findsNothing);
+      expect(find.text('Zurück zu heute'), findsNothing);
+      // The rows still lead to their modules.
+      expect(find.byIcon(AppIcon.chevronRight.data), findsNWidgets(5));
+    });
+
     Future<void> pumpPast(
       WidgetTester tester, {
       VoidCallback? onBack,
