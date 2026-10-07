@@ -40,7 +40,7 @@ void main() {
   group('every table and field survives export -> import', () {
     test('into an empty database, row by row', () async {
       final expected = await expectedExportRows(source.database);
-      // The fixture really exercises all sixteen tables.
+      // The fixture really exercises all seventeen tables.
       for (final entry in expected.entries) {
         expect(entry.value, isNotEmpty, reason: entry.key);
       }

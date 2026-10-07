@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:self_improvement/core/database/converters.dart';
+import 'package:self_improvement/core/database/schema_keys.dart';
 import 'package:self_improvement/core/database/tables/table_mixins.dart';
 
 /// Body weight measurements (integer grams, one decimal of a kilogram).
@@ -43,7 +44,8 @@ class WeightEntries extends Table with AuditColumns, SoftDeleteColumn {
   Set<Column> get primaryKey => {id};
 }
 
-/// Manually entered daily step totals (one active row per local date).
+/// Daily step totals, typed in by hand or taken from the health app (one
+/// active row per local date).
 @DataClassName('StepDayRow')
 @TableIndex.sql('''
   CREATE UNIQUE INDEX step_days_active_date
@@ -67,6 +69,17 @@ class StepDays extends Table with AuditColumns, SoftDeleteColumn {
 
   /// The threshold that was reached (frozen), null until reached.
   IntColumn get xpGoalTargetSteps => integer().nullable()();
+
+  /// Where the total comes from, one of [SchemaKeys.stepSources] (schema 2,
+  /// BS-97). Rows written before schema 2 are `manual`; a value the user
+  /// types in always makes the row `manual`.
+  TextColumn get source => text()
+      .withDefault(const Constant('manual'))
+      .check(
+        CustomExpression<bool>(
+          'source IN ${SchemaKeys.sqlIn(SchemaKeys.stepSources)}',
+        ),
+      )();
 
   @override
   Set<Column> get primaryKey => {id};

@@ -4,6 +4,7 @@ import 'package:self_improvement/core/backup/backup_format.dart';
 import 'package:self_improvement/core/backup/backup_values.dart';
 import 'package:self_improvement/core/backup/field_reader.dart';
 import 'package:self_improvement/core/database/app_database.dart';
+import 'package:self_improvement/core/database/schema_keys.dart';
 import 'package:self_improvement/shared/local_date.dart';
 
 /// One weight measurement (integer grams, steps of 100 g).
@@ -116,7 +117,8 @@ final class WeightEntryDto {
   );
 }
 
-/// The manually entered step total of one day.
+/// The step total of one day, typed in by hand or taken from the health app
+/// ([source], schema 2).
 @immutable
 final class StepDayDto {
   const StepDayDto({
@@ -124,6 +126,7 @@ final class StepDayDto {
     required this.localDate,
     required this.steps,
     required this.timezoneId,
+    required this.source,
     required this.createdAtUtc,
     required this.updatedAtUtc,
     required this.rowVersion,
@@ -141,6 +144,7 @@ final class StepDayDto {
     timezoneId: row.timezoneId,
     reachedGoalEligible: row.reachedGoalEligible,
     xpGoalTargetSteps: row.xpGoalTargetSteps,
+    source: row.source,
     createdAtUtc: row.createdAtUtc,
     updatedAtUtc: row.updatedAtUtc,
     rowVersion: row.rowVersion,
@@ -161,6 +165,7 @@ final class StepDayDto {
         'Erreichter Schwellenwert',
         min: 1,
       ),
+      source: r.choice('source', 'Quelle', SchemaKeys.stepSources),
       createdAtUtc: r.instant('created_at_utc', 'Erstellzeitpunkt'),
       updatedAtUtc: r.instant('updated_at_utc', 'Änderungszeitpunkt'),
       rowVersion: r.integer('row_version', 'Zeilenversion', min: 1),
@@ -183,6 +188,9 @@ final class StepDayDto {
   final String timezoneId;
   final bool? reachedGoalEligible;
   final int? xpGoalTargetSteps;
+
+  /// `manual` or `health` (see `SchemaKeys.stepSources`).
+  final String source;
   final DateTime createdAtUtc;
   final DateTime updatedAtUtc;
   final int rowVersion;
@@ -194,6 +202,7 @@ final class StepDayDto {
     'timezone_id': timezoneId,
     'reached_goal_eligible': reachedGoalEligible,
     'xp_goal_target_steps': xpGoalTargetSteps,
+    'source': source,
     'created_at_utc': BackupValues.formatInstant(createdAtUtc),
     'updated_at_utc': BackupValues.formatInstant(updatedAtUtc),
     'row_version': rowVersion,
@@ -206,6 +215,7 @@ final class StepDayDto {
     timezoneId: timezoneId,
     reachedGoalEligible: Value(reachedGoalEligible),
     xpGoalTargetSteps: Value(xpGoalTargetSteps),
+    source: Value(source),
     createdAtUtc: createdAtUtc,
     updatedAtUtc: updatedAtUtc,
     rowVersion: Value(rowVersion),

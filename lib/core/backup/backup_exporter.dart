@@ -204,6 +204,14 @@ final class BackupExporter {
                   (t) => OrderingTerm.asc(t.id),
                 ]))
               .get();
+      final marks =
+          await (db.select(db.workoutDayMarks)
+                ..where((t) => t.deletedAtUtc.isNull())
+                ..orderBy([
+                  (t) => OrderingTerm.asc(t.localDate),
+                  (t) => OrderingTerm.asc(t.id),
+                ]))
+              .get();
       final tasks =
           await (db.select(db.tasks)
                 ..where((t) => t.deletedAtUtc.isNull())
@@ -263,6 +271,7 @@ final class BackupExporter {
               FocusSessionDto.fromRow(row).exportedAt(nowUtc),
           ],
           workoutEntries: workouts.map(WorkoutEntryDto.fromRow).toList(),
+          workoutDayMarks: marks.map(WorkoutDayMarkDto.fromRow).toList(),
           tasks: tasks.map(TaskDto.fromRow).toList(),
           habits: habits.map(HabitDto.fromRow).toList(),
           habitChecks: [

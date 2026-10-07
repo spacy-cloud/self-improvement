@@ -12,7 +12,7 @@ import 'package:self_improvement/shared/local_time.dart';
 /// returns a neutral placeholder so that a DTO can still be constructed.
 /// Callers must discard the result when [hasProblems] is true.
 ///
-/// Rules of the V1 contract implemented here:
+/// Rules of the backup contract (unchanged since version 1) implemented here:
 /// - every field is required; optional values are present as JSON `null`;
 /// - unknown fields are rejected ([finish]);
 /// - integers are JSON integers (`1.0` is not an integer), booleans are JSON

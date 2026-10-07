@@ -14,6 +14,7 @@ final class ImportPreview {
     required this.exportedAtUtc,
     required this.appVersion,
     required this.counts,
+    required this.schemaVersion,
   });
 
   /// The preview of a validated [document].
@@ -25,6 +26,7 @@ final class ImportPreview {
       exportedAtUtc: document.exportedAtUtc,
       appVersion: document.appVersion,
       counts: Map<BackupTable, int>.unmodifiable(document.data.counts),
+      schemaVersion: document.sourceSchemaVersion,
     );
   }
 
@@ -43,6 +45,10 @@ final class ImportPreview {
 
   /// Number of records per section (profile and settings count 1 each).
   final Map<BackupTable, int> counts;
+
+  /// The format version of the FILE (not of this app): a file of an older
+  /// version is read through an upward step and shows its own version here.
+  final int schemaVersion;
 
   /// Total number of records.
   int get totalRecords => counts.values.fold(0, (sum, count) => sum + count);

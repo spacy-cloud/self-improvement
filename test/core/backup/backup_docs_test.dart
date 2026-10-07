@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/core/backup/backup_format.dart';
+import 'package:self_improvement/core/backup/backup_upgrade.dart';
 import 'package:self_improvement/core/config/app_config.dart';
 import 'package:self_improvement/core/database/schema_keys.dart';
 import 'package:self_improvement/core/time/clock_service.dart';
@@ -74,7 +75,7 @@ void main() {
     test('format marker, schema version and file name pattern', () {
       expect(doc, contains('`${AppConfig.backupFormat}`'));
       expect(doc, contains('`schemaVersion`'));
-      expect(AppConfig.backupSchemaVersion, 1);
+      expect(AppConfig.backupSchemaVersion, 2);
       expect(
         doc,
         contains('${AppConfig.backupFileNamePrefix}-YYYY-MM-DD-HHmm.json'),
@@ -126,6 +127,83 @@ void main() {
         multiLine: true,
       ).allMatches(doc).map((m) => m.group(1)!).toList();
       expect(headings, BackupTable.values.map((t) => t.key).toList());
+    });
+  });
+
+  group('version 2 and the upward step from version 1 (BS-98)', () {
+    test('the readable versions and the current one are documented', () {
+      expect(BackupFormat.readableSchemaVersions, [1, 2]);
+      expect(doc, contains('# Backup-Format (Version 2)'));
+      expect(doc, contains('unterstützt: Version 1 und 2'));
+      expect(doc, contains('## Aufwärtsschritt von Version 1 auf 2'));
+      expect(doc, contains('`levelup_life_backup`'));
+    });
+
+    test('every section of version 2 says that it is new', () {
+      for (final table in BackupTable.values) {
+        final text = section('### `${table.key}`');
+        expect(
+          text.contains('Abschnitt neu in Version 2'),
+          table.sinceVersion == 2,
+          reason: table.key,
+        );
+      }
+    });
+
+    test('every field of version 2 is marked as new in its table', () {
+      for (final entry in BackupUpgrade.fieldsAddedInVersion2.entries) {
+        final text = section('### `${entry.key}`');
+        for (final field in entry.value.keys) {
+          final row = RegExp(
+            '^\\| `$field` \\|.*\$',
+            multiLine: true,
+          ).firstMatch(text);
+          expect(row, isNotNull, reason: '${entry.key}.$field');
+          expect(row!.group(0), contains('(neu in Version 2)'), reason: field);
+        }
+      }
+    });
+
+    test(
+      'the upward step table lists every added section, field and default',
+      () {
+        final text = section('## Aufwärtsschritt von Version 1 auf 2');
+        for (final name in BackupUpgrade.sectionsAddedInVersion2) {
+          expect(text, contains('`$name`'), reason: name);
+        }
+        for (final entry in BackupUpgrade.fieldsAddedInVersion2.entries) {
+          expect(text, contains('`${entry.key}`'), reason: entry.key);
+          for (final field in entry.value.entries) {
+            expect(text, contains('`${field.key}`'), reason: field.key);
+          }
+        }
+        expect(text, contains('`manual`'));
+        expect(text, contains('`false`'));
+        expect(text, contains('`null`'));
+        expect(text, contains('`[]`'));
+      },
+    );
+
+    test(
+      'a version 1 file with content of version 2 is documented as rejected',
+      () {
+        final text = section('## Aufwärtsschritt von Version 1 auf 2');
+        expect(text, contains('Unbekannter Abschnitt'));
+        expect(text, contains('Unbekanntes Zusatzfeld'));
+        expect(text, contains('wird abgelehnt'));
+      },
+    );
+
+    test('every fixture file of version 1 is documented', () {
+      final files = Directory('test/fixtures/v1')
+          .listSync()
+          .whereType<File>()
+          .map((f) => f.uri.pathSegments.last)
+          .toList();
+      expect(files, isNotEmpty);
+      for (final name in files) {
+        expect(doc, contains('`$name`'), reason: name);
+      }
     });
   });
 
