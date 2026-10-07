@@ -5,6 +5,12 @@
          permission and no foreground service: reminders are inexact alarms. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- Steps from Health Connect (BS-97, D-031): the app only READS the step total, only after the
+         user switched "Schritte aus Health übernehmen" on and allowed it in the system dialog of
+         Health Connect. No write permission, no other kind of health data, no background reading
+         (READ_HEALTH_DATA_IN_BACKGROUND) and no extended history (READ_HEALTH_DATA_HISTORY): the
+         app looks at the last 7 days while it is open. -->
+    <uses-permission android:name="android.permission.health.READ_STEPS"/>
     <!-- The app orders the back button itself (a page without history goes to Home, see
          docs/screens/shell.md). With targetSdk 36, Android 16 enables the predictive back
          gesture by default and then would close the app before that order runs; the
@@ -55,6 +61,28 @@
                 <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
             </intent-filter>
         </receiver>
+        <!-- The privacy explanation Health Connect links to in its permission dialog. Health Connect
+             expects an activity for this intent; without one the dialog may not appear. Up to
+             Android 13 the intent filter is used, from Android 14 the alias for
+             VIEW_PERMISSION_USAGE. -->
+        <activity
+            android:name=".HealthRationaleActivity"
+            android:exported="true"
+            android:theme="@style/HealthRationaleTheme">
+            <intent-filter>
+                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"/>
+            </intent-filter>
+        </activity>
+        <activity-alias
+            android:name="ViewPermissionUsageActivity"
+            android:exported="true"
+            android:targetActivity=".HealthRationaleActivity"
+            android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE"/>
+                <category android:name="android.intent.category.HEALTH_PERMISSIONS"/>
+            </intent-filter>
+        </activity-alias>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data
@@ -71,5 +99,8 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- Health Connect: lets the app see whether it is installed and current (a visibility
+             entry, not a permission). -->
+        <package android:name="com.google.android.apps.healthdata"/>
     </queries>
 </manifest>

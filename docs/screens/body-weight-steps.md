@@ -82,6 +82,38 @@ Die Aktion bleibt auch nach dem ersten Eintrag sichtbar (BS-108, Entscheidung D-
 - XP: Einmal je Tag 10 XP, wenn die beim ersten Erreichen eingefrorene Schwelle erreicht ist. Spätere Korrekturen behalten die Entscheidung, die Vergabe gilt nur, solange der Wert die eingefrorene Schwelle noch erreicht; ein Wert, der bei ausgeschalteter Gamification erreicht wurde, wird nie nachträglich vergütet.
 - Löschen ist ein Soft-Delete („Nicht erfasst“, die XP werden zurückgenommen); Undo stellt die Zeile wieder her, sofern der Tag nicht inzwischen neu gefüllt wurde.
 
+### 2.3 Schritte aus Health (BS-97)
+
+Schritte können aus der Health-App des Telefons übernommen werden (Android: Health Connect; iOS folgt erst nach einem positiven Spike mit Tyler, ob SideStore das Entitlement beim Neusignieren setzt, ein Ticket dafür gibt es noch nicht). Der Schalter „Schritte aus Health übernehmen“ ist standardmäßig aus. **Stand dieses Pull Requests:** Kern und Android-Quelle sind da, die Oberfläche (Schalter, Erklärtext, Zustände, Quelle auf den Karten) folgt im dritten Pull Request von BS-97; die Checkliste unten gilt für den Stand danach. Die Entscheidungen stehen in D-031 bis D-033 ([implementation-decisions.md](../implementation-decisions.md)), die Architektur in [architecture.md](../architecture.md) Abschnitt 13.
+
+**Regeln (Kern, D-032).**
+
+- **Nur lesen, nur Schritte.** Die App fragt eine Berechtigung (Schritte lesen), schreibt nichts in Health Connect und liest keine anderen Datenarten.
+- **Tageswert je lokalem Kalendertag.** Der Wert ist die Summe, die Health Connect selbst für den Tag von Mitternacht bis Mitternacht in der Zone des Geräts aggregiert (an Tagen mit Zeitumstellung 23 oder 25 Stunden). Health Connect führt Handy, Uhr und Apps zusammen, damit nichts doppelt zählt; die App liest nie einzelne Datensätze.
+- **Quelle je Tageswert** (`manual` oder `health`). Ein von Hand eingetragener Wert hat immer Vorrang und wird nie überschrieben. Health füllt nur Tage ohne Wert und aktualisiert nur Werte, die es selbst geschrieben hat. „Keine Daten“ ändert nichts. Ein manueller Eintrag auf einen Health-Tag macht den Tag `manual`; „Rückgängig“ stellt Wert und Quelle zurück. Löscht jemand einen Tag, füllt Health ihn beim nächsten Abgleich wieder, solange der Schalter an ist und Health Daten hat.
+- **Abgleich** beim Start der App, beim Fortsetzen und per Aktion; beim Einschalten werden sieben Tage nachgeladen (heute und die sechs davor), jeder Abgleich liest dieses Fenster. Kein Hintergrundabgleich. Bei ausgeschaltetem Schalter fragt nichts das Gerät.
+- **Tagesziel, XP und Streak** zählen Health-Werte wie von Hand eingetragene. Sie bleiben Projektionen der Fakten: Erreicht ein Health-Wert für einen vergangenen Tag die Schwelle dieses Tages, entstehen die XP dieses Tages nachträglich (nur wenn die Gamification beim ersten Erreichen an war); fällt der Wert später darunter, werden sie zurückgenommen; der Streak wird aus den Fakten neu berechnet und springt deshalb mit.
+- **Sicherung.** Exportiert werden die Quelle je Tag, der Wunsch (Schalter) und der Zeitpunkt des letzten Abgleichs, nie die Berechtigung und nie Rohdaten von Health. Nach einem Import kann der Schalter an sein, ohne dass auf diesem Gerät ein Zugriff besteht; dann liest nichts, bis der Zugriff erlaubt ist (Zustand „kein Zugriff“).
+
+**Geräteprüfung (Samsung S25, Android 15 oder neuer; Ergebnis: nicht geprüft).** Die Host-Tests prüfen alles mit einer Fake-Quelle und einem nachgebauten Kanal; die Kotlin-Seite wird nur von der CI übersetzt, und der Emulator hat keine Schrittdaten. Die folgenden Punkte braucht ein Gerät. Voraussetzung: Samsung Health schreibt Schritte nach Health Connect (Samsung Health, Einstellungen, Health Connect, Schritte). Ein APK liefert der CI-Job `android-debug-apk` (Artefakt `debug-apk`).
+
+| Nr. | Prüfung | Erwartung | Ergebnis |
+|---|---|---|---|
+| 1 | App starten, Einstellungen öffnen | Die Gruppe „Schritte“ mit dem Schalter „Schritte aus Health übernehmen“ ist da und aus; es gab keine Abfrage | nicht geprüft |
+| 2 | Schalter an, „Nicht jetzt“ | Der Erklärtext erscheint vor jedem Systemdialog; der Schalter bleibt aus; kein Systemdialog | nicht geprüft |
+| 3 | Schalter an, „Weiter zur Systemabfrage“ | Der Dialog von Health Connect nennt nur „Schritte“ und nur Lesen, nichts anderes (kein Schreiben, kein anderer Datentyp) | nicht geprüft |
+| 4 | Dialog bestätigen | Die letzten sieben Tage erscheinen in „Meine Schritte“; je Tag gleicht der Wert der Tagessumme in Health Connect (Abweichung nur durch den Zeitpunkt) | nicht geprüft |
+| 5 | Handy und Uhr (oder zwei Apps) schreiben Schritte für denselben Tag | Der Tageswert gleicht der Summe in Health Connect und zählt nichts doppelt | nicht geprüft |
+| 6 | Schritte um 23:55 und um 00:05 | Sie stehen an zwei verschiedenen Tagen; am Tag der Zeitumstellung gleicht der Tageswert der Summe in Health Connect | nicht geprüft |
+| 7 | Einen Tag von Hand überschreiben, danach aktualisieren | Der Wert von Hand bleibt, die Quelle ist „Von Hand“; andere Tage aktualisiert Health weiter | nicht geprüft |
+| 8 | App in den Hintergrund, 500 Schritte gehen, App öffnen | Der heutige Wert ist ohne Aktion aktualisiert (Fortsetzen); die Aktion „Aktualisieren“ macht dasselbe | nicht geprüft |
+| 9 | In Health Connect den Zugriff der App entziehen, App öffnen | Der Hinweis „Kein Zugriff“ erscheint, die Werte bleiben; „Zugriff erlauben“ führt zum Dialog oder (nach zwei Ablehnungen) in die Einstellungen von Health Connect | nicht geprüft |
+| 10 | Health Connect fehlt oder ist veraltet (Gerät mit Android 13 oder älter) | Der Hinweis nennt den Zustand ehrlich; „Health Connect installieren“ öffnet den Store | nicht geprüft |
+| 11 | Im Systemdialog „Datenschutzrichtlinie“ antippen | Die Seite „Schritte aus Health Connect“ öffnet sich (Datenschutz-Erklärung der App) | nicht geprüft |
+| 12 | Sicherung exportieren, auf demselben Gerät importieren | Der Schalter bleibt an, der Zustand folgt dem Zugriff dieses Geräts; nach dem Entziehen des Zugriffs steht „Kein Zugriff“ | nicht geprüft |
+| 13 | Schalter aus | Nichts liest mehr; vorhandene Werte bleiben | nicht geprüft |
+| 14 | `adb shell dumpsys package de.lf10.selfimprovement` | Als angeforderte Rechte stehen nur Benachrichtigungen, Neustart-Wiederherstellung und `android.permission.health.READ_STEPS`, kein Internet | nicht geprüft |
+
 ## 3. Abweichungen vom Figma-Entwurf und Gründe
 
 | Entwurf | Umsetzung | Grund |
