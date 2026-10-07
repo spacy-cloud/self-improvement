@@ -105,6 +105,9 @@ enum AppIcon {
   /// Empty state (sprout in Figma).
   sprout(Icons.eco_outlined),
 
+  /// Goals, "Meine Ziele" (target in Figma).
+  target(Icons.track_changes_rounded),
+
   /// Appearance setting (half circle).
   theme(Icons.contrast_rounded),
 
