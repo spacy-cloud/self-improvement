@@ -50,4 +50,8 @@ OptionLook goalLook(GoalType type) => switch (type) {
     accent: AppAccent.habits,
   ),
   GoalType.weightEntry => (icon: AppIcon.weight.data, accent: AppAccent.weight),
+  GoalType.workoutDaily => (
+    icon: AppIcon.workout.data,
+    accent: AppAccent.workout,
+  ),
 };

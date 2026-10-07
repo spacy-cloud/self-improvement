@@ -1,8 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:self_improvement/core/goals/domain/workout_day_mark_kind.dart';
 import 'package:self_improvement/core/time/fake_clock.dart';
 import 'package:self_improvement/features/focus/domain/muscle_group.dart';
 import 'package:self_improvement/features/focus/domain/muscle_recency.dart';
 import 'package:self_improvement/features/focus/domain/training_category.dart';
+import 'package:self_improvement/features/focus/domain/workout_daily_goal.dart';
+import 'package:self_improvement/features/focus/domain/workout_day_mark.dart';
 import 'package:self_improvement/features/focus/domain/workout_entry.dart';
 import 'package:self_improvement/features/focus/domain/workout_intensity.dart';
 import 'package:self_improvement/features/focus/domain/workout_week.dart';
@@ -216,6 +219,145 @@ void main() {
           today,
         ),
         'Beine, zuletzt vor 4 Tagen',
+      );
+    });
+  });
+
+  group('"Wie war dein Tag?" (BS-99)', () {
+    WorkoutDayState state({
+      List<WorkoutEntry> workouts = const [],
+      WorkoutDayMarkKind? kind,
+    }) => buildWorkoutDayState(
+      date: today,
+      workouts: workouts,
+      mark: kind == null
+          ? null
+          : WorkoutDayMark(
+              id: 'm',
+              date: today,
+              kind: kind,
+              timezoneId: 'Europe/Berlin',
+              rowVersion: 1,
+            ),
+    );
+
+    test('(BS-99) an open day: no training yet, still open', () {
+      final open = state();
+      expect(workoutDayValue(open), 'Noch kein Training');
+      expect(workoutDayCaption(open), 'Heute offen');
+      expect(workoutDaySpoken(open), 'Noch kein Training, Heute offen');
+      expect(workoutDayTakeBackLabel(open), 'Rückgängig');
+    });
+
+    test(
+      '(BS-99) a workout: its title and its muscle groups, or the meta line',
+      () {
+        final withGroups = state(
+          workouts: [
+            workout(
+              title: 'Upper Body',
+              groups: [
+                MuscleGroup.chest,
+                MuscleGroup.shoulders,
+                MuscleGroup.back,
+                MuscleGroup.biceps,
+                MuscleGroup.triceps,
+              ],
+            ),
+          ],
+        );
+        expect(workoutDayValue(withGroups), 'Upper Body');
+        expect(
+          workoutDayCaption(withGroups),
+          'Brust, Schultern, Rücken, Bizeps, Trizeps',
+        );
+        expect(
+          workoutDaySpoken(withGroups),
+          'Upper Body, Brust, Schultern, Rücken, Bizeps, Trizeps, '
+          'Tagesziel erreicht',
+        );
+
+        final plain = state(
+          workouts: [workout(intensity: WorkoutIntensity.moderate)],
+        );
+        expect(
+          workoutDayValue(plain),
+          'Kraft',
+          reason: 'no title: the category',
+        );
+        expect(workoutDayCaption(plain), 'Kraft · 60 Min. · Mittel');
+      },
+    );
+
+    test('(BS-99) several workouts: the latest title and the count', () {
+      final two = state(
+        workouts: [
+          workout(title: 'Morgens', at: DateTime.utc(2026, 10, 3, 5)),
+          workout(title: 'Abends', at: DateTime.utc(2026, 10, 3, 6)),
+        ],
+      );
+      expect(workoutDayValue(two), 'Abends');
+      expect(workoutDayCaption(two), '2 Trainings heute');
+    });
+
+    test('(BS-99) a rest day and a skipped day say what they are worth', () {
+      final rest = state(kind: WorkoutDayMarkKind.rest);
+      expect(workoutDayValue(rest), 'Ruhetag');
+      expect(
+        workoutDayCaption(rest),
+        'Zählt als erreicht, keine XP. Die Streak bleibt.',
+      );
+      expect(workoutDayCaption(rest), workoutDayMarkCounts);
+      expect(
+        workoutDaySpoken(rest),
+        'Ruhetag, Zählt als erreicht, keine XP. Die Streak bleibt., '
+        'Tagesziel erreicht',
+      );
+      expect(workoutDayTakeBackLabel(rest), 'Ruhetag rückgängig machen');
+
+      final skipped = state(kind: WorkoutDayMarkKind.skipped);
+      expect(workoutDayValue(skipped), 'Übersprungen');
+      expect(workoutDayCaption(skipped), workoutDayMarkCounts);
+      expect(
+        workoutDayTakeBackLabel(skipped),
+        'Überspringen rückgängig machen',
+      );
+    });
+
+    test('(BS-99) a workout wins over a mark in the texts too', () {
+      final both = state(
+        workouts: [workout(title: 'Doch trainiert')],
+        kind: WorkoutDayMarkKind.rest,
+      );
+      expect(workoutDayValue(both), 'Doch trainiert');
+      expect(workoutDayCaption(both), isNot(contains('keine XP')));
+    });
+
+    test('(BS-99) what the workout area says about the goal', () {
+      expect(
+        workoutDailyGoalPlanText(
+          const WorkoutDailyGoalPlan(today: false, tomorrow: false),
+        ),
+        'Aus. Einschalten bei den Zielen, gilt ab morgen.',
+      );
+      expect(
+        workoutDailyGoalPlanText(
+          const WorkoutDailyGoalPlan(today: true, tomorrow: true),
+        ),
+        'Ein. Training, Ruhetag oder Überspringen zählt als erreicht.',
+      );
+      expect(
+        workoutDailyGoalPlanText(
+          const WorkoutDailyGoalPlan(today: false, tomorrow: true),
+        ),
+        'Ab morgen ein. Training, Ruhetag oder Überspringen zählt dann als '
+        'erreicht.',
+      );
+      expect(
+        workoutDailyGoalPlanText(
+          const WorkoutDailyGoalPlan(today: true, tomorrow: false),
+        ),
+        'Ab morgen aus.',
       );
     });
   });
