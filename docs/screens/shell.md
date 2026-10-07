@@ -36,6 +36,7 @@ Dieses Dokument beschreibt den tatsächlich umgesetzten Zustand von Start, Route
 | `/profile` | `ProfileScreen` | Tab 3 | |
 | `/profile/edit` | `ProfileEditScreen` | Unterseite | |
 | `/goals` | `GoalsScreen` | Unterseite | |
+| `/goals/today` | `GoalsTodayScreen` | Unterseite | „Ziele heute“ (BS-103): die Ziele des Tages mit Stand, Ziel und Status; geöffnet von der Tageskarte auf Home. Kernseite ohne Modulsperre (der Tagesring läuft auch bei ausgeschalteten Modulen), ihre Zeilen kommen nur von aktiven Modulen. Details: [dashboard-gamification.md](dashboard-gamification.md) Abschnitt 12 |
 | `/settings` | `SettingsScreen` | Unterseite | |
 | `/settings/modules` | `ModulesScreen` | Unterseite | Modulverwaltung (Abschnitt 7) |
 | `/settings/data` | `DataScreen` | Unterseite | |
