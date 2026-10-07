@@ -166,28 +166,30 @@ final focusTodaySummaryProvider = Provider<AsyncValue<FocusTodaySummary>>((
 /// The focus time of one day (BS-93): the same summary as
 /// [focusTodaySummaryProvider], built by the same function, for the day Home
 /// shows when it is not today. Only SAVED durations of sessions completed on
-/// that day count, against the daily goal in effect on that day; an open
-/// session belongs to the present and plays no part. Released when no card
-/// shows it.
+/// that day count, against the goal that counted on that day: the one in the
+/// snapshot of that day, which is also the focus goal of the ring of that day
+/// (`dayStatusProvider`, the status Home already reads). When the goal did not
+/// apply then (switched off, or the module was off that day) there is no goal
+/// to measure against. An open session belongs to the present and plays no
+/// part. Released when no card shows it.
 final focusDaySummaryProvider = Provider.autoDispose
     .family<AsyncValue<FocusTodaySummary>, LocalDate>((ref, day) {
       final sessions = ref.watch(focusSessionsOnProvider(day));
-      final versions = ref.watch(goalVersionsProvider);
+      final status = ref.watch(dayStatusProvider(day));
       return sessions.when(
         loading: () => const AsyncLoading(),
         error: AsyncError.new,
         data: (completed) {
-          final goalVersions = versions.value;
-          if (goalVersions == null) {
-            return versions.hasError
-                ? AsyncError(versions.error!, versions.stackTrace!)
+          if (!status.hasValue) {
+            return status.hasError
+                ? AsyncError(status.error!, status.stackTrace!)
                 : const AsyncLoading();
           }
           return AsyncData(
             buildFocusTodaySummary(
               completed,
               today: day,
-              goalMinutes: focusGoalMinutesOn(goalVersions, day),
+              goalMinutes: focusGoalMinutesOfDay(status.value),
             ),
           );
         },

@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/foundation.dart';
+import 'package:self_improvement/core/goals/domain/day_status.dart';
 import 'package:self_improvement/core/goals/domain/goal_type.dart';
 import 'package:self_improvement/core/goals/domain/goal_version.dart';
 import 'package:self_improvement/core/time/clock_service.dart';
@@ -195,10 +196,23 @@ final class FocusTodaySummary {
 
 /// The daily focus goal in minutes that applies on [day] (the goal version in
 /// effect, or the default of 25 minutes), or null when the goal is switched
-/// off.
+/// off. It is the goal of TODAY: it ignores the module status. The card of a
+/// day before today reads the snapshot of that day instead
+/// ([focusGoalMinutesOfDay]).
 int? focusGoalMinutesOn(Iterable<GoalVersion> versions, LocalDate day) {
   final goal = effectiveGoalOrDefault(versions, GoalType.focusMinutes, day);
   return goal.enabled ? GoalType.focusMinutes.resolveTarget(goal.target) : null;
+}
+
+/// The daily focus goal in minutes that counted on the day of [status] (BS-93):
+/// the threshold frozen in the snapshot of that day, or null when the goal did
+/// not apply then (it was switched off, or the module "Fokus" was off that
+/// day). It is the focus goal of the ring of that day, so the card of a day and
+/// its ring cannot disagree. A day without a status (before the profile start)
+/// has no goal.
+int? focusGoalMinutesOfDay(DayStatus? status) {
+  final progress = status?.progressOf(GoalType.focusMinutes);
+  return progress != null && progress.applicable ? progress.target : null;
 }
 
 /// Today's summary from [sessions] (any statuses and days): only COMPLETED

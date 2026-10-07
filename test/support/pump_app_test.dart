@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -160,5 +162,64 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Zurück'));
     await tester.pumpAndSettle();
     expect(find.text('open'), findsOneWidget);
+  });
+  group('the time limit of the tear down (BS-98, R2-04)', () {
+    test('(BS-98, R2-04) work that never finishes fails with the message after '
+        'the limit instead of waiting for it', () async {
+      final stopwatch = Stopwatch()..start();
+      await expectLater(
+        finishWithin(
+          Completer<void>().future,
+          const Duration(milliseconds: 100),
+          message: 'closing never returns',
+        ),
+        throwsA(
+          isA<TestFailure>().having(
+            (failure) => failure.message,
+            'message',
+            'closing never returns',
+          ),
+        ),
+      );
+      expect(
+        stopwatch.elapsed,
+        greaterThanOrEqualTo(const Duration(milliseconds: 100)),
+      );
+      expect(stopwatch.elapsed, lessThan(const Duration(seconds: 10)));
+    }, timeout: const Timeout(Duration(seconds: 20)));
+
+    test('(BS-98, R2-04) work that finishes within the limit passes, also '
+        'when it takes a moment', () async {
+      await finishWithin(
+        Future<void>.delayed(const Duration(milliseconds: 30)),
+        const Duration(seconds: 5),
+        message: 'must not fail',
+      );
+    });
+
+    test('(BS-98, R2-04) an error of the work comes through and is not hidden '
+        'by the limit', () async {
+      await expectLater(
+        finishWithin(
+          Future<void>.error(StateError('close failed')),
+          const Duration(seconds: 5),
+          message: 'must not be this one',
+        ),
+        throwsA(isA<StateError>()),
+      );
+    });
+
+    test('(BS-98, R2-04) the limit of the tear down is far above a normal '
+        'close (at most 16 ms in the whole suite) and below the time a run '
+        'would hang', () {
+      expect(
+        databaseCloseLimit,
+        greaterThanOrEqualTo(const Duration(seconds: 15)),
+      );
+      expect(
+        databaseCloseLimit,
+        lessThanOrEqualTo(const Duration(seconds: 30)),
+      );
+    });
   });
 }

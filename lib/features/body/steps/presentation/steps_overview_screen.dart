@@ -12,6 +12,7 @@ import 'package:self_improvement/features/body/steps/application/steps_providers
 import 'package:self_improvement/features/body/steps/application/steps_stats.dart';
 import 'package:self_improvement/features/body/steps/domain/health_steps_status.dart';
 import 'package:self_improvement/features/body/steps/domain/step_source.dart';
+import 'package:self_improvement/features/body/steps/presentation/health_notice_actions.dart';
 import 'package:self_improvement/features/body/steps/presentation/health_notice_card.dart';
 import 'package:self_improvement/features/body/steps/presentation/health_steps_labels.dart';
 import 'package:self_improvement/features/body/steps/presentation/steps_chart.dart';
@@ -218,7 +219,8 @@ class _HealthBlock extends ConsumerWidget {
           ? null
           : HealthNoticeCard(
               notice: notice,
-              onAction: (action) => unawaited(actions.perform(action)),
+              onAction: (action) =>
+                  unawaited(performHealthNoticeAction(context, ref, action)),
             );
     }
     return block == null

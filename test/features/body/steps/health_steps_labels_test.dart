@@ -4,6 +4,7 @@ import 'package:self_improvement/core/time/clock_service.dart';
 import 'package:self_improvement/core/time/fake_clock.dart';
 import 'package:self_improvement/features/body/steps/domain/health_steps_status.dart';
 import 'package:self_improvement/features/body/steps/presentation/health_steps_labels.dart';
+import 'package:self_improvement/shared/local_date.dart';
 
 /// The state of the Health comparison and its German texts (BS-97): which
 /// state a combination of wish, device answer and run is, and what each state
@@ -390,6 +391,66 @@ void main() {
         'nicht mehr.',
       );
       expect(healthDeleteRefillText, contains('trägt Health den Tag'));
+    });
+  });
+  group('the sentence of the delete confirmation (BS-97, R2-05)', () {
+    final today = LocalDate(2026, 10, 3);
+
+    String sentence(HealthStepsStatus value, {LocalDate? day}) =>
+        healthDeleteRefillTextFor(value, day: day ?? today, today: today);
+
+    test('(BS-97, R2-05) it is there when Health delivers and the day is one '
+        'of the days a comparison reads', () {
+      for (var back = 0; back <= 6; back++) {
+        expect(
+          sentence(status(), day: today.addDays(-back)),
+          healthDeleteRefillText,
+          reason: '$back days back',
+        );
+      }
+    });
+
+    test('(BS-97, R2-05) it is not there for a day no comparison reads', () {
+      for (final back in [7, 8, 60]) {
+        expect(
+          sentence(status(), day: today.addDays(-back)),
+          isEmpty,
+          reason: '$back days back',
+        );
+      }
+      expect(sentence(status(), day: today.addDays(1)), isEmpty);
+    });
+
+    test('(BS-97, R2-05) it is not there when nothing is read: switch off, no '
+        'access, no interface, an outdated one, an unknown state, a failed '
+        'comparison, module off', () {
+      final silent = <(String, HealthStepsStatus)>[
+        ('switch off', status(enabled: false)),
+        ('no access', status(access: HealthAccess.denied)),
+        (
+          'interface missing',
+          status(availability: HealthAvailability.missing, access: null),
+        ),
+        (
+          'interface outdated',
+          status(availability: HealthAvailability.updateRequired, access: null),
+        ),
+        ('not asked yet', status(availability: null, access: null)),
+        ('last comparison failed', status(failed: true)),
+        ('module off', status(bodyEnabled: false)),
+      ];
+      for (final (name, value) in silent) {
+        expect(sentence(value), isEmpty, reason: name);
+      }
+    });
+
+    test('(BS-97, R2-05) the sentence itself still names the switch and the '
+        'next comparison', () {
+      expect(
+        healthDeleteRefillText,
+        contains('Schritte aus Health übernehmen'),
+      );
+      expect(healthDeleteRefillText, contains('beim nächsten Abgleich'));
     });
   });
 }

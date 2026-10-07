@@ -123,7 +123,7 @@ Hinweis zum Testen: Aufrufe von `FocusRestorer.restore()` im Widget-Test laufen 
 
 ## 8. Offene Punkte und Integration
 
-Erledigt (Stand `c0ce096`): `FocusModule` ist in `bundledModules` registriert (Routen, Karten, Plus-Einträge); `initialize` läuft über den Modul-Lebenszyklus beim Start und bei Reaktivierung; die Dashboard-Karte hält `focusCountdownProvider` am Leben, sodass der Übergang in die Bestätigung auch ohne Fokusbildschirm stattfindet; die Modulverwaltung führt bei `MustResolveFirst` zu `/focus/session` (`focusDeactivationResolveRoute`); `feedbackServiceProvider` ist mit der Snackbar überschrieben; "Wochenziel ändern" öffnet den Zieleditor `/goals`; das Plus-Menü springt bei offener Sitzung direkt zu `/focus/session` (Abschnitt 5).
+Erledigt (Stand `577a853`): `FocusModule` ist in `bundledModules` registriert (Routen, Karten, Plus-Einträge); `initialize` läuft über den Modul-Lebenszyklus beim Start und bei Reaktivierung; die Dashboard-Karte hält `focusCountdownProvider` am Leben, sodass der Übergang in die Bestätigung auch ohne Fokusbildschirm stattfindet; die Modulverwaltung führt bei `MustResolveFirst` zu `/focus/session` (`focusDeactivationResolveRoute`); `feedbackServiceProvider` ist mit der Snackbar überschrieben; "Wochenziel ändern" öffnet den Zieleditor `/goals`; das Plus-Menü springt bei offener Sitzung direkt zu `/focus/session` (Abschnitt 5).
 
 Offen:
 
@@ -134,7 +134,7 @@ Offen:
 
 ## 9. v0.2.0: Tagesziel „Workout heute“, Ruhetag und Überspringen (BS-99)
 
-Ticket [BS-99](https://spacy-cloud.atlassian.net/browse/BS-99) (Bug, High). Entscheidungen D-024 und D-025 in [../implementation-decisions.md](../implementation-decisions.md). Der Datenvertrag (Tabelle `workout_day_marks`, Zieltyp `workout_daily`) kommt aus PR 8 (D-015, D-016); dieses Paket ändert weder Schema noch Backup. Entwurf (Figma, Datei LF10-Desing-App, Seite „v0.2.0 – Neue Screens“, Stand Entwurf, Freigabe liegt bei Joern): Karten-Zustände `4123:316`, Sheet „Wie war dein Tag?“ Hell `4117:473`, Dunkel `4117:770`, OLED `4117:1067`, Ziele bearbeiten `4117:249` (aus) und `4117:361` (an), „Ziele heute“ `4114:327` (baut BS-100 später).
+Ticket [BS-99](https://spacy-cloud.atlassian.net/browse/BS-99) (Bug, High). Entscheidungen D-024 und D-025 in [../implementation-decisions.md](../implementation-decisions.md). Der Datenvertrag (Tabelle `workout_day_marks`, Zieltyp `workout_daily`) kommt aus PR 8 (D-015, D-016); dieses Paket ändert weder Schema noch Backup. Entwurf (Figma, Datei LF10-Desing-App, Seite „v0.2.0 – Neue Screens“, Stand Entwurf, Freigabe liegt beim Projektinhaber): Karten-Zustände `4123:316`, Sheet „Wie war dein Tag?“ Hell `4117:473`, Dunkel `4117:770`, OLED `4117:1067`, Ziele bearbeiten `4117:249` (aus) und `4117:361` (an), „Ziele heute“ mit Workout und Wochenziel `4114:327` (gebaut mit BS-100, [dashboard-gamification.md](dashboard-gamification.md) Abschnitt 12).
 
 ### 9.1 Was das Ticket verlangt und was V1 tat (Reproduktion)
 
@@ -176,10 +176,10 @@ Der Haken, das einzige „erledigt“-Zeichen der Karte, erscheint also erst bei
 | Werte in 16 halbfett (offen) und 17 fett (übrige); Mond grün, Überspringen-Symbol orange | durchgehend 16 halbfett (`titleCard`), beide Symbole im Modul-Akzent | „Übersprungen“ in 17 fett passt nicht neben das Symbol in eine halbe Karte; ein Stil für alle Zustände |
 | „Brust, Schulter, …“ | „Brust, Schultern, …“ | Name der Muskelgruppe im Code |
 | Sheet über Home mit geöffnetem Plus-Menü, Navigationsleiste sichtbar | modales Sheet über der ganzen Seite, geöffnet von der Karte oder vom Workout-Bereich | Das Plus-Menü gehört der Shell (BS-117 ändert es gleichzeitig); ein Sheet über der Navigationsleiste macht den Hintergrund inaktiv |
-| Karte ohne Wochenstand (Ziel an) | wie im Entwurf | der Wochenstand steht im Workout-Bereich und später auf „Ziele heute“ (BS-100) |
+| Karte ohne Wochenstand (Ziel an) | wie im Entwurf | der Wochenstand steht im Workout-Bereich und auf „Ziele heute“ in der Gruppe „Wochenziel · nicht im Tagesring“ (BS-100) |
 | Karte bei ausgeschaltetem Ziel nicht entworfen | die Wochenkarte wie bisher | Entscheidung D-024 (Standard aus) |
 | Zeile „Tagesziel „Workout heute““ im Workout-Bereich, Karte „Heute“ dort | nicht im Entwurf | Standard aus: ohne die Zeile fände man das Ziel nur im Profil; Auftrag: Sheet vom Workout-Bereich aus erreichbar |
-| „Ziele heute“ (`4114:327`) | nicht gebaut | BS-100 |
+| „Ziele heute“ mit Workout und Wochenziel (`4114:327`) | nicht Teil von BS-99; gebaut mit BS-100 | Die Seite gehört zu BS-100; ihre Abweichungen vom Entwurf stehen in [dashboard-gamification.md](dashboard-gamification.md) 12.7 |
 
 `MetricCard` (`lib/core/design/components/metric_card.dart`, gemeinsame Datei) hat zwei neue optionale Parameter: `valueStyle` (kleinerer Stil für einen Text statt einer Zahl) und `valueIcon` (Symbol vor dem Wert, in einem `Wrap`, damit ein langes Wort unter das Symbol rückt statt mitten im Wort zu brechen). Kein bestehender Aufruf ändert sich. Außerdem brauchen zwei Auswahlen über `GoalType` im Onboarding einen Zweig für den neuen Wert (`daily_goal_stepper.dart`, `goalTitle`, und `option_icons.dart`, `goalLook`); das Onboarding bietet das Ziel nicht an.
 
@@ -228,7 +228,7 @@ Gesamtzahl: 245 neue Tests gegenüber der Basis (PR 8: 6657, danach 6902). Beste
 
 - Nur Host-Tests. Nicht auf einem Gerät geprüft: TalkBack, echte Systemschrift, Darstellung auf dem Telefon, die Reihenfolge der Snackbar mit dem Sheet.
 - Ruhetag und Überspringen lassen sich nur für **heute** setzen und zurücknehmen; ein vergessener Tag in der Vergangenheit lässt sich in der Oberfläche nicht nachtragen (das Repository nimmt ein Datum entgegen, eine Oberfläche dafür gibt es nicht). Die Streak bleibt dann unterbrochen.
-- Die Seite „Ziele heute“ (BS-100) liest später `DayStatus.progressOf(GoalType.workoutDaily)` und `workoutDayStateProvider` (Zustand, Art, `takeBackMark`).
+- Die Seite „Ziele heute“ (BS-100) liest `DayStatus.progressOf(GoalType.workoutDaily)` und `workoutDayStateProvider` (Zustand, Art, `takeBackMark`); für einen vergangenen Tag (BS-93) liest sie `workoutDayStateOnProvider` (Abschnitt 10).
 - Das Plus-Menü führt für „Workout“ weiter direkt zum Formular.
 
 ## 10. v0.2.0: Karten an einem vergangenen Tag (BS-93)
@@ -236,5 +236,5 @@ Gesamtzahl: 245 neue Tests gegenüber der Basis (PR 8: 6657, danach 6902). Beste
 Zeigt Home einen der letzten sieben Tage ([dashboard-gamification.md](dashboard-gamification.md) Abschnitt 13), bauen sich die Karten „Workout“ und „Fokus“ für diesen Tag und nur lesend (`WorkoutPastDayCard`, `FocusPastDayCard`; die Karten von heute sind unverändert).
 
 - **Workout** zeigt, was der **Tag** war (`workoutDayStateOnProvider`: dieselbe Funktion `buildWorkoutDayState` wie bei `workoutDayStateProvider`, mit dem Tag): den Titel des neuesten Trainings und die Muskelgruppen, bei mehreren „2 Trainings an diesem Tag“, einen Ruhetag oder „Übersprungen“ mit dem Satz, was sie wert sind („Zählt als erreicht, keine XP. Die Streak bleibt.“), oder „–“ mit „Kein Training eingetragen“. Die Woche ist kein Tageswert und bleibt auf der Karte von heute. **Keine Aktion:** „Wie war dein Tag?“, „Training eintragen“ und „Rückgängig“ gibt es an einem vergangenen Tag nicht (Ruhetag und Überspringen lassen sich nur für heute setzen und zurücknehmen, 9.2); die Karte öffnet den Workout-Bereich.
-- **Fokus** zeigt die gespeicherte Fokuszeit der an diesem Tag abgeschlossenen Sitzungen gegen das Ziel, das an diesem Tag galt (`focusDaySummaryProvider`, dieselbe Funktion `buildFocusTodaySummary`), mit Sätzen der Vergangenheit („Tagesziel erreicht“, „Es fehlten 5 Min. bis zum Tagesziel“, „2 Sitzungen“); eine offene Sitzung gehört zur Gegenwart und fehlt, ebenso „Fokus fortsetzen“. Ein Tag ohne Sitzung zeigt „–“ mit dem Ziel und „Keine Sitzung an diesem Tag“, keine „0 Min.“.
+- **Fokus** zeigt die gespeicherte Fokuszeit der an diesem Tag abgeschlossenen Sitzungen gegen das Ziel, das an diesem Tag galt (`focusDaySummaryProvider`, dieselbe Funktion `buildFocusTodaySummary`), mit Sätzen der Vergangenheit („Tagesziel erreicht“, „Es fehlten 5 Min. bis zum Tagesziel“); eine offene Sitzung gehört zur Gegenwart und fehlt, ebenso „Fokus fortsetzen“. Das Ziel kommt aus dem Snapshot dieses Tages, nicht aus den Zielversionen: `focusGoalMinutesOfDay` liest das Fokusziel aus `dayStatusProvider(tag)`, dem Status, den auch der Ring dieses Tages zeigt, wie die Karten für Wasser und Schritte. Galt das Fokusziel an dem Tag nicht (das Modul war aus oder das Ziel ausgeschaltet), steht „Kein Tagesziel an diesem Tag“ mit der Fokuszeit in Minuten, ohne „Es fehlten … Min.“ und ohne Balken (vorher hätte ein Tag mit ausgeschaltetem Modul das heutige Ziel gezeigt, während der Ring es nicht zählte). Ein Tag ohne Sitzung zeigt „–“ mit dem Ziel und „Keine Sitzung an diesem Tag“, keine „0 Min.“.
 - Auf „Ziele heute“ für einen vergangenen Tag beantwortet `workoutDayStateOnProvider` die Zeile „Workout heute“ mit dem Workout und der Markierung **dieses** Tages.

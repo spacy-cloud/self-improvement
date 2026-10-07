@@ -153,7 +153,7 @@ Der Sichtvergleich war ein Augenschein an im Host gerenderten Bildern (393 px in
 
 ## 6. Tests
 
-Befehle: `flutter test test/features/tasks` (1114 Tests, davon 162 neu mit BS-111 und 144 neu mit BS-110), `flutter test` (gesamt), `dart run tool/at_coverage.dart`. Die Tests der Engine für BS-111 stehen in [data-reminders.md](data-reminders.md), Abschnitt 6.
+Befehle: `flutter test test/features/tasks` (1129 Tests, davon 162 neu mit BS-111, 144 neu mit BS-110 und 15 neu mit BS-93), `flutter test` (gesamt), `dart run tool/at_coverage.dart`. Die Tests der Engine für BS-111 stehen in [data-reminders.md](data-reminders.md), Abschnitt 6.
 
 | Datei (unter `test/features/tasks/`, sonst mit Pfad) | Inhalt | Akzeptanz |
 |---|---|---|
@@ -165,9 +165,10 @@ Befehle: `flutter test test/features/tasks` (1114 Tests, davon 162 neu mit BS-11
 | `presentation/habit_detail_test.dart` (14) | Serie und Quote, Nachtragen und Undo, gesperrte Tage, Liste, Archivieren, beendete Gewohnheit | AT12, AT21, AT23, AT24, AT27, T02, G01, G02, C08 |
 | `presentation/tasks_dashboard_card_test.dart` (17) | die Aufgaben auf der Karte „Heute abhaken“: drei offene, Erledigen in einem Tipp (die Aufgabe bleibt, durchgestrichen, „Erledigt um 08:15“), Wiederöffnen, Undo, Fehler, leer, Tageswechsel | AT12, AT13, AT25, AT27, AT33, T01 |
 | `domain/today_checklist_test.dart` (31) | Liste der Karte als reine Funktion: Reihenfolge, Grenzen, Zählung, Sprechtexte | AT21, T01, T02 |
-| `application/today_checklist_providers_test.dart` (10) | Karte folgt Haken, Aufgaben, Tageswechsel, Fehler; ein Lesemodell mit dem Tab, die Karte unabhängig vom gewählten Tag | AT25, C04 |
+| `application/today_checklist_providers_test.dart` (11) | Karte folgt Haken, Aufgaben, Tageswechsel, Fehler; ein Lesemodell mit dem Tab, die Karte unabhängig vom gewählten Tag; die Karte eines Tages, der durch den Zeitzonenwechsel nach Westen zu heute wird, ist nur im Ladezustand (BS-93) | AT25, C04 |
 | `presentation/habits_dashboard_card_test.dart` (37) | Gewohnheiten auf der Karte: Abhaken, Rückgängig, Doppeltipp, Wiederholung mit gleicher ID, Gleichstand mit dem Tab in beide Richtungen, Typen und Sprechtexte, Zustände, nur lesend, große Schrift | AT12, AT21, AT25, AT27, AT33, AT34, C04, T02 |
 | `presentation/home_checklist_test.dart` (13) | echtes Home mit echtem Tab: Platz der Karte, Gleichstand über die Navigation, XP, Weg zur ersten Gewohnheit, Modul-Tor, Breiten, Dunkel und OLED | AT03, AT21, AT33, AT35, C04 |
+| `domain/day_checklist_test.dart` (14, BS-93) | Karte „Aufgaben und Gewohnheiten“ eines vergangenen Tages als reine Funktion: nur die an diesem Tag erledigten Aufgaben (keine offenen), alle Gewohnheiten des Tages mit ihrem Stand, kein Limit und keine Zeilen „und N weitere“, Zählung „x von y erledigt“ über diese Zeilen, Sprechtexte „an diesem Tag“ (nie „heute“), leerer Tag | AT34 |
 | `presentation/tasks_module_test.dart` (7) | Karte, Plus-Einträge, Routenreihenfolge (`/tasks/new` ist nie eine ID) | BS-53 |
 | `presentation/responsive_a11y_test.dart` (128) | alle Screens bei 320, 360, 393, 430 px mit 100 % und 200 % Text ohne Überlauf, Tap-Ziele und Labels, Themes Light, Dark und OLED, Screenreader-Texte, reduzierte Bewegung | AT33 |
 | `presentation/contrast_test.dart` (153) | Kontrast der verwendeten Farbpaare in drei Themes, mit BS-111 auch die des Blocks „Erinnerung“ (Hinweis, seine Aktion, Entfernen: 12 neue Tests), mit BS-110 auch die der Zeilen der Karte „Heute abhaken“ (Typ-Chip, Symbole, Kästchen, Häkchen, Zähler) | AT33 |
@@ -194,5 +195,4 @@ Visuelle Prüfung: jeder Screen wurde als Widget-Test bei 393 x 852 (Light) und 
 - BS-111: Die Dialoge „Datum der Erinnerung“ und „Uhrzeit der Erinnerung“ sind getestet, indem ein Tag gewählt und mit dem angebotenen Wert bestätigt oder abgebrochen wird; das Drehen am Zifferblatt für eine andere Uhrzeit ist nicht getestet (die Regeln dahinter prüft der Controller mit Datum und Uhrzeit der Zone). Zustellung, Antippen und die Dialoge sind auf keinem Gerät gesehen; die Grenzen der Erinnerung je Aufgabe stehen in [known-limitations.md](../known-limitations.md).
 - TalkBack, Systemschrift und Zeitzonenwechsel auf einem Gerät sind nicht prüfbar.
 - Home „Heute abhaken“ (BS-110): nur Host-Tests; Sprechtexte, Systemschrift, Daumenreichweite und das Verhalten der Snackbar über der Navigation sind auf keinem Gerät gesehen. Die Grenzen drei Aufgaben und fünf Gewohnheiten sind Standardwerte (D-028), das Ticket nennt keine.
-- Vergangene Tage auf Home (BS-93, später): die Karte hat den Zustand „nur lesend“ (`readOnly`), aber noch keinen Parameter für einen anderen Tag; der Leerzustand und die Überschrift sagen „heute“. BS-93 muss beides anpassen und die Liste für einen Tag bauen (`buildTodayChecklist` nimmt die Gewohnheitsliste von heute).
 - Die Shell registriert `HabitsTabScreen` auf `/habits` und sichert die Modulrouten zentral ab (`guardModuleRoutes`). Bei ausgeschaltetem Aufgabenmodul ersetzt `ModuleTabGate` den Tab-Inhalt (siehe [shell.md](shell.md), Abschnitt 4).

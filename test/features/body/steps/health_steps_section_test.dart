@@ -23,6 +23,7 @@ import 'package:self_improvement/shared/local_time.dart';
 
 import '../../../support/pump_app.dart';
 import '../../profile/support/screen_env.dart';
+import 'support/explanation_sheet_support.dart';
 
 /// The group "Schritte" of the settings with the switch "Schritte aus Health
 /// übernehmen" (BS-97, design frames `4122:314` and `4122:509`): hidden
@@ -357,6 +358,10 @@ void main() {
       await tester.ensureVisible(find.text('Zugriff erlauben'));
       await tester.tap(find.text('Zugriff erlauben'));
       await settle(tester);
+      expect(find.byType(HealthExplanationSheet), findsOneWidget);
+      expect(source.requestAccessCalls, 0, reason: 'the explanation is first');
+      await tester.tap(find.text('Weiter zur Systemabfrage'));
+      await settle(tester);
       expect(source.requestAccessCalls, 1, reason: 'the dialog is open');
       expect(action('Zugriff erlauben').onPressed, isNull);
       expect(action('Einstellungen öffnen').onPressed, isNull);
@@ -411,6 +416,9 @@ void main() {
       source.accessAfterRequest = HealthAccess.granted;
       await tester.ensureVisible(find.text('Zugriff erlauben'));
       await tester.tap(find.text('Zugriff erlauben'));
+      await settle(tester);
+      expect(find.byType(HealthExplanationSheet), findsOneWidget);
+      await tester.tap(find.text('Weiter zur Systemabfrage'));
       await settle(tester);
       expect(find.byType(HealthNoticeCard), findsNothing);
       expect(find.text('Zuletzt abgeglichen: heute, 10:00'), findsOneWidget);
@@ -495,6 +503,113 @@ void main() {
       expect(env.feedback.last?.onRetry, isNotNull);
       expect(source.requestAccessCalls, 0);
       expect(source.totalCalls, isEmpty);
+    });
+  });
+
+  group('"Zugriff erlauben" in the notice shows the explanation first '
+      '(BS-97, R2-01, AT28)', () {
+    /// The wish came with an imported backup: the explanation was never shown
+    /// on this device and the system has not been asked.
+    Future<ScreenEnv> importedWithoutAccess(
+      WidgetTester tester,
+      FakeHealthStepsSource source,
+    ) async {
+      final env = await _env(tester, source);
+      _noon(env, source, _today, 4000);
+      await _wish(tester, env);
+      await _open(tester, env);
+      expect(find.byType(HealthNoticeCard), findsOneWidget);
+      expect(find.byType(HealthExplanationSheet), findsNothing);
+      return env;
+    }
+
+    Future<void> tapAllow(WidgetTester tester) async {
+      await tester.ensureVisible(find.text('Zugriff erlauben'));
+      await tester.tap(find.text('Zugriff erlauben'));
+      await settle(tester);
+    }
+
+    testWidgets('(BS-97, R2-01, AT28) after an import with the switch on the '
+        'tap shows the explanation and no dialog, "Weiter zur Systemabfrage" '
+        'asks once and compares', (tester) async {
+      final source = FakeHealthStepsSource(accessValue: HealthAccess.denied)
+        ..accessAfterRequest = HealthAccess.granted;
+      final env = await importedWithoutAccess(tester, source);
+
+      await tapAllow(tester);
+      expect(find.byType(HealthExplanationSheet), findsOneWidget);
+      expect(find.text('Schritte aus Health übernehmen?'), findsOneWidget);
+      expect(find.text('Weiter zur Systemabfrage'), findsOneWidget);
+      expect(find.text('Nicht jetzt'), findsOneWidget);
+      expect(source.requestAccessCalls, 0, reason: 'no dialog yet');
+      expect(source.totalCalls, isEmpty, reason: 'nothing is read yet');
+
+      await tester.tap(find.text('Weiter zur Systemabfrage'));
+      await settle(tester);
+      expect(find.byType(HealthExplanationSheet), findsNothing);
+      expect(source.requestAccessCalls, 1);
+      expect(find.byType(HealthNoticeCard), findsNothing);
+      expect(source.totalCalls, hasLength(7));
+      expect(
+        env.feedback.last?.message,
+        'Zugriff erlaubt. Die Schritte werden übernommen.',
+      );
+    });
+
+    for (final how in SheetDismissal.values) {
+      testWidgets('(BS-97, R2-01, AT28) ${how.label} closes the explanation '
+          'and changes nothing: no dialog, nothing read, the notice stays', (
+        tester,
+      ) async {
+        final source = FakeHealthStepsSource(accessValue: HealthAccess.denied)
+          ..accessAfterRequest = HealthAccess.granted;
+        final env = await importedWithoutAccess(tester, source);
+
+        await tapAllow(tester);
+        expect(find.byType(HealthExplanationSheet), findsOneWidget);
+        await dismissExplanationSheet(tester, how, () => settle(tester));
+
+        expect(find.byType(HealthExplanationSheet), findsNothing);
+        expect(source.requestAccessCalls, 0);
+        expect(source.totalCalls, isEmpty);
+        expect(find.byType(HealthNoticeCard), findsOneWidget);
+        expect(_isOn(tester), isTrue, reason: 'the wish stays');
+        expect(env.feedback.last, isNull);
+        // The buttons work again: a second tap shows the explanation again.
+        await tapAllow(tester);
+        expect(find.byType(HealthExplanationSheet), findsOneWidget);
+        expect(source.requestAccessCalls, 0);
+      });
+    }
+
+    testWidgets('(BS-97, R2-01, AT28) the notice that asks again after a '
+        'refusal shows the explanation again', (tester) async {
+      final source = FakeHealthStepsSource(accessValue: HealthAccess.denied)
+        ..accessAfterRequest = HealthAccess.denied;
+      final env = await importedWithoutAccess(tester, source);
+
+      for (var round = 1; round <= 2; round++) {
+        await tapAllow(tester);
+        expect(find.byType(HealthExplanationSheet), findsOneWidget);
+        expect(source.requestAccessCalls, round - 1);
+        await tester.tap(find.text('Weiter zur Systemabfrage'));
+        await settle(tester);
+        expect(source.requestAccessCalls, round);
+        expect(find.byType(HealthNoticeCard), findsOneWidget);
+      }
+      expect(env.feedback.last?.kind, 'info');
+    });
+
+    testWidgets('(BS-97, R2-01) the other button of the notice asks for no '
+        'explanation: it opens the system settings at once', (tester) async {
+      final source = FakeHealthStepsSource(accessValue: HealthAccess.denied);
+      await importedWithoutAccess(tester, source);
+      await tester.ensureVisible(find.text('Einstellungen öffnen'));
+      await tester.tap(find.text('Einstellungen öffnen'));
+      await settle(tester);
+      expect(find.byType(HealthExplanationSheet), findsNothing);
+      expect(source.accessSettingsCalls, 1);
+      expect(source.requestAccessCalls, 0);
     });
   });
 

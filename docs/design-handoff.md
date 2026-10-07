@@ -1,6 +1,6 @@
 # Design-Handoff
 
-Übergabe des freigegebenen Designs (V1, 2026-10-02) an die Flutter-Umsetzung. Quelle sind das Confluence-Handoff „LF10a Design-Handoff“ (Version 1) und das lokale Übergabemanifest; die Figma-Datei wurde im Umsetzungslauf zusätzlich über Lesezugriff geprüft. Dieses Dokument ändert keine Fachregel. Die Confluence-Seite wird im Umsetzungslauf nicht verändert; bei Designänderungen sind beide zu aktualisieren.
+Übergabe des freigegebenen Designs (V1, 2026-10-02) an die Flutter-Umsetzung. Quelle sind das Confluence-Handoff „LF10a Design-Handoff“ (Version 1) und das lokale Übergabemanifest; die Figma-Datei wurde im Umsetzungslauf zusätzlich über Lesezugriff geprüft. Dieses Dokument ändert keine Fachregel. Die Confluence-Seite wird im Umsetzungslauf nicht verändert; bei Designänderungen sind beide zu aktualisieren. Die Entwürfe für v0.2.0 (Figma-Seite „v0.2.0 – Neue Screens“) stehen in Abschnitt 10; sie sind noch nicht vom Projektinhaber freigegeben.
 
 ## 1. Quelle, Freigabestand und verwendeter Stand
 
@@ -8,7 +8,7 @@
 |---|---|
 | Figma-Datei | [LF10-Desing-App](https://www.figma.com/design/K4IWQEjnzuNkRUzkq8JaKz/LF10-Desing-App), File-Key `K4IWQEjnzuNkRUzkq8JaKz` |
 | Team / Plan | IA24, Figma Education |
-| Seiten | `Screens` (86 Frames), `Design System` (18 Komponenten) |
+| Seiten | `Screens` (86 Frames), `Design System` (18 Komponenten), seit v0.2.0 `v0.2.0 – Neue Screens` (53 Frames, Abschnitt 10) |
 | Freigabe | Design-Freigabe V1 vom 2026-10-02 (gilt) |
 | Benannte Figma-Version „Design-Freigabe V1 – 2026-10-02“ | Laut Jira [BS-49](https://spacy-cloud.atlassian.net/browse/BS-49) noch **nicht gespeichert** (formaler Restpunkt, keine Implementierungssperre). Der Figma-MCP bietet keinen Zugriff auf die Versionshistorie; der Stand ist daher nicht unabhängig bestätigt. |
 | Im Lauf gelesener Stand | 2026-10-03, Figma-MCP-Lesezugriff auf Designsystem-Variablen und die unten genannten Referenzscreens (Abschnitt 8) |
@@ -379,7 +379,7 @@ Offene formale Punkte bleiben die gespeicherte Figma-Version und der App-Name (A
 
 ## 9. Abweichungen vom Figma-Entwurf und Ergänzungen
 
-Stand: 2026-10-03, Code-Stand `c0ce096`. Dieser Abschnitt fasst die Abweichungstabellen der Screen-Dokumente in einer Tabelle zusammen, nach Bereichen geordnet und ohne Doppelungen. Den ausführlichen Wortlaut, die Konflikte zwischen Entwurf, Spezifikation und Auftrag und die Barrierefreiheit hat das jeweilige Dokument: [Shell](screens/shell.md), [Dashboard und Gamification](screens/dashboard-gamification.md), [Gewicht und Schritte](screens/body-weight-steps.md), [Ernährung](screens/nutrition.md), [Aufgaben und Gewohnheiten](screens/tasks-habits.md), [Fokus und Workouts](screens/focus-workouts.md), [Analyse](screens/analysis.md), [Daten und Erinnerungen](screens/data-reminders.md), [Onboarding](screens/onboarding.md), [Profil und Einstellungen](screens/profile-settings.md). Abweichungen im Designsystem selbst (Kontrastkorrekturen, Maße, Schatten, Icons) stehen in Abschnitt 8.4, freigegebene Abweichungen gegenüber älteren Frames in Abschnitt 6. Die Spezifikation hat bei Konflikten Vorrang vor Platzhaltern und Beispielwerten der Frames.
+Stand: 2026-10-03, Code-Stand `c0ce096` (V1). Die Abweichungen der Entwürfe von v0.2.0 stehen in den Screen-Dokumenten (Abschnitt 10.2), nicht in dieser Tabelle. Dieser Abschnitt fasst die Abweichungstabellen der Screen-Dokumente in einer Tabelle zusammen, nach Bereichen geordnet und ohne Doppelungen. Den ausführlichen Wortlaut, die Konflikte zwischen Entwurf, Spezifikation und Auftrag und die Barrierefreiheit hat das jeweilige Dokument: [Shell](screens/shell.md), [Dashboard und Gamification](screens/dashboard-gamification.md), [Gewicht und Schritte](screens/body-weight-steps.md), [Ernährung](screens/nutrition.md), [Aufgaben und Gewohnheiten](screens/tasks-habits.md), [Fokus und Workouts](screens/focus-workouts.md), [Analyse](screens/analysis.md), [Daten und Erinnerungen](screens/data-reminders.md), [Onboarding](screens/onboarding.md), [Profil und Einstellungen](screens/profile-settings.md). Abweichungen im Designsystem selbst (Kontrastkorrekturen, Maße, Schatten, Icons) stehen in Abschnitt 8.4, freigegebene Abweichungen gegenüber älteren Frames in Abschnitt 6. Die Spezifikation hat bei Konflikten Vorrang vor Platzhaltern und Beispielwerten der Frames.
 
 ### 9.1 Abweichungen
 
@@ -444,7 +444,7 @@ Stand: 2026-10-03, Code-Stand `c0ce096`. Dieser Abschnitt fasst die Abweichungst
 
 ### 9.2 Ergänzungen des Designsystems
 
-Bausteine und Parameter, die im Figma-Designsystem nicht vorkommen und für die Screens nötig wurden. Jede Ergänzung ist in `lib/core/design` oder `lib/core/feedback` vorhanden (geprüft am Code-Stand `c0ce096`) und mit Tests belegt (`test/core/design`, `test/core/feedback`, Tests der Screens, die sie nutzen).
+Bausteine und Parameter, die im Figma-Designsystem nicht vorkommen und für die Screens nötig wurden. Jede Ergänzung ist in `lib/core/design` oder `lib/core/feedback` vorhanden (geprüft am Code-Stand `577a853`) und mit Tests belegt (`test/core/design`, `test/core/feedback`, Tests der Screens, die sie nutzen).
 
 | Baustein | Ergänzung | Zweck | Datei und Verwendung |
 |---|---|---|---|
@@ -462,5 +462,50 @@ Bausteine und Parameter, die im Figma-Designsystem nicht vorkommen und für die 
 | `AppHeader` | Titel in ganzen Wörtern | Ein Wort, das breiter als die Zeile ist („Einstellungen“ bei 320 px und 200 %), wird etwas verkleinert statt mitten im Wort zu brechen; ab Skala 1,3 stehen Zurück und Aktionen in einer eigenen Zeile | `components/app_header.dart` |
 | `PeriodSelector` | Mindestgröße 48 px | Jedes Segment mindestens 48 x 48, das Label bricht bei großer Schrift um, „ausgewählt“ in der Semantik | `components/period_selector.dart`; Analyse, Gewicht, Schritte, Workout-Intensität |
 | `FeedbackService` | `showError(message, onRetry, retryLabel)` | Fehlermeldung mit Aktion (Standardbeschriftung „Erneut“), bleibt bis zur Aktion oder zum Wegwischen; die Eingabe behält der Aufrufer | `lib/core/feedback/feedback_service.dart`; Umsetzung als Snackbar in `lib/app/feedback/` |
+| `MetricCard` | `valueStyle`, `valueIcon` | Ein Text statt einer Zahl als Wert (ein Tageszustand wie „Ruhetag“ oder „Übersprungen“) in kleinerem Stil und mit einem Symbol davor; ein langes Wort rückt unter das Symbol, statt mitten im Wort zu brechen (BS-99) | `components/metric_card.dart`; Workout-Karte auf Home; `test/core/design/components/display_test.dart` |
+| `ProgressRing` | `complete`, `ProgressRing.isComplete` | Der Bogen des Tagesrings folgt dem Stand der Tagesziele: nichts erreicht nur die Spur, teilweise `dayRing`, alle erreicht `dayRingComplete` (Token in 8.2); gesetzt wird es allein von `ProgressRing.goals`, damit Home und „Ziele heute“ gleich aussehen (BS-121, D-026) | `components/progress_ring.dart`; Karte „Dein Tag im Überblick“, „Ziele heute“; `display_test.dart` |
+| `AppTheme` | Theme je Plattform und Variante | Ein Theme je Paar aus Plattform und Variante (Hell, Dunkel, OLED), damit Scrollverhalten und Gesten der Textfelder die der laufenden Plattform sind, in jeder Reihenfolge der Tests; auf einem Gerät gibt es je Variante einen Bau (BS-98, R1-01, D-018) | `lib/core/design/app_theme.dart`; `test/core/design/app_theme_test.dart` |
 
 Die weiteren wiederkehrenden Bausteine (`AppIconTile`, `AppBadge`, `AppSectionHeader`, `AppListGroup`, `MetricCardAction`, `AdaptiveGrid`, `MaxContentWidth`) stehen in Abschnitt 8.4.
+
+## 10. Entwürfe für v0.2.0 (Figma, Seite „v0.2.0 – Neue Screens“)
+
+Die Entwürfe zu den Tickets von v0.2.0 liegen in der Figma-Datei LF10-Desing-App auf der Seite „v0.2.0 – Neue Screens“ (`4108:39`); die Komponente „Chrome / Subpage“ (`4108:40`) ist der gemeinsame Rahmen der Unterseiten. Die Seite hat 53 Frames. Dunkel und OLED gibt es nur für die Hauptscreens, Zustandsvarianten nur in Hell. Die Entwürfe sind noch nicht vom Projektinhaber freigegeben. Die Umsetzung hat Figma nicht verändert; was sie anders umsetzt, steht im Screen-Dokument des jeweiligen Tickets (Spalte „Umsetzung beschrieben in“), nicht in Abschnitt 9.
+
+### 10.1 Ticket und Frames
+
+Die Frames von „Ziele heute“, der antippbaren Tageskarte und des vergangenen Tages auf Home stehen schon vollständig in Abschnitt 2.2 und werden hier nicht wiederholt.
+
+| Ticket | Entwurf | Frames (Hell; Dunkel, OLED) | Umsetzung beschrieben in |
+|---|---|---|---|
+| BS-101 (Entwurf), BS-103, BS-104, BS-105 | Ziele heute; Home mit antippbarer Karte „Dein Tag im Überblick“ | Abschnitt 2.2, Zeilen „Ziele heute“ (`4112:60`) und „Home, Tageskarte antippbar“ (`4115:249`) | [dashboard-gamification.md](screens/dashboard-gamification.md) Abschnitt 12 |
+| BS-93 | Home und „Ziele heute“ an einem vergangenen Tag | Abschnitt 2.2, Zeile „Home, vergangener Tag“ (`4116:249`, `4114:186`) | dashboard-gamification.md Abschnitt 13 |
+| BS-110 | Home mit Aufgaben und Gewohnheiten („Heute abhaken“) | `4116:421`; Dunkel `4116:822`, OLED `4116:1223` | [tasks-habits.md](screens/tasks-habits.md) Abschnitt 2a |
+| BS-99 | Ziele bearbeiten mit „Workout heute“ aus und an; Sheet „Wie war dein Tag?“; „Ziele heute“ mit Workout und Wochenziel; Karten-Zustände | aus `4117:249`, an `4117:361`; Sheet `4117:473`, Dunkel `4117:770`, OLED `4117:1067`; „Ziele heute“ `4114:327` (auch in 2.2); Karten `4123:316` | [focus-workouts.md](screens/focus-workouts.md) Abschnitt 9, [profile-settings.md](screens/profile-settings.md) Abschnitt 9 |
+| BS-108 | Karten-Zustände der Schritte-Karte | `4123:316` | [body-weight-steps.md](screens/body-weight-steps.md) Abschnitt 2.2 |
+| BS-111 | Aufgabe mit Erinnerung | Erinnerung aus `4121:314`, an `4121:414`, Aufgabe bearbeiten `4121:517`, Benachrichtigungen nicht erlaubt `4121:621`, Vorschau der Benachrichtigung `4121:733` | tasks-habits.md Abschnitte 2 und 3 |
+| BS-117 | Plus-Menü nach Zielen | gefiltert Hell `4118:3643`, Dunkel `4118:3910`, OLED `4118:4177`; Leerzustand Hell `4118:4444`, Dunkel `4118:4720`, OLED `4118:4996` | [shell.md](screens/shell.md) Abschnitt 6 |
+| BS-97 | Schritte aus Health | Einstellungen `4122:314`, Erklärung vor dem Systemdialog `4122:509`, Schritte mit Health `4122:553`, Zugriff verweigert `4122:667`, Health Connect fehlt `4122:777`, Karten-Zustände `4123:316` | body-weight-steps.md Abschnitt 2.3 |
+| BS-118, BS-120 | Einstellungen mit antippbarer Version; „Über die App“ mit Lizenz | Einstellungen `4119:254`; Über die App Hell `4119:418`, Dunkel `4119:512`, OLED `4119:606` | profile-settings.md Abschnitt 2 |
+| BS-113 | Erinnerungen: Erlaubnis erklären, Einstellungen bei abgelehnter Erlaubnis | `4118:5272`, `4118:5313` | [data-reminders.md](screens/data-reminders.md) Abschnitt 1 |
+| BS-121 | Tafel „Ziele-Ring – Zustände“ | Hell `4127:316`, Dunkel `4127:365`, OLED `4127:414` | dashboard-gamification.md Abschnitt 6 (Token `dayRingComplete` in 8.2) |
+
+### 10.2 Annahmen des Entwurfs
+
+Die Entwürfe legen Verhalten fest, das die Tickets offen ließen. Die Umsetzung folgt ihnen, solange nichts anderes entschieden ist:
+
+- Das Wochenziel steht in „Ziele heute“ getrennt unter dem Tagesring und zählt nicht mit.
+- Vergangene Tage: Der Hinweis „Nicht heute“ trägt „Zurück zu heute“, die Pfeile gelten zusätzlich zur Wischgeste, der Tag ist nur lesend.
+- Ruhetag und Überspringen erscheinen als eigene Status, zählen als erreicht, vergeben keine XP, und die Streak bleibt.
+- Dashboard: Eine Aufgabe hat ein eckiges Kästchen, eine Gewohnheit ein rundes Kästchen mit ihrer Serie, dazu jeweils einen Typ-Chip.
+- Die Texte zu Health nennen Health Connect (Android zuerst); iOS folgt erst nach dem Spike mit dem iOS-Tester. Der App-Name bleibt ein Platzhalter (BS-47).
+
+### 10.3 Nicht entworfen
+
+- BS-112 (Tastatur schließen): kein Bildschirm; das Verhalten steht in [forms-keyboard.md](screens/forms-keyboard.md).
+- BS-114 (Querformat): kein Entwurf; die App wird nicht für das Querformat gestaltet (D-019).
+- Workout-Pläne (BS-94, Epic BS-119): gehören zu v0.3.0.
+
+### 10.4 Tokens, Symbole und Bausteine
+
+Neue Tokens und Symbole der Entwürfe stehen schon in 8.2 (`dayRingComplete`) und 8.3 (`AppIcon.target`, `AppIcon.heart`), die zusätzlichen Bausteine des Designsystems in 9.2; hier werden sie nicht wiederholt.

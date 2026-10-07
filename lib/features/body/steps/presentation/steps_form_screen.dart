@@ -90,6 +90,7 @@ class _StepsFormScreenState extends ConsumerState<StepsFormScreen> {
   Future<void> _confirmDelete() async {
     final state = ref.read(stepsFormProvider(_args));
     final today = ref.read(todayProvider);
+    final health = ref.read(healthStepsStatusProvider);
     final feedback = ref.read(feedbackServiceProvider);
     final router = GoRouter.of(context);
     final confirmed = await showConfirmationSheet(
@@ -99,7 +100,7 @@ class _StepsFormScreenState extends ConsumerState<StepsFormScreen> {
           '${stepsText(state.existingSteps ?? 0)} Schritte für '
           '${stepsDateInSentence(state.date, today)} werden entfernt. Du '
           'kannst es direkt danach rückgängig machen.'
-          '${ref.read(healthStepsStatusProvider).enabled ? healthDeleteRefillText : ''}',
+          '${healthDeleteRefillTextFor(health, day: state.date, today: today)}',
       confirmLabel: 'Löschen',
     );
     if (!confirmed || !mounted) {

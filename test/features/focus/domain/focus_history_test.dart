@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:self_improvement/core/goals/domain/day_status.dart';
 import 'package:self_improvement/core/goals/domain/goal_type.dart';
 import 'package:self_improvement/core/goals/domain/goal_version.dart';
+import 'package:self_improvement/core/modules/module_id.dart';
 import 'package:self_improvement/core/time/clock_service.dart';
 import 'package:self_improvement/core/time/fake_clock.dart';
 import 'package:self_improvement/features/focus/domain/focus_category.dart';
@@ -288,6 +290,61 @@ void main() {
         ),
       ];
       expect(focusGoalMinutesOn(versions, day), 25);
+    });
+  });
+  group('focusGoalMinutesOfDay (BS-93, R2-02)', () {
+    final day = LocalDate(2026, 10, 3);
+
+    GoalProgress focusGoal({required bool applicable, int target = 25}) =>
+        GoalProgress(
+          goalKey: GoalType.focusMinutes.key,
+          module: ModuleId.focus,
+          target: target,
+          applicable: applicable,
+          fulfilled: false,
+          current: 0,
+        );
+
+    DayStatus status(List<GoalProgress> goals) =>
+        DayStatus(date: day, goals: goals);
+
+    test('(BS-93, R2-02) the frozen target of the snapshot of the day', () {
+      expect(
+        focusGoalMinutesOfDay(
+          status([focusGoal(applicable: true, target: 40)]),
+        ),
+        40,
+      );
+    });
+
+    test('(BS-93, R2-02) a goal that did not apply that day (module off or '
+        'goal switched off) gives null, whatever its target', () {
+      expect(
+        focusGoalMinutesOfDay(status([focusGoal(applicable: false)])),
+        isNull,
+      );
+    });
+
+    test('(BS-93, R2-02) a day without a focus item or without a status has '
+        'no goal', () {
+      expect(focusGoalMinutesOfDay(status(const [])), isNull);
+      expect(focusGoalMinutesOfDay(null), isNull);
+    });
+
+    test('(BS-93, R2-02) other goals of the day play no part', () {
+      final water = GoalProgress(
+        goalKey: GoalType.water.key,
+        module: ModuleId.nutrition,
+        target: 2500,
+        applicable: true,
+        fulfilled: false,
+        current: 0,
+      );
+      expect(focusGoalMinutesOfDay(status([water])), isNull);
+      expect(
+        focusGoalMinutesOfDay(status([water, focusGoal(applicable: true)])),
+        25,
+      );
     });
   });
 }

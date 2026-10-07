@@ -251,7 +251,8 @@ void main() {
     });
   });
 
-  test('(BS-93) the card of today is not built by this function', () {
+  test('(BS-93, R2-03) the card of today is not built by this function, and '
+      'the message names this function and the one that builds it', () {
     expect(
       () => buildDayChecklist(
         tasks: const <Task>[],
@@ -263,7 +264,17 @@ void main() {
         ),
         completedAt: (_) => null,
       ),
-      throwsA(isA<AssertionError>()),
+      throwsA(
+        isA<AssertionError>().having(
+          (error) => error.message.toString(),
+          'message',
+          allOf(
+            contains('buildDayChecklist'),
+            contains('a day before today'),
+            contains('buildTodayChecklist'),
+          ),
+        ),
+      ),
     );
   });
 }
