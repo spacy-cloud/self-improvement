@@ -6,6 +6,7 @@ import 'package:self_improvement/core/goals/domain/workout_day_mark_kind.dart';
 import 'package:self_improvement/core/modules/module_registry.dart';
 import 'package:self_improvement/core/providers/command_providers.dart';
 import 'package:self_improvement/core/testing/data_harness.dart';
+import 'package:self_improvement/features/dashboard/application/day_browser_providers.dart';
 import 'package:self_improvement/features/dashboard/presentation/dashboard_routes.dart';
 import 'package:self_improvement/features/focus/data/workout_day_mark_repository.dart';
 import 'package:self_improvement/features/focus/data/workout_repository.dart';
@@ -88,6 +89,53 @@ const List<String> _dailyWorkoutRoutes = <String>[
   '/goals',
   DashboardRoutes.goalsToday,
 ];
+
+/// The pages that show the day Home pages to (BS-93): Home with its day
+/// navigator, the note "Nicht heute" and the cards of that day, and "Ziele
+/// heute" with the same day. They only look like that on a day before today.
+const List<String> _pastDayRoutes = <String>['/', DashboardRoutes.goalsToday];
+
+/// Seeds a month of synthetic data and pages Home to three days before today.
+Future<AppFixture> _pumpOnPastDay(
+  WidgetTester tester, {
+  Size size = const Size(393, 852),
+  double scale = 1.0,
+}) async {
+  final today = LocalDate(2026, 10, 3);
+  final first = today.addDays(-29);
+  final harness = await createTestHarness(
+    tester,
+    onboarded: false,
+    realProjection: true,
+  );
+  final app = await pumpFullApp(
+    tester,
+    reuse: harness,
+    size: size,
+    textScale: scale,
+    onboarded: false,
+    seed: (h) async {
+      await h.seedOnboarded(startedOn: first);
+      await insertSyntheticRecords(
+        h.database,
+        h.ids,
+        first,
+        today,
+        data: const SyntheticData(
+          habitTitles: <String>['Lesen', 'Dehnen'],
+          mealNames: <String>['Frühstück', 'Mittagessen', 'Abendessen'],
+          varied: true,
+        ),
+      );
+      await h.projections.syncDays(<LocalDate>{
+        for (var d = first; !d.isAfter(today); d = d.addDays(1)) d,
+      });
+    },
+  );
+  app.container.read(selectedDayProvider.notifier).select(today.addDays(-3));
+  await app.settle();
+  return app;
+}
 
 /// Switches "Workout heute" on and puts the day into [state]: `open`, `rest`,
 /// `skipped` or `workout` (a rest day and a skipped day need no workout; the
@@ -264,6 +312,46 @@ void main() {
             onboarded: false,
             seed: (h) => _seedDailyWorkout(h, 'rest'),
           );
+          await app.run(
+            () => app.container
+                .read(settingsCommandsProvider)
+                .setThemeMode(
+                  commandId: app.harness.ids.newId(),
+                  themeModeKey: mode,
+                ),
+          );
+          await app.settle();
+          await _check(tester, app, route);
+        },
+      );
+    }
+  }
+
+  // BS-93: the pages that show another day than today, with a month of data.
+  for (final setup in <_Setup>[_setups.first, _setups[3]]) {
+    for (final route in _pastDayRoutes) {
+      testWidgets(
+        'AT33 $route on a day before today lays out and is operable at '
+        '${setup.name}',
+        (tester) async {
+          final app = await _pumpOnPastDay(
+            tester,
+            size: setup.size,
+            scale: setup.scale,
+          );
+          await _check(tester, app, route);
+        },
+      );
+    }
+  }
+
+  for (final mode in <String>['dark', 'oled']) {
+    for (final route in _pastDayRoutes) {
+      testWidgets(
+        'AT35 $route on a day before today lays out and is operable in the '
+        '$mode theme',
+        (tester) async {
+          final app = await _pumpOnPastDay(tester);
           await app.run(
             () => app.container
                 .read(settingsCommandsProvider)

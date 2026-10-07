@@ -12,6 +12,10 @@ import 'package:self_improvement/features/dashboard/presentation/widgets/text_sc
 /// label. Its arc colour follows the stand (grey, yellow, green) and is chosen
 /// by `ProgressRing.goals`, not here, so that every day ring looks the same.
 ///
+/// On a day that is not today ([isToday] false, BS-93) the card carries no title
+/// and its sentence speaks of "diesem Tag" ("An diesem Tag hast du 3 von 5 Zielen
+/// erreicht."); the ring and its colour follow the stand as ever.
+///
 /// With [onTap] the whole card is one button that opens "Ziele heute" (BS-104):
 /// a chevron shows it, while it is pressed the card takes the green tint and
 /// border of the design, and a screen reader hears one element ("Ziele heute,
@@ -24,6 +28,7 @@ class DayOverviewCard extends StatefulWidget {
     required this.applicable,
     this.motivation,
     this.onTap,
+    this.isToday = true,
     super.key,
   }) : assert(applicable >= 1, 'The ring needs at least one applicable goal');
 
@@ -40,6 +45,10 @@ class DayOverviewCard extends StatefulWidget {
   /// Opens "Ziele heute"; `null` makes the card a plain display.
   final VoidCallback? onTap;
 
+  /// Whether the card shows today. The sentence and the spoken text of a day
+  /// that is not today say "an diesem Tag" instead of "heute".
+  final bool isToday;
+
   /// The spoken text of the ring.
   String get ringLabel => applicable == 1
       ? '$fulfilled von 1 Ziel erreicht'
@@ -47,11 +56,25 @@ class DayOverviewCard extends StatefulWidget {
 
   /// The spoken text of the whole card as a button (BS-104). It replaces the
   /// texts inside, so nothing is read twice.
-  String get tapLabel =>
-      'Ziele heute, $fulfilled von $applicable erreicht, Details öffnen';
+  String get tapLabel => isToday
+      ? 'Ziele heute, $fulfilled von $applicable erreicht, Details öffnen'
+      : 'Ziele dieses Tages, $fulfilled von $applicable erreicht, '
+            'Details öffnen';
 
   /// The factual sentence next to the ring.
   String get summary {
+    if (!isToday) {
+      if (fulfilled >= applicable) {
+        return applicable == 1
+            ? 'An diesem Tag hast du dein Tagesziel erreicht.'
+            : 'An diesem Tag hast du alle Tagesziele erreicht.';
+      }
+      if (fulfilled == 0) {
+        return 'An diesem Tag hast du kein Ziel erreicht.';
+      }
+      return 'An diesem Tag hast du $fulfilled von $applicable Zielen '
+          'erreicht.';
+    }
     if (fulfilled >= applicable) {
       return applicable == 1
           ? 'Du hast heute dein Tagesziel erreicht.'
