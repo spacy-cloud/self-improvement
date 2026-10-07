@@ -11,6 +11,8 @@ import 'package:self_improvement/app/shell/app_shell.dart';
 import 'package:self_improvement/core/modules/module.dart';
 import 'package:self_improvement/core/modules/module_id.dart';
 import 'package:self_improvement/features/analysis/presentation/analysis_screen.dart';
+import 'package:self_improvement/features/dashboard/presentation/dashboard_routes.dart';
+import 'package:self_improvement/features/dashboard/presentation/goals_today_screen.dart';
 import 'package:self_improvement/features/dashboard/presentation/home_screen.dart';
 import 'package:self_improvement/features/modules/presentation/modules_screen.dart';
 import 'package:self_improvement/features/onboarding/presentation/onboarding_screen.dart';
@@ -116,6 +118,10 @@ List<RouteBase> buildAppRoutes({
     appRoute(
       path: AppRoutes.goals,
       builder: (context, state) => const GoalsScreen(),
+    ),
+    appRoute(
+      path: DashboardRoutes.goalsToday,
+      builder: (context, state) => const GoalsTodayScreen(),
     ),
     appRoute(
       path: AppRoutes.settings,

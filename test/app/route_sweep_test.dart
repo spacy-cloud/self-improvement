@@ -6,6 +6,7 @@ import 'package:self_improvement/core/goals/domain/workout_day_mark_kind.dart';
 import 'package:self_improvement/core/modules/module_registry.dart';
 import 'package:self_improvement/core/providers/command_providers.dart';
 import 'package:self_improvement/core/testing/data_harness.dart';
+import 'package:self_improvement/features/dashboard/presentation/dashboard_routes.dart';
 import 'package:self_improvement/features/focus/data/workout_day_mark_repository.dart';
 import 'package:self_improvement/features/focus/data/workout_repository.dart';
 import 'package:self_improvement/features/focus/domain/training_category.dart';
@@ -46,6 +47,7 @@ final List<String> _routes = <String>{
   AppRoutes.profile,
   AppRoutes.profileEdit,
   AppRoutes.goals,
+  DashboardRoutes.goalsToday,
   AppRoutes.settings,
   AppRoutes.modules,
   AppRoutes.data,
@@ -77,9 +79,15 @@ Future<void> _check(WidgetTester tester, AppFixture app, String route) async {
 }
 
 /// The pages that change with the optional daily goal "Workout heute" (BS-99):
-/// home with the Workout card, the workout area with its day card, and the
-/// goal editor. Each state of the day is a state of the card.
-const List<String> _dailyWorkoutRoutes = <String>['/', '/workouts', '/goals'];
+/// home with the Workout card, the workout area with its day card, the goal
+/// editor and "Ziele heute" (BS-103) with its row for the day. Each state of the
+/// day is a state of the card.
+const List<String> _dailyWorkoutRoutes = <String>[
+  '/',
+  '/workouts',
+  '/goals',
+  DashboardRoutes.goalsToday,
+];
 
 /// Switches "Workout heute" on and puts the day into [state]: `open`, `rest`,
 /// `skipped` or `workout` (a rest day and a skipped day need no workout; the

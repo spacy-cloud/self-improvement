@@ -121,6 +121,7 @@ void main() {
           '/profile',
           '/profile/edit',
           '/goals',
+          '/goals/today',
           '/settings',
           '/settings/modules',
           '/settings/data',
