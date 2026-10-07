@@ -127,6 +127,7 @@ class _Overview extends StatelessWidget {
               fulfilled: day.fulfilledCount,
               applicable: day.applicableCount,
             ),
+            onTap: () => context.push(DashboardRoutes.goalsToday),
           )
         else
           NoGoalsCard(onSetGoals: () => context.push(DashboardRoutes.goals)),
