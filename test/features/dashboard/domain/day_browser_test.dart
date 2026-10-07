@@ -172,7 +172,9 @@ void main() {
       // Paging back from Monday passes the 29th exactly once.
       var day = shown(today_: monday);
       final seen = <LocalDate>[];
-      while (day.previous != null) {
+      // At most 20 steps: a bug that never ends the row must fail this test,
+      // not hang it.
+      for (var step = 0; step < 20 && day.previous != null; step++) {
         day = shown(today_: monday, choice: day.previous);
         seen.add(day.date);
       }
@@ -187,7 +189,7 @@ void main() {
       var day = shown(today_: monday, choice: LocalDate(2026, 10, 19));
       expect(day.date, LocalDate(2026, 10, 19));
       final seen = <LocalDate>[day.date];
-      while (day.next != null) {
+      for (var step = 0; step < 20 && day.next != null; step++) {
         day = shown(today_: monday, choice: day.next);
         seen.add(day.date);
       }

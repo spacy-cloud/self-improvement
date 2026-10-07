@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:self_improvement/core/design/design.dart';
+import 'package:self_improvement/features/dashboard/application/day_browser_providers.dart';
 import 'package:self_improvement/features/dashboard/application/goals_today_providers.dart';
 import 'package:self_improvement/features/dashboard/domain/goals_day.dart';
 import 'package:self_improvement/features/dashboard/presentation/dashboard_routes.dart';
@@ -9,13 +10,15 @@ import 'package:self_improvement/features/dashboard/presentation/goal_destinatio
 import 'package:self_improvement/features/dashboard/presentation/widgets/async_body.dart';
 import 'package:self_improvement/features/dashboard/presentation/widgets/goals_day_view.dart';
 
-/// "Ziele heute" (`/goals/today`): every daily goal of today with its stand,
-/// target and status, the ring of Home in the same numbers, and the weekly
-/// workout goal apart from them.
+/// "Ziele heute" (`/goals/today`): every daily goal of the day Home shows with
+/// its stand, target and status, the ring of Home in the same numbers, and the
+/// weekly workout goal apart from them.
 ///
 /// Opened by the day card on Home. The numbers are the ones of
 /// `DashboardView.dayStatus`, the status the ring counts; the screen holds no
-/// rule and calculates nothing. Every row opens the module of its goal and
+/// rule and calculates nothing. When Home shows a day before today (BS-93) the
+/// page shows that day, with the note "Nicht heute", and "Zurück zu heute" puts
+/// both Home and the page on today. Every row opens the module of its goal and
 /// "Ziele bearbeiten" opens the goal editor. Back leads to where it was opened,
 /// or to Home after a deep link. States: loading (a neutral line only when it
 /// takes a moment), error with retry, no daily goal ("Noch keine Tagesziele")
@@ -38,6 +41,8 @@ class GoalsTodayScreen extends ConsumerWidget {
           onSetGoals: () => context.push(DashboardRoutes.goals),
           onEditGoals: () => context.push(DashboardRoutes.goals),
           onOpenGoal: (row) => openGoal(context, row),
+          onBackToToday: () =>
+              ref.read(selectedDayProvider.notifier).backToToday(),
         ),
       ),
     );
