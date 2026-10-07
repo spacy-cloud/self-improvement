@@ -134,7 +134,7 @@ Offen:
 
 ## 9. v0.2.0: Tagesziel „Workout heute“, Ruhetag und Überspringen (BS-99)
 
-Ticket [BS-99](https://spacy-cloud.atlassian.net/browse/BS-99) (Bug, High). Entscheidungen D-024 und D-025 in [../implementation-decisions.md](../implementation-decisions.md). Der Datenvertrag (Tabelle `workout_day_marks`, Zieltyp `workout_daily`) kommt aus PR 8 (D-015, D-016); dieses Paket ändert weder Schema noch Backup. Entwurf (Figma, Datei LF10-Desing-App, Seite „v0.2.0 – Neue Screens“, Stand Entwurf, Freigabe liegt bei Joern): Karten-Zustände `4123:316`, Sheet „Wie war dein Tag?“ Hell `4117:473`, Dunkel `4117:770`, OLED `4117:1067`, Ziele bearbeiten `4117:249` (aus) und `4117:361` (an), „Ziele heute“ mit Workout und Wochenziel `4114:327` (gebaut mit BS-100, [dashboard-gamification.md](dashboard-gamification.md) Abschnitt 12).
+Ticket [BS-99](https://spacy-cloud.atlassian.net/browse/BS-99) (Bug, High). Entscheidungen D-024 und D-025 in [../implementation-decisions.md](../implementation-decisions.md). Der Datenvertrag (Tabelle `workout_day_marks`, Zieltyp `workout_daily`) kommt aus PR 8 (D-015, D-016); dieses Paket ändert weder Schema noch Backup. Entwurf (Figma, Datei LF10-Desing-App, Seite „v0.2.0 – Neue Screens“, Stand Entwurf, Freigabe liegt beim Projektinhaber): Karten-Zustände `4123:316`, Sheet „Wie war dein Tag?“ Hell `4117:473`, Dunkel `4117:770`, OLED `4117:1067`, Ziele bearbeiten `4117:249` (aus) und `4117:361` (an), „Ziele heute“ mit Workout und Wochenziel `4114:327` (gebaut mit BS-100, [dashboard-gamification.md](dashboard-gamification.md) Abschnitt 12).
 
 ### 9.1 Was das Ticket verlangt und was V1 tat (Reproduktion)
 
