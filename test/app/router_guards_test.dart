@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/core/modules/module_id.dart';
 import 'package:self_improvement/core/providers/command_providers.dart';
+import 'package:self_improvement/features/dashboard/presentation/goals_today_screen.dart';
 import 'package:self_improvement/features/gamification/presentation/progress_screen.dart';
 import 'package:self_improvement/features/gamification/presentation/streak_screen.dart';
 import 'package:self_improvement/features/modules/presentation/modules_screen.dart';
@@ -228,6 +229,7 @@ void main() {
     final cases = <String, Type>{
       '/profile/edit': ProfileEditScreen,
       '/goals': GoalsScreen,
+      '/goals/today': GoalsTodayScreen,
       '/settings': SettingsScreen,
       '/settings/modules': ModulesScreen,
       '/settings/data': DataScreen,
