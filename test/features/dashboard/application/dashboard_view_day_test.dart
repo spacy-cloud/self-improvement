@@ -205,14 +205,16 @@ void main() {
       final tomorrow = container.read(todayProvider);
       expect(tomorrow, LocalDate(2026, 10, 4));
 
+      // The status of the new day is read first: its snapshot exists then, so a
+      // status of the day before that took the goals of today would show it.
+      final live = await statusOf(tomorrow);
+      expect(live!.progressOf(GoalType.water)!.target, 3000);
+      expect(live.progressOf(GoalType.water)!.fulfilled, isFalse);
+
       final yesterday = await statusOf(today);
       final water = yesterday!.progressOf(GoalType.water)!;
       expect(water.target, 2500, reason: 'the goal of that day');
       expect(water.fulfilled, isTrue);
-
-      final live = await statusOf(tomorrow);
-      expect(live!.progressOf(GoalType.water)!.target, 3000);
-      expect(live.progressOf(GoalType.water)!.fulfilled, isFalse);
     });
 
     test('(BS-93, AT24) a goal switched off from tomorrow still counts on the '
@@ -228,8 +230,10 @@ void main() {
           );
       harness.clock.advance(const Duration(days: 1));
       container.read(todayProvider.notifier).refresh();
-      final before = await statusOf(today);
+      // The new day first (see above): its snapshot exists when the day before
+      // is read.
       final after = await statusOf(container.read(todayProvider));
+      final before = await statusOf(today);
       expect(before!.applicableCount, 5);
       expect(after!.applicableCount, 4);
       expect(before.progressOf(GoalType.steps)!.applicable, isTrue);

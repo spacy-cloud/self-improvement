@@ -138,6 +138,24 @@ Future<AppFixture> _pumpOnPastDay(
   return app;
 }
 
+/// Runs [body] on [_pumpOnPastDay] and takes the app down again when [body]
+/// throws: a failed expectation with the app running would otherwise hang the
+/// test run in its tear down instead of failing the test.
+Future<void> _onPastDay(
+  WidgetTester tester, {
+  required Future<void> Function(AppFixture app) body,
+  Size size = const Size(393, 852),
+  double scale = 1.0,
+}) async {
+  final app = await _pumpOnPastDay(tester, size: size, scale: scale);
+  try {
+    await body(app);
+  } finally {
+    await tester.pumpWidget(const SizedBox());
+    await app.settle();
+  }
+}
+
 /// Switches "Workout heute" on and puts the day into [state]: `open`, `rest`,
 /// `skipped` or `workout` (a rest day and a skipped day need no workout; the
 /// workout of yesterday makes the area show its week and its list).
@@ -347,15 +365,15 @@ void main() {
   for (final setup in <_Setup>[_setups.first, _setups[3]]) {
     for (final route in _pastDayRoutes) {
       testWidgets(
-        'AT33 $route on a day before today lays out and is operable at '
-        '${setup.name}',
+        '(BS-93, AT33) $route on a day before today lays out and is operable '
+        'at ${setup.name}',
         (tester) async {
-          final app = await _pumpOnPastDay(
+          await _onPastDay(
             tester,
             size: setup.size,
             scale: setup.scale,
+            body: (app) => _check(tester, app, route),
           );
-          await _check(tester, app, route);
         },
       );
     }
@@ -364,20 +382,24 @@ void main() {
   for (final mode in <String>['dark', 'oled']) {
     for (final route in _pastDayRoutes) {
       testWidgets(
-        'AT35 $route on a day before today lays out and is operable in the '
-        '$mode theme',
+        '(BS-93, AT35) $route on a day before today lays out and is operable '
+        'in the $mode theme',
         (tester) async {
-          final app = await _pumpOnPastDay(tester);
-          await app.run(
-            () => app.container
-                .read(settingsCommandsProvider)
-                .setThemeMode(
-                  commandId: app.harness.ids.newId(),
-                  themeModeKey: mode,
-                ),
+          await _onPastDay(
+            tester,
+            body: (app) async {
+              await app.run(
+                () => app.container
+                    .read(settingsCommandsProvider)
+                    .setThemeMode(
+                      commandId: app.harness.ids.newId(),
+                      themeModeKey: mode,
+                    ),
+              );
+              await app.settle();
+              await _check(tester, app, route);
+            },
           );
-          await app.settle();
-          await _check(tester, app, route);
         },
       );
     }
