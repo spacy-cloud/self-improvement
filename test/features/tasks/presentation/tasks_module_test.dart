@@ -28,7 +28,9 @@ void main() {
       expect(SchemaKeys.dashboardCards, contains(card.cardId));
       expect(SchemaKeys.dashboardCardModule[card.cardId], ModuleId.tasks.key);
       expect(card.fullWidth, isTrue);
-      expect(card.title, 'Aufgaben');
+      // The card is "Heute abhaken" on Home, with tasks and habits (BS-110):
+      // the page "Karten anpassen" names both.
+      expect(card.title, 'Aufgaben und Gewohnheiten');
       expect(card.defaultRank, SchemaKeys.defaultCardOrder.indexOf('tasks'));
     },
   );
