@@ -9,6 +9,7 @@ import 'package:self_improvement/features/focus/application/focus_providers.dart
 import 'package:self_improvement/features/focus/domain/focus_status.dart';
 import 'package:self_improvement/features/focus/presentation/focus_dashboard_card.dart';
 import 'package:self_improvement/features/focus/presentation/focus_history_screen.dart';
+import 'package:self_improvement/features/focus/presentation/focus_past_day_card.dart';
 import 'package:self_improvement/features/focus/presentation/focus_routes.dart';
 import 'package:self_improvement/features/focus/presentation/focus_session_detail_screen.dart';
 import 'package:self_improvement/features/focus/presentation/focus_session_screen.dart';
@@ -17,6 +18,7 @@ import 'package:self_improvement/features/focus/presentation/workout_dashboard_c
 import 'package:self_improvement/features/focus/presentation/workout_form_screen.dart';
 import 'package:self_improvement/features/focus/presentation/workout_history_screen.dart';
 import 'package:self_improvement/features/focus/presentation/workout_overview_screen.dart';
+import 'package:self_improvement/features/focus/presentation/workout_past_day_card.dart';
 
 /// The `focus` module: the persistent focus timer (start, running, paused and
 /// confirmation screens, history) and manual workouts (form, week overview,
@@ -86,12 +88,14 @@ final class FocusModule extends SelfImprovementModule {
       title: 'Workout',
       defaultRank: 3,
       builder: (context, ref) => const WorkoutDashboardCard(),
+      dayBuilder: (context, ref, day) => WorkoutPastDayCard(day: day),
     ),
     DashboardCardDescriptor(
       cardId: 'focus',
       title: 'Fokus',
       defaultRank: 4,
       builder: (context, ref) => const FocusDashboardCard(),
+      dayBuilder: (context, ref, day) => FocusPastDayCard(day: day),
     ),
   ];
 

@@ -20,13 +20,13 @@ import 'package:self_improvement/features/reminders/presentation/reminder_permis
 
 /// The reminders block of the settings: the on/off switch with the honest
 /// state of the permission, the editable water time slots, the reminders the
-/// app has planned, and the way to the system settings when Android blocks
+/// app has planned, and the way to the system settings when the system blocks
 /// notifications.
 ///
 /// Self-contained: the settings screen embeds it as a card below its group
 /// heading. Reminders are off by default and nothing here asks for the
 /// permission early: the explanation sheet appears when the user switches
-/// reminders on, and the system dialog only after "Weiter zur Android-Abfrage".
+/// reminders on, and the system dialog only after "Weiter zur Systemabfrage".
 /// The block never claims that a reminder was delivered; it only knows what
 /// it planned.
 class RemindersSection extends ConsumerStatefulWidget {
@@ -127,11 +127,7 @@ class _RemindersSectionState extends ConsumerState<RemindersSection>
         } else {
           final opened = await actions.openSystemSettings();
           if (!opened) {
-            feedback.showInfo(
-              'Die Systemeinstellungen konnten nicht geöffnet werden. Öffne '
-              'in Android die Einstellungen dieser App und erlaube '
-              'Benachrichtigungen.',
-            );
+            feedback.showInfo(ReminderLabels.settingsNotOpened);
           }
         }
     }
@@ -143,7 +139,7 @@ class _RemindersSectionState extends ConsumerState<RemindersSection>
         feedback.showSaved('Erinnerungen eingeschaltet.');
       case ReminderState.blocked:
         feedback.showInfo(
-          'Erinnerungen sind vorgemerkt, aber Android blockiert '
+          'Erinnerungen sind vorgemerkt, aber das System blockiert '
           'Benachrichtigungen noch. Erlaube sie in den Systemeinstellungen.',
         );
       case ReminderState.unavailable:
@@ -215,10 +211,7 @@ class _RemindersSectionState extends ConsumerState<RemindersSection>
     final feedback = ref.read(feedbackServiceProvider);
     final opened = await ref.read(reminderActionsProvider).openSystemSettings();
     if (!opened) {
-      feedback.showInfo(
-        'Die Systemeinstellungen konnten nicht geöffnet werden. Öffne in '
-        'Android die Einstellungen dieser App und erlaube Benachrichtigungen.',
-      );
+      feedback.showInfo(ReminderLabels.settingsNotOpened);
     }
   }
 
@@ -238,7 +231,8 @@ class _RemindersSectionState extends ConsumerState<RemindersSection>
 
   /// Opens the screen a planned reminder points to. The target is resolved
   /// like a tap on the notification: an unknown payload or a switched off
-  /// module opens the dashboard, a missing habit the habit list.
+  /// module opens the dashboard, a missing habit the habit list, a missing
+  /// task the task list.
   Future<void> _open(ScheduledReminder reminder) async {
     final router = GoRouter.of(context);
     final route = await ref
@@ -321,7 +315,8 @@ class _RemindersSectionState extends ConsumerState<RemindersSection>
         else if (status.state == ReminderState.active)
           const _Note(
             'Aktuell ist nichts geplant. Wähle Uhrzeiten für die '
-            'Trink-Erinnerung oder lege eine Gewohnheit mit Uhrzeit an.',
+            'Trink-Erinnerung, lege eine Gewohnheit mit Uhrzeit an oder gib '
+            'einer Aufgabe eine Erinnerung.',
           ),
         _Notices(status: status),
       ],
@@ -334,11 +329,11 @@ class _RemindersSectionState extends ConsumerState<RemindersSection>
         return _StatusBanner(
           title: 'Benachrichtigungen sind blockiert',
           text:
-              'Erlaube sie in den Android-Einstellungen, damit Erinnerungen '
+              'Erlaube sie in den Systemeinstellungen, damit Erinnerungen '
               'ankommen.',
           actionLabel: 'Öffnen',
           actionSemanticLabel:
-              'Android-Einstellungen für Benachrichtigungen öffnen',
+              'Systemeinstellungen für Benachrichtigungen öffnen',
           onAction: _openSettings,
         );
       case ReminderState.unavailable:
@@ -577,8 +572,9 @@ class _OtherKindsNote extends StatelessWidget {
   Widget build(BuildContext context) {
     return const _Note(
       'Weitere Erinnerungen: Gewohnheiten erinnern zu der Uhrzeit, die du bei '
-      'der Gewohnheit einstellst. Am Ende einer laufenden Fokus-Sitzung gibt '
-      'es einmalig einen Hinweis.',
+      'der Gewohnheit einstellst, Aufgaben zu dem Zeitpunkt, den du bei der '
+      'Aufgabe wählst. Am Ende einer laufenden Fokus-Sitzung gibt es einmalig '
+      'einen Hinweis.',
     );
   }
 }
@@ -692,12 +688,14 @@ class _PlannedBlock extends ConsumerWidget {
   static IconData _iconOf(ReminderKind kind) => switch (kind) {
     ReminderKind.water => AppIcon.water.data,
     ReminderKind.habit => AppIcon.habit.data,
+    ReminderKind.task => AppIcon.task.data,
     ReminderKind.focusEnd => AppIcon.focus.data,
   };
 
   static AppAccent _accentOf(ReminderKind kind) => switch (kind) {
     ReminderKind.water => AppAccent.water,
     ReminderKind.habit => AppAccent.habits,
+    ReminderKind.task => AppAccent.habits,
     ReminderKind.focusEnd => AppAccent.focus,
   };
 }

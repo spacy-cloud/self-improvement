@@ -8,6 +8,7 @@ import 'package:self_improvement/features/focus/application/focus_restorer.dart'
 import 'package:self_improvement/features/focus/data/focus_repository.dart';
 import 'package:self_improvement/features/focus/domain/focus_history.dart';
 import 'package:self_improvement/features/focus/domain/focus_session.dart';
+import 'package:self_improvement/shared/local_date.dart';
 
 final focusRepositoryProvider = Provider<FocusRepository>(
   (ref) => FocusRepository(
@@ -161,6 +162,46 @@ final focusTodaySummaryProvider = Provider<AsyncValue<FocusTodaySummary>>((
     },
   );
 });
+
+/// The focus time of one day (BS-93): the same summary as
+/// [focusTodaySummaryProvider], built by the same function, for the day Home
+/// shows when it is not today. Only SAVED durations of sessions completed on
+/// that day count, against the goal that counted on that day: the one in the
+/// snapshot of that day, which is also the focus goal of the ring of that day
+/// (`dayStatusProvider`, the status Home already reads). When the goal did not
+/// apply then (switched off, or the module was off that day) there is no goal
+/// to measure against. An open session belongs to the present and plays no
+/// part. Released when no card shows it.
+final focusDaySummaryProvider = Provider.autoDispose
+    .family<AsyncValue<FocusTodaySummary>, LocalDate>((ref, day) {
+      final sessions = ref.watch(focusSessionsOnProvider(day));
+      final status = ref.watch(dayStatusProvider(day));
+      return sessions.when(
+        loading: () => const AsyncLoading(),
+        error: AsyncError.new,
+        data: (completed) {
+          if (!status.hasValue) {
+            return status.hasError
+                ? AsyncError(status.error!, status.stackTrace!)
+                : const AsyncLoading();
+          }
+          return AsyncData(
+            buildFocusTodaySummary(
+              completed,
+              today: day,
+              goalMinutes: focusGoalMinutesOfDay(status.value),
+            ),
+          );
+        },
+      );
+    });
+
+/// The sessions completed on one day (BS-93), for the focus card of that day.
+/// Released when no card shows it.
+final focusSessionsOnProvider = StreamProvider.autoDispose
+    .family<List<FocusSession>, LocalDate>(
+      (ref, day) => ref.watch(focusRepositoryProvider).watchCompletedOn(day),
+    );
 
 /// Restores the open session on bootstrap and on every app resume (see
 /// `FocusRestorer`).

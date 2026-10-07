@@ -12,6 +12,7 @@ import 'package:self_improvement/core/backup/import_validation_report.dart';
 import 'package:self_improvement/core/backup/platform/backup_file_gateway.dart';
 import 'package:self_improvement/core/backup/snapshot_consistency_checker.dart';
 import 'package:self_improvement/core/backup/testing/in_memory_backup_adapters.dart';
+import 'package:self_improvement/core/config/app_config.dart';
 import 'package:self_improvement/core/database/app_database.dart';
 import 'package:self_improvement/core/errors/app_failure.dart';
 import 'package:self_improvement/core/testing/data_harness.dart';
@@ -211,7 +212,7 @@ void main() {
         expect(preview.profileName, 'Mia Muster');
         expect(preview.hasProfileName, isTrue);
         expect(preview.exportedAtUtc, DateTime.utc(2026, 10, 3, 8));
-        expect(preview.appVersion, '1.0.0');
+        expect(preview.appVersion, AppConfig.appVersion);
         expect(preview.counts[BackupTable.weightEntries], 3);
         expect(preview.counts[BackupTable.habits], 2);
         expect(preview.counts[BackupTable.profile], 1);
@@ -254,7 +255,7 @@ void main() {
     test(
       'a rejected file carries the report and an unsupported_backup failure',
       () async {
-        final root = decoded(await validBackupBytes())..['schemaVersion'] = 2;
+        final root = decoded(await validBackupBytes())..['schemaVersion'] = 3;
         final preparation = await service.prepareImport(
           Uint8List.fromList(utf8.encode(jsonEncode(root))),
         );

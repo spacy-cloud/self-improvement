@@ -406,7 +406,17 @@ void main() {
         expect(profile.startWeightGrams, isNull);
         expect(profile.motivationGoals, isEmpty);
         expect((await env.modules(tester)).values.every((on) => on), isTrue);
-        expect((await env.goals(tester)).length, GoalType.values.length);
+        final goals = await env.goals(tester);
+        expect(
+          goals.length,
+          GoalType.values.length - 1,
+          reason: 'a version for every goal but "Workout heute" (BS-99)',
+        );
+        expect(
+          goals.containsKey('workout_daily'),
+          isFalse,
+          reason: 'no version means off',
+        );
         expect(await env.weightEntryCount(tester), 0);
       },
     );

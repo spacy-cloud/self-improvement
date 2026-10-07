@@ -24,6 +24,10 @@ import 'package:self_improvement/shared/german_date.dart';
 /// weight, which is a profile value and valid at once. The notice at the top
 /// and the group titles say so.
 ///
+/// The optional daily goal "Workout heute" (BS-99, Figma `4117:249` and
+/// `4117:361`) is a switch between "Gewicht erfassen" and "Aufgabe erledigen";
+/// it is off until it is switched on, and its note appears while it is on.
+///
 /// Deviations from the frame: every quantitative daily goal has its own switch
 /// (the specification requires goals to be switchable off), the weekly workout
 /// goal moves out of "gelten sofort" because the versioned contract applies it
@@ -220,6 +224,15 @@ class _GoalsFormState extends ConsumerState<_GoalsForm> {
         if (type.isDaily && model.rowOf(type).visible) goalRow(type),
     ];
     final hasHabits = model.rowOf(GoalType.taskCompletion).visible;
+    final dailyWorkoutOn =
+        model.rowOf(GoalType.workoutDaily).visible &&
+        state.drafts[GoalType.workoutDaily]!.enabled;
+    final dailyNotes = [
+      if (hasHabits) 'Jede aktive Gewohnheit zählt automatisch als Tagesziel.',
+      if (dailyWorkoutOn)
+        'Ruhetag und Überspringen erfüllen das Workout-Ziel, geben aber keine '
+            'XP. Die Streak bleibt.',
+    ];
     final workoutsVisible = model.rowOf(GoalType.workoutWeekly).visible;
     final hiddenCount = model.hiddenRows.length;
 
@@ -263,11 +276,9 @@ class _GoalsFormState extends ConsumerState<_GoalsForm> {
               const SizedBox(height: 8),
               AppListGroup(children: dailyRows),
             ],
-            if (hasHabits) ...[
+            if (dailyNotes.isNotEmpty) ...[
               const SizedBox(height: 8),
-              _Note(
-                text: 'Jede aktive Gewohnheit zählt automatisch als Tagesziel.',
-              ),
+              _Note(text: dailyNotes.join(' ')),
             ],
             if (workoutsVisible) ...[
               const SizedBox(height: 12),
@@ -722,6 +733,7 @@ class _ValueFieldState extends State<_ValueField> {
                 ),
                 onChanged: widget.onChanged,
                 onSubmitted: widget.onSubmitted,
+                onTapOutside: dismissKeyboardOnTapOutside,
               ),
             ),
           ),

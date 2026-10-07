@@ -1,7 +1,7 @@
 name: self_improvement
 description: "Lokale Selbstverbesserungs-App (LF10a, Team IA24)"
 publish_to: "none"
-version: 1.0.0+1
+version: 0.2.0+2
 
 environment:
   sdk: ^3.13.5
@@ -25,6 +25,7 @@ dependencies:
   path_provider: ^2.1.6
   share_plus: ^13.3.1
   timezone: ^0.11.1
+  url_launcher: ^6.3.3
   uuid: ^4.6.0
 
 dev_dependencies:
@@ -55,3 +56,6 @@ flutter:
   assets:
     # Licence text, registered in the LicenseRegistry by registerDesignLicenses().
     - assets/fonts/OFL.txt
+    # The licence of the own code (the file LICENSE of the repository). The page
+    # "Über die App" shows exactly this file; there is no second copy (D-021).
+    - LICENSE

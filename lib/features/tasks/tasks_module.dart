@@ -67,10 +67,13 @@ final class TasksModule extends SelfImprovementModule {
   List<DashboardCardDescriptor> get dashboardCards => <DashboardCardDescriptor>[
     DashboardCardDescriptor(
       cardId: cardId,
-      title: 'Aufgaben',
+      // The card is "Heute abhaken" on Home (tasks AND habits), so the page
+      // "Karten anpassen" names both: hiding it hides both.
+      title: 'Aufgaben und Gewohnheiten',
       defaultRank: SchemaKeys.defaultCardOrder.indexOf(cardId),
       fullWidth: true,
       builder: (context, ref) => const TasksDashboardCard(),
+      dayBuilder: (context, ref, day) => TasksDashboardCard(day: day),
     ),
   ];
 

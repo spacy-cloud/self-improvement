@@ -17,6 +17,7 @@ import 'package:self_improvement/features/profile/presentation/goals_screen.dart
 import 'package:self_improvement/features/profile/presentation/profile_edit_screen.dart';
 import 'package:self_improvement/features/profile/presentation/profile_routes.dart';
 import 'package:self_improvement/features/profile/presentation/profile_screen.dart';
+import 'package:self_improvement/features/settings/presentation/about_screen.dart';
 import 'package:self_improvement/features/settings/presentation/licenses_screen.dart';
 import 'package:self_improvement/features/settings/presentation/settings_screen.dart';
 import 'package:self_improvement/shared/local_date.dart';
@@ -79,6 +80,10 @@ Future<ScreenEnv> createScreenEnv(
   LocalDate? startedOn,
   bool realProjection = false,
   List<Override> overrides = const [],
+
+  /// Switches the optional daily goal "Workout heute" on from the profile
+  /// start (BS-99); off by default, like in the app.
+  bool workoutDailyGoal = false,
 }) async {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
   final projection = FlakyProjection();
@@ -95,6 +100,7 @@ Future<ScreenEnv> createScreenEnv(
       () => harness.seedOnboarded(
         enabledModules: enabledModules,
         startedOn: startedOn,
+        workoutDailyGoal: workoutDailyGoal,
       ),
     );
   }
@@ -139,6 +145,10 @@ List<RouteBase> screenRoutes() => [
   GoRoute(
     path: SettingsRoutes.licenses,
     builder: (context, state) => const LicensesScreen(),
+  ),
+  GoRoute(
+    path: SettingsRoutes.about,
+    builder: (context, state) => const AboutScreen(),
   ),
   for (final path in [
     SettingsRoutes.data,

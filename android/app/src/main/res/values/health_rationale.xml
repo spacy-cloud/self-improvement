@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The privacy explanation behind the link in the permission dialog of Health Connect
+         (HealthRationaleActivity). A separate file: strings.xml is generated from
+         AppConfig by tool/sync_app_name.dart and holds only the app name. -->
+    <string name="health_rationale_title">Schritte aus Health Connect</string>
+    <string name="health_rationale_text">Diese App kann deine Schritte aus Health Connect übernehmen, wenn du das in den Einstellungen einschaltest.\n\nWas die App liest: nur die Zahl deiner Schritte, je Tag zusammengefasst. Sonst nichts: keine Herzfrequenz, kein Schlaf, kein Standort, keine anderen Gesundheitsdaten.\n\nWas die App nicht tut: Sie schreibt nichts in Health Connect, hat keine Internet-Berechtigung und schickt nichts an einen Server oder an Dritte. Die übernommenen Tageswerte liegen wie alle Daten der App nur auf diesem Gerät.\n\nDu kannst den Zugriff jederzeit in Health Connect entziehen oder den Schalter in den Einstellungen der App ausschalten. Danach liest die App nichts mehr; bereits übernommene Tageswerte bleiben, bis du sie löschst.</string>
+</resources>

@@ -11,14 +11,17 @@ import 'package:self_improvement/features/tasks/application/task_form_controller
 import 'package:self_improvement/features/tasks/application/task_providers.dart';
 import 'package:self_improvement/features/tasks/domain/task.dart';
 import 'package:self_improvement/features/tasks/domain/task_priority.dart';
+import 'package:self_improvement/features/tasks/domain/task_reminder.dart';
 import 'package:self_improvement/features/tasks/domain/task_tag_suggestions.dart';
 import 'package:self_improvement/features/tasks/domain/task_tags.dart';
 import 'package:self_improvement/features/tasks/domain/task_validation.dart';
+import 'package:self_improvement/features/tasks/presentation/task_reminder_field.dart';
 import 'package:self_improvement/features/tasks/presentation/task_row.dart';
 import 'package:self_improvement/features/tasks/presentation/tasks_routes.dart';
 import 'package:self_improvement/features/tasks/presentation/tasks_widgets.dart';
 import 'package:self_improvement/shared/german_date.dart';
 import 'package:self_improvement/shared/local_date.dart';
+import 'package:self_improvement/shared/local_time.dart';
 
 /// "Neue Aufgabe" (new) and "Aufgabe bearbeiten" (with [taskId]).
 class TaskFormScreen extends ConsumerWidget {
@@ -100,6 +103,9 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
   final FocusNode _titleFocus = FocusNode();
   final FocusNode _descriptionFocus = FocusNode();
 
+  /// The reminder block, to scroll to it when its hint is the one to read.
+  final GlobalKey _reminderKey = GlobalKey();
+
   TaskFormArgs get _args => widget.args;
   bool get _isEdit => _args.task != null;
 
@@ -151,6 +157,12 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
           _titleFocus.requestFocus();
         } else if (state.fieldErrors.containsKey(TaskFields.description)) {
           _descriptionFocus.requestFocus();
+        } else if (state.fieldErrors.containsKey(TaskFields.reminder)) {
+          // The hint is a live region: bring it into view so it is seen too.
+          final reminderContext = _reminderKey.currentContext;
+          if (reminderContext != null && reminderContext.mounted) {
+            unawaited(Scrollable.ensureVisible(reminderContext));
+          }
         }
         final failure = state.submitFailure;
         if (failure == null) {
@@ -190,6 +202,60 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
       return;
     }
     _controller.setDueDate(LocalDate.fromDateTime(picked));
+  }
+
+  /// Date, then time, in the zone of the device; the first date offered is the
+  /// reminder's own, else the due day when it is not past, else today. Either
+  /// picker cancelled changes nothing. A moment that is refused (past, or not
+  /// existing on a day the clock jumps) is explained at the field.
+  Future<void> _pickReminder() async {
+    final state = ref.read(taskFormProvider(_args));
+    final clock = ref.read(clockProvider);
+    final today = ref.read(todayProvider);
+    final reminder = state.reminderAtUtc;
+    final current = reminder == null ? null : clock.toLocal(reminder);
+    final due = state.dueDate;
+    var firstDate =
+        current?.date ?? (due != null && due >= today ? due : today);
+    if (firstDate < today) {
+      // A reminder that has passed: offer today, the pickers need a day ahead.
+      firstDate = today;
+    }
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime(firstDate.year, firstDate.month, firstDate.day),
+      firstDate: DateTime(today.year, today.month, today.day),
+      lastDate: DateTime(2100),
+      helpText: 'Datum der Erinnerung',
+    );
+    if (pickedDate == null || !mounted) {
+      return;
+    }
+    final date = LocalDate.fromDateTime(pickedDate);
+    final LocalTime initialTime;
+    if (current != null) {
+      initialTime = current.time;
+    } else if (date == today) {
+      final hour = clock.toLocal(clock.nowUtc()).time.hour;
+      initialTime = LocalTime(hour < 23 ? hour + 1 : 23, 0);
+    } else {
+      initialTime = reminderMorningTime;
+    }
+    final pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(
+        hour: initialTime.hour,
+        minute: initialTime.minute,
+      ),
+      helpText: 'Uhrzeit der Erinnerung',
+    );
+    if (pickedTime == null || !mounted) {
+      return;
+    }
+    _controller.setReminderLocal(
+      date,
+      LocalTime(pickedTime.hour, pickedTime.minute),
+    );
   }
 
   void _addTag([String? text]) {
@@ -286,6 +352,16 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
               const SizedBox(height: 8),
               FieldMessage(text: state.fieldErrors[TaskFields.dueDate]!),
             ],
+            const SizedBox(height: 16),
+            TaskReminderField(
+              key: _reminderKey,
+              reminderAtUtc: state.reminderAtUtc,
+              completed: _args.task?.isCompleted ?? false,
+              isEdit: _isEdit,
+              errorText: state.fieldErrors[TaskFields.reminder],
+              onChoose: _controller.setReminder,
+              onPick: () => unawaited(_pickReminder()),
+            ),
             const SizedBox(height: 16),
             const FieldLabel(label: 'Tags', requirement: 'optional'),
             const SizedBox(height: 8),
@@ -437,57 +513,18 @@ class _DateField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.tokens.colors;
     final date = dueDate;
     final text = date == null
         ? 'Kein Datum gewählt'
         : (date.year == today.year
               ? formatDateLong(date)
               : '${formatDateLong(date)} ${date.year}');
-    return Semantics(
-      container: true,
-      button: true,
-      label: 'Fälligkeitsdatum wählen, $text',
+    return PickerField(
+      text: text,
+      empty: date == null,
+      icon: Icons.calendar_today_outlined,
+      semanticLabel: 'Fälligkeitsdatum wählen, $text',
       onTap: onTap,
-      excludeSemantics: true,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 56),
-        child: Material(
-          color: colors.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: AppRadii.controlBorder,
-            side: BorderSide(color: colors.borderInput, width: 1.5),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
-            focusColor: colors.focus.withValues(alpha: 0.2),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              child: Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Text(
-                      text,
-                      style: AppTextStyles.bodyDefault.copyWith(
-                        color: date == null
-                            ? colors.textSecondary
-                            : colors.textPrimary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Icon(
-                    Icons.calendar_today_outlined,
-                    size: 20,
-                    color: colors.textSecondary,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

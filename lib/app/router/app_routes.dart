@@ -26,6 +26,9 @@ abstract final class AppRoutes {
   static const String data = '/settings/data';
   static const String licenses = '/settings/licenses';
 
+  /// "Über die App": version, author, website, privacy, technical versions.
+  static const String about = '/settings/about';
+
   /// Onboarding (the five steps run inside this one route).
   static const String onboarding = '/onboarding';
 

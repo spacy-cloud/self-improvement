@@ -7,7 +7,8 @@ import 'package:self_improvement/core/design/design.dart';
 /// confirmation.
 ///
 /// The sheet scrolls, keeps clear of the keyboard and closes with its own
-/// button, the system back action or a tap on the barrier. It cannot be
+/// button, the system back action or a tap on the barrier. Dragging its
+/// content closes the keyboard. It cannot be
 /// dragged away: sheets that run an operation must not disappear half way.
 Future<T?> showAppModalSheet<T>(
   BuildContext context, {
@@ -146,6 +147,8 @@ class AppSheetFrame extends StatelessWidget {
                 scale <= 1.5;
             if (!pin) {
               return SingleChildScrollView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
                 padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -173,6 +176,8 @@ class AppSheetFrame extends StatelessWidget {
                 ),
                 Flexible(
                   child: SingleChildScrollView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,

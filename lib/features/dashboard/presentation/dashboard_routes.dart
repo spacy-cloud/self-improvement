@@ -10,6 +10,10 @@ abstract final class DashboardRoutes {
   /// Daily goals editor ("Ziele festlegen").
   static const String goals = '/goals';
 
+  /// "Ziele heute": every daily goal of today with its stand, target and
+  /// status (opened by the day card on Home).
+  static const String goalsToday = '/goals/today';
+
   /// Module management ("Module auswählen").
   static const String modules = '/settings/modules';
 

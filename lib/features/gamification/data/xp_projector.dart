@@ -62,6 +62,21 @@ class XpProjector {
     return row.read(sum) ?? 0;
   }
 
+  /// The XP the profile had at the end of [day]: the sum of the awards dated on
+  /// or before it (BS-93). Awards dated later play no part. Like [totalXp] it is
+  /// computed from the rows, never stored.
+  Future<int> totalXpThrough(LocalDate day) async {
+    final sum = _database.xpAwards.points.sum();
+    final row =
+        await (_database.selectOnly(_database.xpAwards)
+              ..addColumns([sum])
+              ..where(
+                _database.xpAwards.localDate.isSmallerOrEqualValue(day.toIso()),
+              ))
+            .getSingle();
+    return row.read(sum) ?? 0;
+  }
+
   /// All active facts of [day] that can earn XP.
   Future<XpDayFacts> loadFacts(LocalDate day) async {
     final water =

@@ -9,8 +9,10 @@ import 'package:self_improvement/core/feedback/feedback_service.dart';
 import 'package:self_improvement/core/providers/core_providers.dart';
 import 'package:self_improvement/features/body/presentation/weight_routes.dart';
 import 'package:self_improvement/features/body/presentation/weight_widgets.dart';
+import 'package:self_improvement/features/body/steps/application/health_steps_controller.dart';
 import 'package:self_improvement/features/body/steps/application/steps_form_controller.dart';
 import 'package:self_improvement/features/body/steps/domain/step_day.dart';
+import 'package:self_improvement/features/body/steps/presentation/health_steps_labels.dart';
 import 'package:self_improvement/features/body/steps/presentation/steps_labels.dart';
 import 'package:self_improvement/features/body/steps/presentation/steps_routes.dart';
 import 'package:self_improvement/shared/local_date.dart';
@@ -88,6 +90,7 @@ class _StepsFormScreenState extends ConsumerState<StepsFormScreen> {
   Future<void> _confirmDelete() async {
     final state = ref.read(stepsFormProvider(_args));
     final today = ref.read(todayProvider);
+    final health = ref.read(healthStepsStatusProvider);
     final feedback = ref.read(feedbackServiceProvider);
     final router = GoRouter.of(context);
     final confirmed = await showConfirmationSheet(
@@ -96,7 +99,8 @@ class _StepsFormScreenState extends ConsumerState<StepsFormScreen> {
       message:
           '${stepsText(state.existingSteps ?? 0)} Schritte für '
           '${stepsDateInSentence(state.date, today)} werden entfernt. Du '
-          'kannst es direkt danach rückgängig machen.',
+          'kannst es direkt danach rückgängig machen.'
+          '${healthDeleteRefillTextFor(health, day: state.date, today: today)}',
       confirmLabel: 'Löschen',
     );
     if (!confirmed || !mounted) {
@@ -164,6 +168,9 @@ class _StepsFormScreenState extends ConsumerState<StepsFormScreen> {
       }
     });
     final today = ref.watch(todayProvider);
+    // Keeps the state of the Health comparison alive, so the delete
+    // confirmation knows whether Health would fill the day again.
+    ref.watch(healthStepsStatusProvider.select((status) => status.enabled));
     final stepsError = state.fieldErrors[StepsFields.steps];
     final dateError = state.fieldErrors[StepsFields.date];
     final canSubmit = !state.submitting && state.stepsText.trim().isNotEmpty;
@@ -256,6 +263,7 @@ class _StepsFormScreenState extends ConsumerState<StepsFormScreen> {
                 existing: state.existingSteps!,
                 date: state.date,
                 today: today,
+                fromHealth: state.replacesHealth,
               ),
             ],
             const SizedBox(height: 14),
@@ -409,6 +417,7 @@ class _StepsField extends StatelessWidget {
             ),
             onChanged: onChanged,
             onSubmitted: onSubmitted,
+            onTapOutside: dismissKeyboardOnTapOutside,
           ),
         ),
       ),
@@ -443,22 +452,34 @@ class _ReplaceNotice extends StatelessWidget {
     required this.existing,
     required this.date,
     required this.today,
+    required this.fromHealth,
   });
 
   final int existing;
   final LocalDate date;
   final LocalDate today;
 
+  /// The stored value came from Health: saving makes the day a value typed in
+  /// and Health leaves it alone from then on.
+  final bool fromHealth;
+
   @override
   Widget build(BuildContext context) {
     final colors = context.tokens.colors;
+    final title = fromHealth
+        ? healthDayNoticeTitle(
+            existing: stepsText(existing),
+            when: stepsDateInSentence(date, today),
+          )
+        : 'Für ${stepsDateInSentence(date, today)} sind schon '
+              '${stepsText(existing)} eingetragen';
+    final body = fromHealth
+        ? healthDayNoticeText
+        : 'Beim Speichern wird der Tageswert ersetzt, nicht addiert.';
     return Semantics(
       container: true,
       liveRegion: true,
-      label:
-          'Für ${stepsDateInSentence(date, today)} sind schon '
-          '${stepsText(existing)} eingetragen. Beim Speichern wird der '
-          'Tageswert ersetzt, nicht addiert.',
+      label: '$title. $body',
       excludeSemantics: true,
       child: DecoratedBox(
         decoration: BoxDecoration(
@@ -478,16 +499,14 @@ class _ReplaceNotice extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Für ${stepsDateInSentence(date, today)} sind schon '
-                      '${stepsText(existing)} eingetragen',
+                      title,
                       style: AppTextStyles.captionStrong.copyWith(
                         color: colors.warningText,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Beim Speichern wird der Tageswert ersetzt, nicht '
-                      'addiert.',
+                      body,
                       style: AppTextStyles.captionDefault.copyWith(
                         color: colors.warningText,
                       ),

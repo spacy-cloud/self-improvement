@@ -6,6 +6,7 @@ import 'package:self_improvement/features/dashboard/presentation/dashboard_route
 import 'package:self_improvement/features/gamification/presentation/progress_screen.dart';
 import 'package:self_improvement/features/gamification/presentation/streak_screen.dart';
 import 'package:self_improvement/features/gamification/presentation/widgets/xp_dashboard_card.dart';
+import 'package:self_improvement/features/gamification/presentation/widgets/xp_past_day_card.dart';
 
 /// The `gamification` module ("Fortschritt"): the streak page, the progress
 /// page and the XP and level card of the dashboard. There is no plus menu
@@ -51,6 +52,7 @@ final class GamificationModule extends SelfImprovementModule {
       defaultRank: 7,
       fullWidth: true,
       builder: (context, ref) => const XpDashboardCard(),
+      dayBuilder: (context, ref, day) => XpPastDayCard(day: day),
     ),
   ];
 

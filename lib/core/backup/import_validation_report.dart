@@ -116,7 +116,7 @@ final class ProblemCollector {
 }
 
 /// Thrown by the strict `fromJson` constructors when the input violates the
-/// V1 contract. The [report] lists every problem, without personal data.
+/// backup contract. The [report] lists every problem, without personal data.
 final class BackupFormatException implements Exception {
   const BackupFormatException(this.report);
 

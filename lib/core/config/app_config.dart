@@ -19,13 +19,22 @@ abstract final class AppConfig {
 
   /// Application version (without build number); kept in sync with
   /// `pubspec.yaml` by `test/core/config/app_config_test.dart`.
-  static const String appVersion = '1.0.0';
+  static const String appVersion = '0.2.0';
 
-  /// Stable technical backup format marker of V1. Not a visible brand name.
+  /// Build number (the part of the `pubspec.yaml` version after the `+`); kept
+  /// in sync with `pubspec.yaml` by `test/core/config/app_config_test.dart`.
+  /// The settings row and the page "Über die App" show [appVersion] and this
+  /// number, so they can only differ from the release by the one version in
+  /// `pubspec.yaml`.
+  static const int buildNumber = 2;
+
+  /// Stable technical backup format marker (unchanged since V1). Not a
+  /// visible brand name.
   static const String backupFormat = 'levelup_life_backup';
 
-  /// Backup schema version of V1.
-  static const int backupSchemaVersion = 1;
+  /// Backup schema version the app writes. Version 1 (v0.1.0) is still read,
+  /// through an explicit upward step (see `docs/backup-format.md`).
+  static const int backupSchemaVersion = 2;
 
   /// Prefix of exported backup files:
   /// `self-improvement-backup-YYYY-MM-DD-HHmm.json`.

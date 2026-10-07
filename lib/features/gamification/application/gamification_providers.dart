@@ -8,6 +8,7 @@ import 'package:self_improvement/core/providers/core_providers.dart';
 import 'package:self_improvement/features/gamification/data/gamification_repository.dart';
 import 'package:self_improvement/features/gamification/data/xp_projector.dart';
 import 'package:self_improvement/features/gamification/domain/level.dart';
+import 'package:self_improvement/shared/local_date.dart';
 
 final xpProjectorProvider = Provider<XpProjector>(
   (ref) => XpProjector(ref.watch(appDatabaseProvider)),
@@ -25,6 +26,15 @@ final gamificationRepositoryProvider = Provider<GamificationRepository>(
 final totalXpProvider = StreamProvider<int>(
   (ref) => ref.watch(gamificationRepositoryProvider).watchTotalXp(),
 );
+
+/// The XP at the end of one day (BS-93): the sum of the awards dated on or
+/// before it, for the XP card of the day Home shows when it is not today.
+/// Released when no card shows it.
+final totalXpThroughProvider = StreamProvider.autoDispose
+    .family<int, LocalDate>(
+      (ref, day) =>
+          ref.watch(gamificationRepositoryProvider).watchTotalXpThrough(day),
+    );
 
 /// XP, level and the three badges for the progress page and dashboard card.
 final gamificationSummaryProvider = StreamProvider<GamificationSummary>(

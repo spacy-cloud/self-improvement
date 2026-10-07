@@ -18,6 +18,7 @@ abstract final class SettingsRoutes {
   static const String modules = '/settings/modules';
   static const String data = '/settings/data';
   static const String licenses = '/settings/licenses';
+  static const String about = '/settings/about';
 }
 
 /// The back button of a header: lets the screen veto first (unsaved input asks

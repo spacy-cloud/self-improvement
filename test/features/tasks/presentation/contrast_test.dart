@@ -56,6 +56,63 @@ void main() {
       );
       text('selected day of the week strip', c.onPrimary, c.primaryButton);
       text('series text on a card', c.streakText, c.surface);
+      // The block "Erinnerung" of the task form (BS-111).
+      text(
+        'notice of the reminder block: warning text on its tint',
+        c.warningText,
+        c.warningTint,
+      );
+      text(
+        'action of the notice (green text) on the warning tint',
+        c.primaryText,
+        c.warningTint,
+      );
+      text(
+        'action of the planning error notice (green text) on the error tint',
+        c.primaryText,
+        c.errorTint,
+      );
+      text(
+        'removal of the reminder: error text on the page',
+        c.error,
+        c.background,
+      );
+      // BS-110: the rows of the Home card "Heute abhaken".
+      text(
+        'kind chip "Aufgabe" (green text on the green tint)',
+        c.primaryText,
+        c.primaryTint,
+      );
+      text(
+        'kind chip "Gewohnheit" (habits violet on the quiet surface)',
+        c.moduleHabits,
+        c.surfaceMuted,
+      );
+      symbol(
+        'kind icon of a habit (violet on the quiet surface)',
+        c.moduleHabits,
+        c.surfaceMuted,
+      );
+      symbol(
+        'kind icon of a task (green on the green tint)',
+        c.primaryText,
+        c.primaryTint,
+      );
+      symbol(
+        'the box of an open row (input border on a card)',
+        c.borderInput,
+        c.surface,
+      );
+      symbol(
+        'the check mark of a done row (on the button green)',
+        c.onPrimary,
+        c.primaryButton,
+      );
+      text(
+        'count of a finished day (green text on the page)',
+        c.primaryText,
+        c.background,
+      );
 
       for (final icon in HabitIcon.values) {
         final accent = icon.accent;

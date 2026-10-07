@@ -13,6 +13,7 @@ import 'package:self_improvement/features/tasks/domain/habit_icon.dart';
 import 'package:self_improvement/features/tasks/domain/task.dart';
 import 'package:self_improvement/features/tasks/domain/task_priority.dart';
 import 'package:self_improvement/features/tasks/presentation/habits_tab_screen.dart';
+import 'package:self_improvement/features/tasks/presentation/tasks_dashboard_card.dart';
 import 'package:self_improvement/features/tasks/tasks_module.dart';
 import 'package:self_improvement/shared/local_date.dart';
 import 'package:self_improvement/shared/local_time.dart';
@@ -229,13 +230,17 @@ String locationOf(GoRouter router) =>
     router.routerDelegate.currentConfiguration.uri.toString();
 
 /// A dashboard page that hosts only the `tasks` card, like the dashboard does
-/// (inside a scroll view, full width).
-Widget cardHost() {
+/// (inside a scroll view, full width). With [readOnly] it hosts the card in the
+/// state of the card of a day before today (BS-93): it shows the state and
+/// changes nothing.
+Widget cardHost({bool readOnly = false}) {
   final card = const TasksModule().dashboardCards.single;
   return Scaffold(
     body: SingleChildScrollView(
       padding: const EdgeInsets.all(16),
-      child: Consumer(builder: (context, ref, _) => card.builder(context, ref)),
+      child: readOnly
+          ? const TasksDashboardCard(readOnly: true)
+          : Consumer(builder: (context, ref, _) => card.builder(context, ref)),
     ),
   );
 }

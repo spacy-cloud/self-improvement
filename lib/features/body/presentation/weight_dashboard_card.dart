@@ -47,13 +47,20 @@ class WeightDashboardCard extends ConsumerWidget {
                 onPressed: () => context.push(WeightRoutes.create),
               ),
             )
-          : _FilledCard(model: model, today: today),
+          : WeightCardBody(model: model, today: today),
     );
   }
 }
 
-class _FilledCard extends StatelessWidget {
-  const _FilledCard({required this.model, required this.today});
+/// The weight card with a measurement: the current value, the curve of the seven
+/// days ending on [today] and the week comparison, or only the honest date when
+/// the last measurement is older than the curve.
+///
+/// [today] is the last day of the curve: today on Home, the day shown when Home
+/// pages back (BS-93, `WeightPastDayCard`).
+class WeightCardBody extends StatelessWidget {
+  /// Creates the card for [model], ending on [today].
+  const WeightCardBody({required this.model, required this.today, super.key});
 
   final WeightCardModel model;
   final LocalDate today;

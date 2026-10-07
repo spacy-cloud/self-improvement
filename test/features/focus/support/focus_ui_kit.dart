@@ -10,15 +10,18 @@ import 'package:self_improvement/core/commands/projection_synchronizer.dart';
 import 'package:self_improvement/core/database/app_database.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/core/feedback/feedback_service.dart';
+import 'package:self_improvement/core/goals/domain/workout_day_mark_kind.dart';
 import 'package:self_improvement/core/providers/core_providers.dart';
 import 'package:self_improvement/core/testing/data_harness.dart';
 import 'package:self_improvement/features/focus/application/focus_providers.dart';
 import 'package:self_improvement/features/focus/application/workout_providers.dart';
 import 'package:self_improvement/features/focus/data/focus_repository.dart';
+import 'package:self_improvement/features/focus/data/workout_day_mark_repository.dart';
 import 'package:self_improvement/features/focus/data/workout_repository.dart';
 import 'package:self_improvement/features/focus/domain/focus_category.dart';
 import 'package:self_improvement/features/focus/domain/muscle_group.dart';
 import 'package:self_improvement/features/focus/domain/training_category.dart';
+import 'package:self_improvement/features/focus/domain/workout_day_mark.dart';
 import 'package:self_improvement/features/focus/domain/workout_entry.dart';
 import 'package:self_improvement/features/focus/domain/workout_intensity.dart';
 import 'package:self_improvement/features/focus/focus_module.dart';
@@ -57,6 +60,9 @@ final class FocusUi {
 
   WorkoutRepository get workoutRepository =>
       container.read(workoutRepositoryProvider);
+
+  WorkoutDayMarkRepository get workoutDayMarkRepository =>
+      container.read(workoutDayMarkRepositoryProvider);
 
   AppDatabase get database => harness.database;
 
@@ -137,6 +143,10 @@ Future<FocusUi> createFocusUi(
   ProjectionSynchronizer? projection,
   Set<String>? enabledModules,
   List<Override> overrides = const [],
+
+  /// Switches the optional daily goal "Workout heute" on from the profile
+  /// start (BS-99); off by default, like in the app.
+  bool workoutDailyGoal = false,
 }) async {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
   final harness = (await tester.runAsync(
@@ -153,6 +163,7 @@ Future<FocusUi> createFocusUi(
     () => harness.seedOnboarded(
       enabledModules: enabledModules,
       startedOn: LocalDate(2026, 9, 1),
+      workoutDailyGoal: workoutDailyGoal,
     ),
   );
   return _build(
@@ -254,6 +265,26 @@ extension FocusUiTester on WidgetTester {
     );
     return (await runAsync(
       () => ui.workoutRepository.findById(outcome.entityId!),
+    ))!;
+  }
+
+  /// Marks today (or [date]) as a rest day or a skipped day through the
+  /// repository (BS-99).
+  Future<WorkoutDayMark> markWorkoutDay(
+    FocusUi ui,
+    WorkoutDayMarkKind kind, {
+    LocalDate? date,
+  }) async {
+    await runCommand(
+      () => ui.workoutDayMarkRepository.mark(
+        commandId: ui.ids.newId(),
+        kind: kind,
+        date: date,
+      ),
+    );
+    return (await runAsync(
+      () =>
+          ui.workoutDayMarkRepository.findDay(date ?? ui.harness.clock.today()),
     ))!;
   }
 

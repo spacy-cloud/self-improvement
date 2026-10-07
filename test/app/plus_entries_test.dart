@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/app/router/app_routes.dart';
 import 'package:self_improvement/app/shell/plus_entries.dart';
+import 'package:self_improvement/core/goals/domain/goal_type.dart';
+import 'package:self_improvement/core/goals/domain/goal_version.dart';
 import 'package:self_improvement/core/modules/module.dart';
 import 'package:self_improvement/core/modules/module_id.dart';
+import 'package:self_improvement/core/modules/module_registry.dart';
+import 'package:self_improvement/shared/local_date.dart';
 
 import 'support/fake_modules.dart';
 
@@ -24,6 +28,39 @@ List<PlusEntry> _resolve({
   statuses: statuses ?? _all(),
   focusSessionOpen: focusOpen,
   labelOf: (action) => action.label,
+);
+
+/// All goal types that are on by default (the planning default, BS-99 added the
+/// optional daily workout goal, which is off until it is switched on) except
+/// [off].
+Set<GoalType> _goals({Set<GoalType> off = const <GoalType>{}}) => {
+  for (final type in GoalType.values)
+    if (type.defaultEnabled && !off.contains(type)) type,
+};
+
+/// The entries of the active modules, filtered by the goals that are on.
+List<PlusEntry> _menu({
+  Map<ModuleId, bool>? statuses,
+  Set<GoalType>? goals,
+  List<SelfImprovementModule>? modules,
+}) => filterPlusEntriesByGoals(
+  _resolve(modules: modules, statuses: statuses),
+  goals ?? _goals(),
+);
+
+final LocalDate _today = LocalDate(2026, 10, 3);
+final LocalDate _tomorrow = LocalDate(2026, 10, 4);
+
+GoalVersion _version(
+  GoalType type, {
+  required bool enabled,
+  required LocalDate from,
+  int? target,
+}) => GoalVersion(
+  type: type,
+  target: target ?? type.defaultTarget,
+  enabled: enabled,
+  effectiveFrom: from,
 );
 
 void main() {
@@ -145,5 +182,334 @@ void main() {
       labelOf: (action) => 'Gewicht heute',
     );
     expect(entries.single.label, 'Gewicht heute');
+  });
+
+  group('goals of Meine Ziele filter the entries (BS-117)', () {
+    test('(BS-117, BS-99, R1-03, C02) six entries belong to a goal, workout to two, habit and meal to none', () {
+      expect(
+        {for (final id in plusEntryIds) id: plusGoalsFor(id)},
+        <String, Set<GoalType>>{
+          'weight': {GoalType.weightEntry},
+          'workout': {GoalType.workoutWeekly, GoalType.workoutDaily},
+          'water': {GoalType.water},
+          'steps': {GoalType.steps},
+          'focus': {GoalType.focusMinutes},
+          'task': {GoalType.taskCompletion},
+          'habit': <GoalType>{},
+          'meal': <GoalType>{},
+        },
+      );
+      expect(plusGoalsFor('sleep'), isEmpty);
+      for (final entry in _resolve()) {
+        expect(entry.goals, plusGoalsFor(entry.id), reason: entry.id);
+      }
+    });
+
+    test('(BS-117, C02) the goal of an entry belongs to the module that offers '
+        'it', () {
+      var withGoal = 0;
+      for (final module in bundledModules) {
+        for (final action in module.quickActions) {
+          final goals = plusGoalsFor(action.id);
+          if (goals.isEmpty) {
+            continue;
+          }
+          withGoal++;
+          for (final goal in goals) {
+            expect(goal.module, module.id, reason: '${action.id}: $goal');
+          }
+        }
+      }
+      expect(withGoal, 6);
+    });
+
+    test('(BS-117, C02) with every goal on all eight entries stay in the fixed '
+        'order', () {
+      expect(_ids(_menu()), plusEntryIds);
+    });
+
+    for (final id in plusEntryIds.where((id) => plusGoalsFor(id).isNotEmpty)) {
+      final goals = plusGoalsFor(id);
+      final module = goals.first.module;
+      test('(BS-117, C02) $id is offered only with its module on AND its goal '
+          'on', () {
+        for (final moduleOn in <bool>[true, false]) {
+          for (final goalOn in <bool>[true, false]) {
+            final entries = _menu(
+              statuses: _all(off: moduleOn ? <ModuleId>{} : {module}),
+              // "Off" is every goal of the entry off, "on" the planning default.
+              goals: _goals(off: goalOn ? <GoalType>{} : goals),
+            );
+            expect(
+              _ids(entries).contains(id),
+              moduleOn && goalOn,
+              reason:
+                  'module ${moduleOn ? 'on' : 'off'}, goal '
+                  '${goalOn ? 'on' : 'off'}',
+            );
+          }
+        }
+      });
+    }
+
+    group('workout: the weekly goal "Workouts" or the daily goal "Workout heute" '
+        '(BS-117, BS-99, R1-03)', () {
+      /// Whether the workout entry is in the menu with exactly these goals on.
+      bool offered(Set<GoalType> on) =>
+          _ids(filterPlusEntriesByGoals(_resolve(), on)).contains('workout');
+
+      test('(BS-99, R1-03, C02) both goals off hide the entry, the daily goal '
+          'alone or the weekly goal alone or both show it', () {
+        expect(offered(<GoalType>{}), isFalse, reason: 'both off');
+        expect(
+          offered({GoalType.workoutDaily}),
+          isTrue,
+          reason: 'only "Workout heute" on',
+        );
+        expect(
+          offered({GoalType.workoutWeekly}),
+          isTrue,
+          reason: 'only "Workouts" on',
+        );
+        expect(
+          offered({GoalType.workoutWeekly, GoalType.workoutDaily}),
+          isTrue,
+          reason: 'both on',
+        );
+      });
+
+      test(
+        '(BS-99, R1-03, C02) the other goals do not decide about the entry',
+        () {
+          final others = GoalType.values.toSet()
+            ..removeAll({GoalType.workoutWeekly, GoalType.workoutDaily});
+          expect(offered(others), isFalse);
+          expect(offered({...others, GoalType.workoutDaily}), isTrue);
+        },
+      );
+
+      test('(BS-99, R1-03, C02) with the daily goal on and the weekly goal off '
+          'the entry keeps its place in the menu', () {
+        final entries = filterPlusEntriesByGoals(_resolve(), {
+          ..._goals(off: {GoalType.workoutWeekly}),
+          GoalType.workoutDaily,
+        });
+        expect(_ids(entries), plusEntryIds);
+      });
+
+      test('(BS-99, R1-03, C07) read from stored versions: "Workout heute" on '
+          'and "Workouts" off from tomorrow leave the entry in the menu', () {
+        final versions = <GoalVersion>[
+          _version(GoalType.workoutDaily, enabled: true, from: _tomorrow),
+          _version(GoalType.workoutWeekly, enabled: false, from: _tomorrow),
+        ];
+        final active = activeGoalTypes(versions, _today);
+        expect(active, contains(GoalType.workoutDaily));
+        expect(active, isNot(contains(GoalType.workoutWeekly)));
+        expect(
+          _ids(filterPlusEntriesByGoals(_resolve(), active)),
+          contains('workout'),
+        );
+      });
+
+      test('(BS-99, R1-03, C07) the daily goal is off without a stored '
+          'version, so the weekly goal alone decides, as before', () {
+        final off = <GoalVersion>[
+          _version(GoalType.workoutWeekly, enabled: false, from: _tomorrow),
+        ];
+        expect(
+          _ids(
+            filterPlusEntriesByGoals(_resolve(), activeGoalTypes(off, _today)),
+          ),
+          isNot(contains('workout')),
+        );
+        expect(
+          _ids(
+            filterPlusEntriesByGoals(
+              _resolve(),
+              activeGoalTypes(const <GoalVersion>[], _today),
+            ),
+          ),
+          contains('workout'),
+        );
+      });
+
+      test('(BS-99, R1-03, C02) the module still decides: with Fokus off the '
+          'entry is gone whatever the goals say', () {
+        final entries = filterPlusEntriesByGoals(
+          _resolve(statuses: _all(off: {ModuleId.focus})),
+          {GoalType.workoutWeekly, GoalType.workoutDaily},
+        );
+        expect(_ids(entries), isNot(contains('workout')));
+      });
+    });
+
+    test('(BS-117, C02) a goal off hides only its own entry, the order of the '
+        'rest stays', () {
+      final entries = _menu(
+        goals: _goals(
+          off: {GoalType.weightEntry, GoalType.steps, GoalType.taskCompletion},
+        ),
+      );
+      expect(_ids(entries), <String>[
+        'workout',
+        'water',
+        'focus',
+        'habit',
+        'meal',
+      ]);
+    });
+
+    test('(BS-117, C02) habit and meal have no goal: with every goal off only '
+        'their module hides them', () {
+      final everyGoalOff = _goals(off: GoalType.values.toSet());
+      expect(_ids(_menu(goals: everyGoalOff)), <String>['habit', 'meal']);
+      expect(
+        _ids(
+          _menu(
+            goals: everyGoalOff,
+            statuses: _all(off: {ModuleId.tasks}),
+          ),
+        ),
+        <String>['meal'],
+      );
+      expect(
+        _ids(
+          _menu(
+            goals: everyGoalOff,
+            statuses: _all(off: {ModuleId.nutrition}),
+          ),
+        ),
+        <String>['habit'],
+      );
+      expect(
+        _menu(
+          goals: everyGoalOff,
+          statuses: _all(off: {ModuleId.tasks, ModuleId.nutrition}),
+        ),
+        isEmpty,
+      );
+    });
+
+    test('(BS-117, C02) the filter keeps the plusOrder of the actions', () {
+      final modules = <SelfImprovementModule>[
+        FakeModule(
+          ModuleId.body,
+          actions: <QuickAction>[
+            action('weight', 'Gewicht', '/weight/new', 9),
+            action('steps', 'Schritte', '/steps/new', 1),
+          ],
+        ),
+        FakeModule(
+          ModuleId.nutrition,
+          actions: <QuickAction>[
+            action('water', 'Wasser', '/water', 5),
+            action('meal', 'Mahlzeit', '/nutrition/new', 0),
+          ],
+        ),
+      ];
+      expect(_ids(_menu(modules: modules)), <String>[
+        'meal',
+        'steps',
+        'water',
+        'weight',
+      ]);
+      expect(
+        _ids(
+          _menu(
+            modules: modules,
+            goals: _goals(off: {GoalType.water}),
+          ),
+        ),
+        <String>['meal', 'steps', 'weight'],
+      );
+    });
+
+    test('(BS-117, C02) a running focus session follows the goal of Fokus, '
+        'like Fokus itself', () {
+      final session = filterPlusEntriesByGoals(
+        _resolve(focusOpen: true),
+        _goals(off: {GoalType.focusMinutes}),
+      );
+      expect(_ids(session), isNot(contains('focus')));
+      expect(_ids(session), hasLength(7));
+      final open = filterPlusEntriesByGoals(
+        _resolve(focusOpen: true),
+        _goals(),
+      );
+      expect(
+        open.singleWhere((e) => e.id == 'focus').label,
+        'Fokus fortsetzen',
+      );
+    });
+
+    group('activeGoalTypes', () {
+      test('(BS-117, C07) without stored versions every goal counts as on '
+          '(the planning default)', () {
+        expect(activeGoalTypes(const <GoalVersion>[], _today), _goals());
+      });
+
+      test('(BS-117, C07) a goal is on when its switch is on, whatever its '
+          'value', () {
+        final versions = <GoalVersion>[
+          for (final type in GoalType.values)
+            _version(type, enabled: true, from: _today, target: type.minTarget),
+        ];
+        expect(activeGoalTypes(versions, _today), GoalType.values.toSet());
+      });
+
+      test('(BS-117, AT24) the menu follows the state saved for tomorrow at '
+          'once, today\'s ring keeps the old one', () {
+        final versions = <GoalVersion>[
+          _version(GoalType.weightEntry, enabled: true, from: _today),
+          // What "Meine Ziele" saves: a version that applies from tomorrow.
+          _version(GoalType.weightEntry, enabled: false, from: _tomorrow),
+        ];
+        expect(
+          resolveGoalVersion(versions, GoalType.weightEntry, _today)!.enabled,
+          isTrue,
+          reason: 'today still counts the goal',
+        );
+        expect(
+          activeGoalTypes(versions, _today),
+          _goals(off: {GoalType.weightEntry}),
+        );
+      });
+
+      test('(BS-117, C07) a goal switched on again for tomorrow is on again, '
+          'although it was off today', () {
+        final versions = <GoalVersion>[
+          _version(GoalType.steps, enabled: false, from: _today),
+          _version(GoalType.steps, enabled: true, from: _tomorrow),
+        ];
+        expect(activeGoalTypes(versions, _today), _goals());
+      });
+
+      test('(BS-117, C07) a version of a later day is not looked at yet', () {
+        final versions = <GoalVersion>[
+          _version(
+            GoalType.water,
+            enabled: false,
+            from: LocalDate(2026, 10, 5),
+          ),
+        ];
+        expect(activeGoalTypes(versions, _today), _goals());
+        expect(
+          activeGoalTypes(versions, _tomorrow),
+          _goals(off: {GoalType.water}),
+        );
+      });
+
+      test('(BS-117, C07) goals are independent of each other', () {
+        final versions = <GoalVersion>[
+          _version(GoalType.focusMinutes, enabled: false, from: _today),
+          _version(GoalType.workoutWeekly, enabled: false, from: _today),
+        ];
+        expect(
+          activeGoalTypes(versions, _today),
+          _goals(off: {GoalType.focusMinutes, GoalType.workoutWeekly}),
+        );
+      });
+    });
   });
 }

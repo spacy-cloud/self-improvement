@@ -5,6 +5,30 @@ import 'package:self_improvement/core/design/tokens/app_radii.dart';
 import 'package:self_improvement/core/design/tokens/app_text_styles.dart';
 import 'package:self_improvement/core/design/tokens/app_tokens.dart';
 
+/// Closes the keyboard when a pointer goes down outside the text field that
+/// has the focus. Every text input of the app passes it as `onTapOutside`
+/// ([AppTextField] does it itself).
+///
+/// Flutter does nothing here on a touch screen: Android closes the keyboard
+/// with the Back gesture, but iOS has no such gesture and its number pad has
+/// no Return key, so without this a form on an iPhone keeps the keyboard open
+/// (BS-112, D-018). The callback unfocuses on every platform and for every
+/// pointer kind.
+///
+/// Why it does not get in the way:
+///
+/// - It only looks at the pointer going down and takes no part in the gesture
+///   arena, so a button under the finger still gets its tap, the first time.
+/// - A tap on another text field is not "outside": all text fields share one
+///   tap region group. Moving from field to field never hides the keyboard on
+///   the way. A control that should count as part of a field (a row that
+///   focuses its field when tapped) is wrapped in a [TextFieldTapRegion].
+/// - It only runs for the field that has the focus, so it never steals the
+///   focus from anything else.
+void dismissKeyboardOnTapOutside(PointerDownEvent event) {
+  FocusManager.instance.primaryFocus?.unfocus();
+}
+
 /// Text field with a permanent label above the box (never a floating label),
 /// an optional requirement hint ("Pflichtfeld", "optional") on the right and
 /// the error text directly below the field.
@@ -13,6 +37,8 @@ import 'package:self_improvement/core/design/tokens/app_tokens.dart';
 /// with an error text and icon (never colour only). Put the unit into the
 /// label ("Gewicht in kg") or into [suffixText]. Label, hint and error are
 /// read together with the field by screen readers.
+///
+/// A tap outside the field closes the keyboard ([dismissKeyboardOnTapOutside]).
 class AppTextField extends StatelessWidget {
   /// Creates a text field.
   const AppTextField({
@@ -161,6 +187,7 @@ class AppTextField extends StatelessWidget {
       inputFormatters: effectiveFormatters,
       onChanged: onChanged,
       onSubmitted: onSubmitted,
+      onTapOutside: dismissKeyboardOnTapOutside,
       maxLength: maxLength,
       maxLines: maxLines,
       minLines: minLines,

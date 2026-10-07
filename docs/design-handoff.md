@@ -1,6 +1,6 @@
 # Design-Handoff
 
-Übergabe des freigegebenen Designs (V1, 2026-10-02) an die Flutter-Umsetzung. Quelle sind das Confluence-Handoff „LF10a Design-Handoff“ (Version 1) und das lokale Übergabemanifest; die Figma-Datei wurde im Umsetzungslauf zusätzlich über Lesezugriff geprüft. Dieses Dokument ändert keine Fachregel. Die Confluence-Seite wird im Umsetzungslauf nicht verändert; bei Designänderungen sind beide zu aktualisieren.
+Übergabe des freigegebenen Designs (V1, 2026-10-02) an die Flutter-Umsetzung. Quelle sind das Confluence-Handoff „LF10a Design-Handoff“ (Version 1) und das lokale Übergabemanifest; die Figma-Datei wurde im Umsetzungslauf zusätzlich über Lesezugriff geprüft. Dieses Dokument ändert keine Fachregel. Die Confluence-Seite wird im Umsetzungslauf nicht verändert; bei Designänderungen sind beide zu aktualisieren. Die Entwürfe für v0.2.0 (Figma-Seite „v0.2.0 – Neue Screens“) stehen in Abschnitt 10; sie sind noch nicht vom Projektinhaber freigegeben.
 
 ## 1. Quelle, Freigabestand und verwendeter Stand
 
@@ -8,7 +8,7 @@
 |---|---|
 | Figma-Datei | [LF10-Desing-App](https://www.figma.com/design/K4IWQEjnzuNkRUzkq8JaKz/LF10-Desing-App), File-Key `K4IWQEjnzuNkRUzkq8JaKz` |
 | Team / Plan | IA24, Figma Education |
-| Seiten | `Screens` (86 Frames), `Design System` (18 Komponenten) |
+| Seiten | `Screens` (86 Frames), `Design System` (18 Komponenten), seit v0.2.0 `v0.2.0 – Neue Screens` (53 Frames, Abschnitt 10) |
 | Freigabe | Design-Freigabe V1 vom 2026-10-02 (gilt) |
 | Benannte Figma-Version „Design-Freigabe V1 – 2026-10-02“ | Laut Jira [BS-49](https://spacy-cloud.atlassian.net/browse/BS-49) noch **nicht gespeichert** (formaler Restpunkt, keine Implementierungssperre). Der Figma-MCP bietet keinen Zugriff auf die Versionshistorie; der Stand ist daher nicht unabhängig bestätigt. |
 | Im Lauf gelesener Stand | 2026-10-03, Figma-MCP-Lesezugriff auf Designsystem-Variablen und die unten genannten Referenzscreens (Abschnitt 8) |
@@ -53,6 +53,9 @@ Frames mit größerer Höhe sind Scroll-Screens. Die Routen sind die im `go_rout
 | Gewohnheit – Detail | `4053:109` | `/habits/:id` | 30-Tage-Verlauf, Bearbeiten, Archivieren, Löschen |
 | Streak | `4004:2` | `/streak` | Dark `4056:1046`, OLED `4056:2853` |
 | Fortschritt (Gamification) | `4042:2` | `/progress` | – |
+| Ziele heute (v0.2.0, BS-103) | `4112:60` | `/goals/today` | Dark `4113:160`, OLED `4113:270`, nichts erreicht `4112:186`, alle erreicht `4112:304`, ein Ziel `4112:444`, kein Ziel `4112:509`, 200 % Schrift `4114:501`, Ruhetag und Wochenziel `4114:327`, vergangener Tag `4114:186` |
+| Home, Tageskarte antippbar (v0.2.0, BS-104) | `4115:249` | `/` | Dark `4115:565`, OLED `4115:881`, gedrückt `4115:407` (Dark `4115:723`, OLED `4115:1039`) |
+| Home, vergangener Tag (v0.2.0, BS-93) | `4116:249` | `/` | Dark `4116:650`, OLED `4116:1051`; Pfeile (48 x 48) `4116:405` und `4116:409`, Hinweis „Nicht heute“ `4116:414`; „Ziele heute“ für einen vergangenen Tag `4114:186`. Abweichungen und Entscheidungen: [screens/dashboard-gamification.md](screens/dashboard-gamification.md) Abschnitt 13 |
 
 ### 2.3 Profil, Einstellungen, Daten, Onboarding
 
@@ -134,7 +137,7 @@ Weitere Tokens: Modulfarben (`color/module/*`), Abstände 4/8/12/16/24/32, Radie
 
 - iPhone-Statusleiste, Dynamic Island und Home-Indikator sind nur Figma-Rahmen; Android nutzt echte Systemleisten.
 - Schlafwerte entfallen; keine erfundenen Werte (km, kcal, Aktivminuten ohne Datenquelle).
-- Einstellungen ohne Konto/Cloud/Health; lokales Profil, „Alle Daten zurücksetzen“ statt „Konto löschen“.
+- Einstellungen ohne Konto/Cloud; Health nur als Schalter „Schritte aus Health übernehmen“ (BS-97, Entwurf `4122:314`, nur Android), keine weiteren Health-Zeilen; lokales Profil, „Alle Daten zurücksetzen“ statt „Konto löschen“.
 - Plus-Menü mit 8 Einträgen und Schließen im Sheet; die rote X-Taste in der Navigation ist zusätzlich erlaubt.
 - Detailseite Wasser entfällt; „Wasser eintragen“ deckt Tagesstand und Verlauf ab.
 - Workout-Erfassung enthält zusätzlich Muskelgruppen und Intensität (optional, über F03 hinaus); die Trainingskategorie folgt Kraft/Cardio/Mobility/Sport.
@@ -242,7 +245,8 @@ Die Größen skalieren mit der Systemschrift; die Skalierung wird nirgends globa
 
 | Wert | Dart | Quelle und Behandlung |
 |---|---|---|
-| Tagesring-Bogen `#E2D11E` (alle Modi) | `AppColors.dayRing` | Fest eingetragener Strich im Home-Frame (Light, Dark, OLED gleich). Die Spur nutzt `track`. |
+| Tagesring-Bogen `#E2D11E` (alle Modi), gelb bei „1 bis x minus 1 Ziele erreicht“ | `AppColors.dayRing` | Fest eingetragener Strich im Home-Frame (Light, Dark, OLED gleich). Die Spur nutzt `track`. Bei 0 erreichten Zielen gibt es keinen Bogen, nur die Spur; bei allen erreichten gilt die nächste Zeile. Die Wahl nach Stand trifft allein `ProgressRing.goals` (BS-121, D-026). |
+| Tagesring-Bogen bei „alle Ziele erreicht“: Light `#20B65C`, Dark und OLED `#2FCB6E` | `AppColors.dayRingComplete` | Eigene Rolle mit den Werten von `color/primary`: So zeichnen die Frames „Ziele-Ring – Zustände“ (`4127:316`, Dark `4127:365`, OLED `4127:414`) und „Ziele heute“ (`4112:304`, `4112:444`) den vollen Ring. „Alle erreicht“ heißt: Mindestens ein Ziel gilt und keines fehlt; ein einziges erreichtes Ziel zählt (1 von 1). Der volle Ring deckt die Spur ganz zu. Kontrast und geprüfte Alternative stehen in Abschnitt 8.4. |
 | SnackBar `#1F2328` / Fehler `#6B140F`, Text `#FFFFFF`, Aktion `#7DE2A8` / `#FFCCC7` | `snackBarSurface`, `snackBarErrorSurface`, `onSnackBar`, `snackBarAction`, `snackBarErrorAction` | Komponente `4052:116`; Figma kennt keine Dark-Variante, in allen Modi gleich. |
 | Scrim `#000000` bei 50 % | `scrim` | Hintergrundabdunklung der Frames `2037:18` und `4053:422`. |
 | Kartenschatten (0, 4, Unschärfe 12) schwarz 5 % Light, 15 % Dark und OLED | `AppShadows.card`, `shadow` | Komponente `4051:2`; Prozentwerte aus den Dark/OLED-Frames. |
@@ -283,8 +287,10 @@ Die Figma-Icons sind eigene Vektorpfade. Eingesetzt werden gleichwertige Materia
 | Fehlerhinweis am Feld | `Icons.error_outline_rounded` | `error` |
 | Hinweiskarte (`Hint / bulb`) | `Icons.lightbulb_outline_rounded` | `hint` |
 | Ladefehler (Wolke mit Ausrufezeichen) | `Icons.cloud_off_rounded` | `cloudOff` |
-| Erneut versuchen (Kreispfeil) | `Icons.refresh_rounded` | `retry` |
+| Erneut versuchen (Kreispfeil), Aktualisieren der Health-Schritte (`icon/refresh`, BS-97) | `Icons.refresh_rounded` | `retry` |
+| Health (Herz, `icon/heart`, BS-97) | `Icons.favorite_border_rounded` | `heart` |
 | Leerer Zustand (Pflanze, eigene Illustration) | `Icons.eco_outlined` | `sprout` |
+| Leerzustand des Plus-Menüs bei ausgeblendeten Zielen (`icon/target`, Zielscheibe; Entwurf `4118:4444`, BS-117) | `Icons.track_changes_rounded` | `target` |
 | „Nur lokal“ (Schloss) | `Icons.lock_outline_rounded` | `lock` |
 | Info (Version) | `Icons.info_outline_rounded` | `info` |
 | Einstellungen: Design (Halbkreis), Reduzierte Bewegung, Haptik, Erinnerung | `Icons.contrast_rounded`, `Icons.motion_photos_off_outlined`, `Icons.vibration_rounded`, `Icons.notifications_none_rounded` | `theme`, `reducedMotion`, `haptics`, `reminder` |
@@ -341,6 +347,8 @@ Modulfarben als Text und Icon (`AppColors.accent`) erreichen auf `surface` und `
 | `color/streak` gegen `surface`, Light | 2,86 | Flammensymbol neben einem Textwert. Text und Symbol in Listen: `streakText`. |
 | `color/module/gamification` gegen `surface`, Light | 3,19 | Füllfarbe; Text und Icon: `moduleGamificationText` (4,5:1 und mehr). |
 | Tagesring-Bogen `#E2D11E` gegen `track`, Light | 1,36 | Wie in Figma; der Ring zeigt den Wert immer zusätzlich als Text (`3 von 4`) und trägt eine Textalternative. In Dark und OLED mindestens 3:1. |
+| Tagesring-Bogen „alle erreicht“ (`dayRingComplete`, Wert von `color/primary`) gegen `surface` / `track`, Light | 2,66 / 2,30 | Dasselbe Paar wie die Akzentfläche `primary` in der ersten Zeile dieser Tabelle (Ringe, Balken, Diagramme mit Textalternative). Der volle Ring deckt die Spur zu; sichtbar ist der Rand gegen die Kartenfläche (2,66). „4 von 4“ im Zentrum, die Textalternative und der sachliche Satz sagen dasselbe wie die Farbe. Dark: 7,85 / 6,33, OLED: 8,96 / 7,06. |
+| Geprüfte Alternative zum Ring „alle erreicht“: `primary-button` (Grafik, 3:1) gegen `surface` / `track` | Light 4,72 / 4,09; Dark 3,65 / 2,94; OLED 4,17 / 3,29 | Nicht gewählt (D-026): Der Entwurf zeigt `color/primary`, der Ring wäre dunkler als die Fortschrittsbalken, und in Dark läge der Bogen gegen die Spur mit 2,94 ebenfalls knapp unter 3:1. Ein Wechsel ist die Änderung von drei Tokenwerten. Beide Zahlenreihen stehen als Tests in `test/core/design/contrast_test.dart`. |
 
 #### Weitere Abweichungen und Entscheidungen
 
@@ -371,7 +379,7 @@ Offene formale Punkte bleiben die gespeicherte Figma-Version und der App-Name (A
 
 ## 9. Abweichungen vom Figma-Entwurf und Ergänzungen
 
-Stand: 2026-10-03, Code-Stand `c0ce096`. Dieser Abschnitt fasst die Abweichungstabellen der Screen-Dokumente in einer Tabelle zusammen, nach Bereichen geordnet und ohne Doppelungen. Den ausführlichen Wortlaut, die Konflikte zwischen Entwurf, Spezifikation und Auftrag und die Barrierefreiheit hat das jeweilige Dokument: [Shell](screens/shell.md), [Dashboard und Gamification](screens/dashboard-gamification.md), [Gewicht und Schritte](screens/body-weight-steps.md), [Ernährung](screens/nutrition.md), [Aufgaben und Gewohnheiten](screens/tasks-habits.md), [Fokus und Workouts](screens/focus-workouts.md), [Analyse](screens/analysis.md), [Daten und Erinnerungen](screens/data-reminders.md), [Onboarding](screens/onboarding.md), [Profil und Einstellungen](screens/profile-settings.md). Abweichungen im Designsystem selbst (Kontrastkorrekturen, Maße, Schatten, Icons) stehen in Abschnitt 8.4, freigegebene Abweichungen gegenüber älteren Frames in Abschnitt 6. Die Spezifikation hat bei Konflikten Vorrang vor Platzhaltern und Beispielwerten der Frames.
+Stand: 2026-10-03, Code-Stand `c0ce096` (V1). Die Abweichungen der Entwürfe von v0.2.0 stehen in den Screen-Dokumenten (Abschnitt 10.2), nicht in dieser Tabelle. Dieser Abschnitt fasst die Abweichungstabellen der Screen-Dokumente in einer Tabelle zusammen, nach Bereichen geordnet und ohne Doppelungen. Den ausführlichen Wortlaut, die Konflikte zwischen Entwurf, Spezifikation und Auftrag und die Barrierefreiheit hat das jeweilige Dokument: [Shell](screens/shell.md), [Dashboard und Gamification](screens/dashboard-gamification.md), [Gewicht und Schritte](screens/body-weight-steps.md), [Ernährung](screens/nutrition.md), [Aufgaben und Gewohnheiten](screens/tasks-habits.md), [Fokus und Workouts](screens/focus-workouts.md), [Analyse](screens/analysis.md), [Daten und Erinnerungen](screens/data-reminders.md), [Onboarding](screens/onboarding.md), [Profil und Einstellungen](screens/profile-settings.md). Abweichungen im Designsystem selbst (Kontrastkorrekturen, Maße, Schatten, Icons) stehen in Abschnitt 8.4, freigegebene Abweichungen gegenüber älteren Frames in Abschnitt 6. Die Spezifikation hat bei Konflikten Vorrang vor Platzhaltern und Beispielwerten der Frames.
 
 ### 9.1 Abweichungen
 
@@ -389,7 +397,7 @@ Stand: 2026-10-03, Code-Stand `c0ce096`. Dieser Abschnitt fasst die Abweichungst
 | Shell | Modulverwaltung nur mit Nach-oben und Nach-unten; Frame zeigt sechs Karten | Zusätzlich Ausblenden und Einblenden je Karte; alle acht Karten | BS-58 verlangt einzeln ausblendbare Karten; der Frame ist abgeschnitten |
 | Shell | Kein Frame für „Nicht gefunden“, „Modul ausgeschaltet“, Startfehler und den Habits-Tab bei ausgeschaltetem Aufgabenmodul | `EmptyState` und `ErrorState` nach dem Fallback-Muster (Abschnitt 7); der Habits-Tab zeigt „Aufgaben und Gewohnheiten sind ausgeschaltet“ mit Aktivieren und „Module verwalten“, ohne Daten und Schreibaktion | Kein eigener Frame; der Modulstatus sperrt Daten und Schreibaktionen, der Tab bleibt Kernziel |
 | Shell | Onboarding unter `/onboarding/*` | Eine Route `/onboarding`, die Schritte laufen darin | Vertrag des Onboarding-Screens |
-| Dashboard | Banner „Stark unterwegs!“ und Pokalzeile „Weiter so!“ | Fünf feste neutrale Texte (Tag des Jahres modulo 5) und ein sachlicher Satz zum Stand der Ziele | Spezifikation |
+| Dashboard | Banner „Stark unterwegs!“ und Pokalzeile „Weiter so!“ (so auch in `4115:249`, „Home – Karte antippbar“) | Titel nach dem Stand der Tagesziele (keins, teilweise, alle erreicht), je Stand drei neutrale Texte (Tag des Jahres modulo 3), darunter der sachliche Satz; keine Pokalzeile. Der Ring ist grau (nur die Spur), gelb oder grün nach demselben Stand | Entscheidung D-026 (BS-121): Die Spezifikation sah fünf feste Texte vor, die bei „4 von 4“ oder „0 von 5“ nicht zum Stand passten; „Stark unterwegs!“ ist der erste Text der Liste „teilweise“. Die Pokalzeile gehört nicht zu den Texten der Entscheidung |
 | Dashboard | Erster Tag: Plus-Menü und „+250 ml Wasser“ als Hauptaktion | Die Hauptaktion öffnet den ersten sinnvollen Eintrag; „Wasser eintragen“ öffnet die Wasser-Seite | Das Dashboard speichert nie ohne Bestätigung; das Plus-Menü gehört zur Shell |
 | Dashboard | Level-up als Snackbar | Ruhige, schließbare Karte über dem Ring | Die Snackbar würde das „Rückgängig“ des auslösenden Speicherns verdrängen |
 | Streak | Kacheln mit Symbolkachel, heutiger Tag in anderer Farbe, fester Satz „Noch 3 Tage bis zu deinem Rekord“ | `MetricCard`, „Heute“ nur durch Beschriftung hervorgehoben, Zustand über Form (Haken, Ring, Strich, leerer Umriss) und Datum je Tag, Satz nach den Streak-Regeln ohne Verlust-Text | Zustand nie nur über Farbe (Spezifikation 10.2); ein offener Tag verlängert die Serie |
@@ -436,7 +444,7 @@ Stand: 2026-10-03, Code-Stand `c0ce096`. Dieser Abschnitt fasst die Abweichungst
 
 ### 9.2 Ergänzungen des Designsystems
 
-Bausteine und Parameter, die im Figma-Designsystem nicht vorkommen und für die Screens nötig wurden. Jede Ergänzung ist in `lib/core/design` oder `lib/core/feedback` vorhanden (geprüft am Code-Stand `c0ce096`) und mit Tests belegt (`test/core/design`, `test/core/feedback`, Tests der Screens, die sie nutzen).
+Bausteine und Parameter, die im Figma-Designsystem nicht vorkommen und für die Screens nötig wurden. Jede Ergänzung ist in `lib/core/design` oder `lib/core/feedback` vorhanden (geprüft am Code-Stand `a90f3b1`) und mit Tests belegt (`test/core/design`, `test/core/feedback`, Tests der Screens, die sie nutzen).
 
 | Baustein | Ergänzung | Zweck | Datei und Verwendung |
 |---|---|---|---|
@@ -449,8 +457,55 @@ Bausteine und Parameter, die im Figma-Designsystem nicht vorkommen und für die 
 | `RoundCheckbox` | `squared` | Abgerundetes Quadrat für Mehrfachauswahl; der Kreis bleibt für Aufgaben und Gewohnheiten | `components/round_checkbox.dart`; genutzt von `EntryListTile.check` |
 | `ButtonWidth` | Render-Objekt (intern) | Primär- und Sekundärbutton füllen die Breite nur bei begrenzter Breite; kein `LayoutBuilder`, der bei Intrinsic-Abfragen wirft | `internal/button_width.dart`; Buttons in Karten des `AdaptiveGrid` (`IntrinsicHeight`) |
 | `AppTextField` | Semantik | Label plus Pflichtangabe („Gewicht, optional“) als Semantics-Label, Hilfetext oder Fehler als Hinweis des Feldes; die sichtbare Rückmeldungszeile bleibt außerhalb des Semantics-Baums (nichts wird doppelt gelesen); kein `MergeSemantics` | `components/app_text_field.dart` |
+| `AppTextField` | Tastatur schließen | Ein Tipp neben das fokussierte Feld schließt die Tastatur (`dismissKeyboardOnTapOutside`, alle Plattformen); dieselbe Funktion tragen die großen Zahlenfelder ohne Rahmen. Die Funktion nimmt nicht an der Gestenarena teil (eine Schaltfläche reagiert beim ersten Tipp), ein Tipp auf ein anderes Textfeld gilt nicht als „daneben“ | `components/app_text_field.dart`; alle Formulare, Onboarding ([screens/forms-keyboard.md](screens/forms-keyboard.md)) |
+| `AppScaffold`, Sheet-Rahmen | Tastatur beim Ziehen | `keyboardDismissBehavior: onDrag` am Scrollbereich | `components/app_scaffold.dart`, `FormSheetFrame` in `features/nutrition/presentation/nutrition_widgets.dart`, `AppSheetFrame` in `features/reminders/presentation/sheet_frame.dart`, Aufgabenliste |
 | `AppHeader` | Titel in ganzen Wörtern | Ein Wort, das breiter als die Zeile ist („Einstellungen“ bei 320 px und 200 %), wird etwas verkleinert statt mitten im Wort zu brechen; ab Skala 1,3 stehen Zurück und Aktionen in einer eigenen Zeile | `components/app_header.dart` |
 | `PeriodSelector` | Mindestgröße 48 px | Jedes Segment mindestens 48 x 48, das Label bricht bei großer Schrift um, „ausgewählt“ in der Semantik | `components/period_selector.dart`; Analyse, Gewicht, Schritte, Workout-Intensität |
 | `FeedbackService` | `showError(message, onRetry, retryLabel)` | Fehlermeldung mit Aktion (Standardbeschriftung „Erneut“), bleibt bis zur Aktion oder zum Wegwischen; die Eingabe behält der Aufrufer | `lib/core/feedback/feedback_service.dart`; Umsetzung als Snackbar in `lib/app/feedback/` |
+| `MetricCard` | `valueStyle`, `valueIcon` | Ein Text statt einer Zahl als Wert (ein Tageszustand wie „Ruhetag“ oder „Übersprungen“) in kleinerem Stil und mit einem Symbol davor; ein langes Wort rückt unter das Symbol, statt mitten im Wort zu brechen (BS-99) | `components/metric_card.dart`; Workout-Karte auf Home; `test/core/design/components/display_test.dart` |
+| `ProgressRing` | `complete`, `ProgressRing.isComplete` | Der Bogen des Tagesrings folgt dem Stand der Tagesziele: nichts erreicht nur die Spur, teilweise `dayRing`, alle erreicht `dayRingComplete` (Token in 8.2); gesetzt wird es allein von `ProgressRing.goals`, damit Home und „Ziele heute“ gleich aussehen (BS-121, D-026) | `components/progress_ring.dart`; Karte „Dein Tag im Überblick“, „Ziele heute“; `display_test.dart` |
+| `AppTheme` | Theme je Plattform und Variante | Ein Theme je Paar aus Plattform und Variante (Hell, Dunkel, OLED), damit Scrollverhalten und Gesten der Textfelder die der laufenden Plattform sind, in jeder Reihenfolge der Tests; auf einem Gerät gibt es je Variante einen Bau (BS-98, R1-01, D-018) | `lib/core/design/app_theme.dart`; `test/core/design/app_theme_test.dart` |
 
 Die weiteren wiederkehrenden Bausteine (`AppIconTile`, `AppBadge`, `AppSectionHeader`, `AppListGroup`, `MetricCardAction`, `AdaptiveGrid`, `MaxContentWidth`) stehen in Abschnitt 8.4.
+
+## 10. Entwürfe für v0.2.0 (Figma, Seite „v0.2.0 – Neue Screens“)
+
+Die Entwürfe zu den Tickets von v0.2.0 liegen in der Figma-Datei LF10-Desing-App auf der Seite „v0.2.0 – Neue Screens“ (`4108:39`); die Komponente „Chrome / Subpage“ (`4108:40`) ist der gemeinsame Rahmen der Unterseiten. Die Seite hat 53 Frames. Dunkel und OLED gibt es nur für die Hauptscreens, Zustandsvarianten nur in Hell. Die Entwürfe sind noch nicht vom Projektinhaber freigegeben. Die Umsetzung hat Figma nicht verändert; was sie anders umsetzt, steht im Screen-Dokument des jeweiligen Tickets (Spalte „Umsetzung beschrieben in“), nicht in Abschnitt 9.
+
+### 10.1 Ticket und Frames
+
+Die Frames von „Ziele heute“, der antippbaren Tageskarte und des vergangenen Tages auf Home stehen schon vollständig in Abschnitt 2.2 und werden hier nicht wiederholt.
+
+| Ticket | Entwurf | Frames (Hell; Dunkel, OLED) | Umsetzung beschrieben in |
+|---|---|---|---|
+| BS-101 (Entwurf), BS-103, BS-104, BS-105 | Ziele heute; Home mit antippbarer Karte „Dein Tag im Überblick“ | Abschnitt 2.2, Zeilen „Ziele heute“ (`4112:60`) und „Home, Tageskarte antippbar“ (`4115:249`) | [dashboard-gamification.md](screens/dashboard-gamification.md) Abschnitt 12 |
+| BS-93 | Home und „Ziele heute“ an einem vergangenen Tag | Abschnitt 2.2, Zeile „Home, vergangener Tag“ (`4116:249`, `4114:186`) | dashboard-gamification.md Abschnitt 13 |
+| BS-110 | Home mit Aufgaben und Gewohnheiten („Heute abhaken“) | `4116:421`; Dunkel `4116:822`, OLED `4116:1223` | [tasks-habits.md](screens/tasks-habits.md) Abschnitt 2a |
+| BS-99 | Ziele bearbeiten mit „Workout heute“ aus und an; Sheet „Wie war dein Tag?“; „Ziele heute“ mit Workout und Wochenziel; Karten-Zustände | aus `4117:249`, an `4117:361`; Sheet `4117:473`, Dunkel `4117:770`, OLED `4117:1067`; „Ziele heute“ `4114:327` (auch in 2.2); Karten `4123:316` | [focus-workouts.md](screens/focus-workouts.md) Abschnitt 9, [profile-settings.md](screens/profile-settings.md) Abschnitt 9 |
+| BS-108 | Karten-Zustände der Schritte-Karte | `4123:316` | [body-weight-steps.md](screens/body-weight-steps.md) Abschnitt 2.2 |
+| BS-111 | Aufgabe mit Erinnerung | Erinnerung aus `4121:314`, an `4121:414`, Aufgabe bearbeiten `4121:517`, Benachrichtigungen nicht erlaubt `4121:621`, Vorschau der Benachrichtigung `4121:733` | tasks-habits.md Abschnitte 2 und 3 |
+| BS-117 | Plus-Menü nach Zielen | gefiltert Hell `4118:3643`, Dunkel `4118:3910`, OLED `4118:4177`; Leerzustand Hell `4118:4444`, Dunkel `4118:4720`, OLED `4118:4996` | [shell.md](screens/shell.md) Abschnitt 6 |
+| BS-97 | Schritte aus Health | Einstellungen `4122:314`, Erklärung vor dem Systemdialog `4122:509`, Schritte mit Health `4122:553`, Zugriff verweigert `4122:667`, Health Connect fehlt `4122:777`, Karten-Zustände `4123:316` | body-weight-steps.md Abschnitt 2.3 |
+| BS-118, BS-120 | Einstellungen mit antippbarer Version; „Über die App“ mit Lizenz | Einstellungen `4119:254`; Über die App Hell `4119:418`, Dunkel `4119:512`, OLED `4119:606` | profile-settings.md Abschnitt 2 |
+| BS-113 | Erinnerungen: Erlaubnis erklären, Einstellungen bei abgelehnter Erlaubnis | `4118:5272`, `4118:5313` | [data-reminders.md](screens/data-reminders.md) Abschnitt 1 |
+| BS-121 | Tafel „Ziele-Ring – Zustände“ | Hell `4127:316`, Dunkel `4127:365`, OLED `4127:414` | dashboard-gamification.md Abschnitt 6 (Token `dayRingComplete` in 8.2) |
+
+### 10.2 Annahmen des Entwurfs
+
+Die Entwürfe legen Verhalten fest, das die Tickets offen ließen. Die Umsetzung folgt ihnen, solange nichts anderes entschieden ist:
+
+- Das Wochenziel steht in „Ziele heute“ getrennt unter dem Tagesring und zählt nicht mit.
+- Vergangene Tage: Der Hinweis „Nicht heute“ trägt „Zurück zu heute“, die Pfeile gelten zusätzlich zur Wischgeste, der Tag ist nur lesend.
+- Ruhetag und Überspringen erscheinen als eigene Status, zählen als erreicht, vergeben keine XP, und die Streak bleibt.
+- Dashboard: Eine Aufgabe hat ein eckiges Kästchen, eine Gewohnheit ein rundes Kästchen mit ihrer Serie, dazu jeweils einen Typ-Chip.
+- Die Texte zu Health nennen Health Connect (Android zuerst); iOS folgt erst nach dem Spike mit dem iOS-Tester. Der App-Name bleibt ein Platzhalter (BS-47).
+
+### 10.3 Nicht entworfen
+
+- BS-112 (Tastatur schließen): kein Bildschirm; das Verhalten steht in [forms-keyboard.md](screens/forms-keyboard.md).
+- BS-114 (Querformat): kein Entwurf; die App wird nicht für das Querformat gestaltet (D-019).
+- Workout-Pläne (BS-94, Epic BS-119): gehören zu v0.3.0.
+
+### 10.4 Tokens, Symbole und Bausteine
+
+Neue Tokens und Symbole der Entwürfe stehen schon in 8.2 (`dayRingComplete`) und 8.3 (`AppIcon.target`, `AppIcon.heart`), die zusätzlichen Bausteine des Designsystems in 9.2; hier werden sie nicht wiederholt.

@@ -1,12 +1,21 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:self_improvement/core/goals/application/goal_providers.dart';
 import 'package:self_improvement/core/providers/core_providers.dart';
+import 'package:self_improvement/features/focus/data/workout_day_mark_repository.dart';
 import 'package:self_improvement/features/focus/data/workout_repository.dart';
 import 'package:self_improvement/features/focus/domain/workout_entry.dart';
 import 'package:self_improvement/features/focus/domain/workout_week.dart';
 
 final workoutRepositoryProvider = Provider<WorkoutRepository>(
   (ref) => WorkoutRepository(
+    database: ref.watch(appDatabaseProvider),
+    runner: ref.watch(commandRunnerProvider),
+  ),
+);
+
+/// Rest days and skipped days (BS-99).
+final workoutDayMarkRepositoryProvider = Provider<WorkoutDayMarkRepository>(
+  (ref) => WorkoutDayMarkRepository(
     database: ref.watch(appDatabaseProvider),
     runner: ref.watch(commandRunnerProvider),
   ),

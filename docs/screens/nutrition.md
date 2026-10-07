@@ -42,6 +42,7 @@ Routenreihenfolge in `NutritionModule.routes`: `/water`, `/water/:id`, `/nutriti
 
 - **Wasser**: echte Summe mit Ziel („1,5 / 2,5 l“), Balken, Prozent- bzw. Zielstatus als Text, Schnellwahl-Buttons, bei einem Fehler Hinweis mit „Erneut versuchen“.
 - **Ernährung**: Anzahl der Mahlzeiten, bekannte Kalorien bzw. „Kalorien unvollständig“, Aktion „Mahlzeit eintragen“. Ohne Mahlzeit nur „–“ und der Weg zum Eintragen.
+- **An einem vergangenen Tag (BS-93)**: Home kann einen der letzten sieben Tage zeigen ([dashboard-gamification.md](dashboard-gamification.md) Abschnitt 13). Beide Karten sind dann eigene Widgets (`WaterPastDayCard`, `NutritionPastDayCard`) über denselben Modellen (`waterDayProvider` ruft dieselbe Funktion wie `waterTodayProvider` mit dem Tag auf, `mealsDayProvider` gab es schon): Wasser zeigt die Summe dieses Tages gegen das Ziel, das an **diesem** Tag galt (Snapshot), mit dem wirklichen Prozentwert und dem Sprechtext „Wasser an diesem Tag: …“; Ernährung die Mahlzeiten des Tages und die bekannten Kalorien. **Ohne Schnellzugriffe und ohne „Mahlzeit eintragen“** (ein Tipp ginge auf heute); die Karte öffnet wie sonst die Seite, dort läuft das Eintragen für einen früheren Tag über das Formular. Ein Tag ohne Eintrag sagt „Nichts eingetragen“ bzw. „Keine Mahlzeit eingetragen“ und zeigt keine „0“.
 
 ## 3. Abweichungen vom Figma-Entwurf und Gründe
 
@@ -94,7 +95,7 @@ Routenreihenfolge in `NutritionModule.routes`: `/water`, `/water/:id`, `/nutriti
 | `nutrition_module_test.dart` | Routenreihenfolge, Karten-IDs und Ränge, Plus-Menü | - |
 | `visual_check_test.dart` | schreibt PNGs unter `build/` für den Vergleich mit den Frames | - |
 
-Befehle: `flutter test test/features/nutrition` (612 Tests, davon 248 der Oberfläche (`presentation/` und `nutrition_module_test.dart`), die übrigen 364 sind Engine-Tests) und `flutter test` (Gesamtlauf; der aktuelle Stand steht in [test-report.md](../test-report.md)). `dart run tool/at_coverage.dart` ordnet die Tests den Abnahmefällen AT10, AT11, AT12, AT14, AT23, AT24 und AT27 zu.
+Befehle: `flutter test test/features/nutrition` (618 Tests; Oberfläche: `test/features/nutrition/presentation` (243) und `test/features/nutrition/nutrition_module_test.dart` (5); Engine: `test/features/nutrition/application` (113), `test/features/nutrition/data` (135) und `test/features/nutrition/domain` (122)) und `flutter test` (Gesamtlauf; der aktuelle Stand steht in [test-report.md](../test-report.md)). `dart run tool/at_coverage.dart` ordnet die Tests den Abnahmefällen AT10, AT11, AT12, AT14, AT23, AT24 und AT27 zu.
 
 ## 7. Offene Punkte
 

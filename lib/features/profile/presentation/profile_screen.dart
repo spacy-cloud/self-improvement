@@ -217,6 +217,7 @@ class _GoalTile extends StatelessWidget {
       ProfileGoalKind.weightEntry => (AppIcon.weight, AppAccent.weight),
       ProfileGoalKind.taskCompletion => (AppIcon.task, AppAccent.habits),
       ProfileGoalKind.workoutWeekly => (AppIcon.workout, AppAccent.workout),
+      ProfileGoalKind.workoutDaily => (AppIcon.workout, AppAccent.workout),
       ProfileGoalKind.targetWeight => (AppIcon.weight, AppAccent.weight),
     };
     final pending = goal.pending;

@@ -69,4 +69,69 @@ void main() {
     expect(s.reduceMotion, isFalse);
     expect(s.notificationsEnabled, isFalse);
   });
+
+  test('the health wish is off by default and the time of the last '
+      'comparison is empty (BS-97)', () async {
+    final s = (await repository.get())!;
+    expect(s.healthStepsSyncEnabled, isFalse);
+    expect(s.healthStepsLastSyncAtUtc, isNull);
+  });
+
+  test('the health wish is stored and switched off again (BS-97)', () async {
+    await commands.setHealthStepsSyncEnabled(commandId: 'h1', value: true);
+    expect((await repository.get())!.healthStepsSyncEnabled, isTrue);
+    await commands.setHealthStepsSyncEnabled(commandId: 'h2', value: false);
+    expect((await repository.get())!.healthStepsSyncEnabled, isFalse);
+  });
+
+  test('the wish never touches the other settings and bumps the version '
+      'once (BS-97)', () async {
+    await commands.setReduceMotion(commandId: 'm', value: true);
+    final before = (await repository.get())!;
+    await commands.setHealthStepsSyncEnabled(commandId: 'h', value: true);
+    final after = (await repository.get())!;
+    expect(after.rowVersion, before.rowVersion + 1);
+    expect(after.reduceMotion, isTrue);
+    expect(after.notificationsEnabled, before.notificationsEnabled);
+    expect(after.themeModeKey, before.themeModeKey);
+    expect(after.healthStepsLastSyncAtUtc, isNull);
+  });
+
+  test('the time of the last comparison is stored to the minute in UTC '
+      '(BS-97)', () async {
+    await commands.setHealthStepsLastSyncAt(
+      commandId: 't1',
+      atUtc: DateTime.utc(2026, 10, 3, 8, 15, 42, 987),
+    );
+    expect(
+      (await repository.get())!.healthStepsLastSyncAtUtc,
+      DateTime.utc(2026, 10, 3, 8, 15),
+    );
+    // A local instant is stored as the same instant in UTC.
+    await commands.setHealthStepsLastSyncAt(
+      commandId: 't2',
+      atUtc: DateTime.parse('2026-10-03T10:20:59+02:00'),
+    );
+    expect(
+      (await repository.get())!.healthStepsLastSyncAtUtc,
+      DateTime.utc(2026, 10, 3, 8, 20),
+    );
+  });
+
+  test('minuteOf cuts seconds and milliseconds only (BS-97)', () {
+    expect(
+      SettingsCommands.minuteOf(DateTime.utc(2026, 10, 3, 23, 59, 59, 999)),
+      DateTime.utc(2026, 10, 3, 23, 59),
+    );
+    expect(
+      SettingsCommands.minuteOf(DateTime.utc(2026, 10, 3, 0, 0)),
+      DateTime.utc(2026, 10, 3, 0, 0),
+    );
+  });
+
+  test('replaying a health command changes nothing (BS-97)', () async {
+    await commands.setHealthStepsSyncEnabled(commandId: 'r', value: true);
+    await commands.setHealthStepsSyncEnabled(commandId: 'r', value: false);
+    expect((await repository.get())!.healthStepsSyncEnabled, isTrue);
+  });
 }

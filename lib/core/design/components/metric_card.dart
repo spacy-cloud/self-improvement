@@ -25,6 +25,8 @@ class MetricCard extends StatelessWidget {
     this.target,
     this.subtitle,
     this.icon,
+    this.valueStyle,
+    this.valueIcon,
     this.accent = AppAccent.primary,
     this.progress,
     this.progressVariant = AppProgressVariant.primary,
@@ -52,6 +54,15 @@ class MetricCard extends StatelessWidget {
 
   /// Glyph in front of the title.
   final IconData? icon;
+
+  /// Style of [value]. The default is the big number style; a card that shows
+  /// a text instead of a number (a day state such as "Ruhetag") passes a
+  /// smaller one so the text does not break inside a word.
+  final TextStyle? valueStyle;
+
+  /// Glyph in front of [value] (for example the moon of a rest day), in the
+  /// colour of [accent]. Decorative: [semanticLabel] says what it means.
+  final IconData? valueIcon;
 
   /// Accent of the icon.
   final AppAccent accent;
@@ -127,7 +138,7 @@ class MetricCard extends StatelessWidget {
         children: <InlineSpan>[
           TextSpan(
             text: value,
-            style: AppTextStyles.titleScreen.copyWith(
+            style: (valueStyle ?? AppTextStyles.titleScreen).copyWith(
               color: colors.textPrimary,
             ),
           ),
@@ -156,7 +167,21 @@ class MetricCard extends StatelessWidget {
         children: <Widget>[
           header,
           const SizedBox(height: 12),
-          valueLine,
+          if (valueIcon == null)
+            valueLine
+          else
+            // A Wrap, not a Row: a long word (for example "Übersprungen") that
+            // does not fit next to the glyph moves below it instead of
+            // breaking inside the word.
+            Wrap(
+              spacing: 6,
+              runSpacing: 2,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: <Widget>[
+                Icon(valueIcon, size: 18, color: colors.accent(accent)),
+                valueLine,
+              ],
+            ),
           if (progress != null) ...<Widget>[
             const SizedBox(height: 10),
             AppProgressBar(

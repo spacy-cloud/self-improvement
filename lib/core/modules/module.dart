@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:self_improvement/core/modules/module_id.dart';
+import 'package:self_improvement/shared/local_date.dart';
 
 /// A dashboard card contributed by a module.
 ///
@@ -16,6 +17,7 @@ final class DashboardCardDescriptor {
     required this.defaultRank,
     required this.builder,
     this.fullWidth = false,
+    this.dayBuilder,
   });
 
   /// Stable id, e.g. `water`.
@@ -35,6 +37,19 @@ final class DashboardCardDescriptor {
   /// Builds the card. Quick actions inside the card must not trigger the card
   /// tap (detail navigation).
   final Widget Function(BuildContext context, WidgetRef ref) builder;
+
+  /// Builds the card for a day that is NOT today (BS-93), the day Home shows
+  /// when a person pages back through the last days. The card shows what that
+  /// day had, from the facts and the goals of that day, and only shows: no quick
+  /// action, nothing that records something. Opening the module page from the
+  /// card stays possible, because recording for an earlier day happens in the
+  /// forms.
+  ///
+  /// `null` means the module has no card for another day; Home then leaves the
+  /// card out on those days rather than show today's numbers under the date of
+  /// another day.
+  final Widget Function(BuildContext context, WidgetRef ref, LocalDate day)?
+  dayBuilder;
 }
 
 /// An entry offered by the plus menu to create a record.

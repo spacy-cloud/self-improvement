@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/core/feedback/feedback_service.dart';
 import 'package:self_improvement/core/modules/module_id.dart';
 import 'package:self_improvement/core/modules/module_registry.dart';
 import 'package:self_improvement/core/providers/command_providers.dart';
+import 'package:self_improvement/features/body/application/weight_providers.dart';
+import 'package:self_improvement/features/body/domain/weight_entry.dart';
+import 'package:self_improvement/features/body/steps/application/steps_providers.dart';
 import 'package:self_improvement/features/dashboard/presentation/home_screen.dart';
 import 'package:self_improvement/shared/local_date.dart';
 
@@ -133,6 +137,52 @@ void main() {
     },
   );
 
+  testWidgets('(BS-108, AT26) after an entry the steps card keeps its action, '
+      'the weight card offers entering only without a measurement', (
+    tester,
+  ) async {
+    final home = await _pump(tester);
+    expect(find.text('Schritte eintragen'), findsOneWidget);
+    expect(find.text('Gewicht eintragen'), findsOneWidget);
+
+    await tester.runCommand(
+      () => home.container
+          .read(stepsRepositoryProvider)
+          .setSteps(
+            commandId: 'steps-today',
+            date: LocalDate(2026, 10, 3),
+            steps: 7450,
+          ),
+    );
+    await settle(tester);
+    // Only the steps card changes: its action turns into the update.
+    expect(find.text('75 % erreicht'), findsOneWidget);
+    expect(find.text('Schritte aktualisieren'), findsOneWidget);
+    expect(find.text('Schritte eintragen'), findsNothing);
+    expect(find.text('Gewicht eintragen'), findsOneWidget);
+
+    await tester.runCommand(
+      () => home.container
+          .read(weightRepositoryProvider)
+          .create(
+            commandId: 'weight-today',
+            draft: WeightDraft(
+              weightGrams: 71500,
+              occurredAtUtc: DateTime.utc(2026, 10, 3, 6),
+            ),
+          ),
+    );
+    await settle(tester);
+    // The weight card is unchanged: with a measurement it has no action.
+    expect(find.textContaining('71,5 kg'), findsOneWidget);
+    expect(find.text('Gewicht eintragen'), findsNothing);
+    expect(find.text('Schritte aktualisieren'), findsOneWidget);
+
+    await tester.tap(find.text('Schritte aktualisieren'));
+    await tester.pumpAndSettle();
+    expect(find.text('Für heute sind schon 7.450 eingetragen'), findsOneWidget);
+  });
+
   for (final size in responsiveSizes) {
     testWidgets(
       '(Q02) real cards fit ${size.width.toInt()} px at 200 % text without overflow',
@@ -144,5 +194,38 @@ void main() {
         expect(tester.takeException(), isNull);
       },
     );
+
+    for (final scale in [1.0, 2.0]) {
+      testWidgets(
+        '(BS-108, AT33) the steps card with an entry and its action fit '
+        '${size.width.toInt()} px at ${(scale * 100).toInt()} % text, the '
+        'action keeps 48 x 48',
+        (tester) async {
+          final home = await _pump(tester, size: size, scale: scale);
+          await tester.runCommand(
+            () => home.container
+                .read(stepsRepositoryProvider)
+                .setSteps(
+                  commandId: 'steps-today',
+                  date: LocalDate(2026, 10, 3),
+                  steps: 7450,
+                ),
+          );
+          await settle(tester);
+          expect(tester.takeException(), isNull);
+
+          final action = find.widgetWithText(
+            MetricCardAction,
+            'Schritte aktualisieren',
+          );
+          await tester.ensureVisible(action);
+          await tester.pump();
+          expect(tester.takeException(), isNull);
+          final area = tester.getSize(action);
+          expect(area.width, greaterThanOrEqualTo(48));
+          expect(area.height, greaterThanOrEqualTo(48));
+        },
+      );
+    }
   }
 }

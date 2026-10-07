@@ -5,6 +5,8 @@ library;
 import 'package:self_improvement/core/time/clock_service.dart';
 import 'package:self_improvement/features/focus/domain/muscle_group.dart';
 import 'package:self_improvement/features/focus/domain/muscle_recency.dart';
+import 'package:self_improvement/features/focus/domain/workout_daily_goal.dart';
+import 'package:self_improvement/features/focus/domain/workout_day_mark.dart';
 import 'package:self_improvement/features/focus/domain/workout_entry.dart';
 import 'package:self_improvement/features/focus/domain/workout_week.dart';
 import 'package:self_improvement/shared/german_date.dart';
@@ -112,3 +114,90 @@ String lastTrainedText(int daysAgo) => switch (daysAgo) {
 /// `Brust, heute` for screen readers.
 String muscleRecencySpoken(MuscleRecency recency, LocalDate today) =>
     '${recency.group.label}, zuletzt ${lastTrainedText(recency.daysAgo(today))}';
+
+// ------------------------------------------------- "Wie war dein Tag?" (BS-99)
+
+/// What a rest day and a skipped day are worth, in one sentence: they count as
+/// reached for "Workout heute", earn no XP and keep the streak.
+const String workoutDayMarkCounts =
+    'Zählt als erreicht, keine XP. Die Streak bleibt.';
+
+/// The line of the Workout card (and of the day card of the workout area):
+/// the workout of the day, the mark, or that the day is still open.
+String workoutDayValue(WorkoutDayState state) => switch (state.outcome) {
+  WorkoutDayOutcome.open => 'Noch kein Training',
+  WorkoutDayOutcome.trained => state.latest!.displayTitle,
+  WorkoutDayOutcome.rest => 'Ruhetag',
+  WorkoutDayOutcome.skipped => 'Übersprungen',
+};
+
+/// The line below [workoutDayValue]: what the day needs, the muscle groups (or
+/// the meta line) of the latest workout, how many workouts the day has, or what
+/// the mark is worth.
+String workoutDayCaption(WorkoutDayState state) => switch (state.outcome) {
+  WorkoutDayOutcome.open => 'Heute offen',
+  WorkoutDayOutcome.trained =>
+    state.workouts.length > 1
+        ? '${state.workouts.length} Trainings heute'
+        : (muscleGroupsText(state.latest!.muscleGroups) ??
+              workoutMetaLine(state.latest!)),
+  WorkoutDayOutcome.rest || WorkoutDayOutcome.skipped => workoutDayMarkCounts,
+};
+
+/// What a screen reader says for the day: the value, the caption and that the
+/// daily goal is reached once the day is not open.
+String workoutDaySpoken(WorkoutDayState state) {
+  final reached = state.fulfilled ? ', Tagesziel erreicht' : '';
+  return '${workoutDayValue(state)}, ${workoutDayCaption(state)}$reached';
+}
+
+/// The value line of the Workout card for a day that is not today (BS-93): the
+/// workout of that day, the mark, or a dash for a day without either (nothing
+/// was recorded, which is not "0 Trainings").
+String workoutPastDayValue(WorkoutDayState state) => switch (state.outcome) {
+  WorkoutDayOutcome.open => '–',
+  WorkoutDayOutcome.trained => state.latest!.displayTitle,
+  WorkoutDayOutcome.rest => 'Ruhetag',
+  WorkoutDayOutcome.skipped => 'Übersprungen',
+};
+
+/// The line below [workoutPastDayValue]: the muscle groups (or the meta line)
+/// of the latest workout, how many workouts the day had, what the mark is worth,
+/// or that nothing was recorded.
+String workoutPastDayCaption(WorkoutDayState state) => switch (state.outcome) {
+  WorkoutDayOutcome.open => 'Kein Training eingetragen',
+  WorkoutDayOutcome.trained =>
+    state.workouts.length > 1
+        ? '${state.workouts.length} Trainings an diesem Tag'
+        : (muscleGroupsText(state.latest!.muscleGroups) ??
+              workoutMetaLine(state.latest!)),
+  WorkoutDayOutcome.rest || WorkoutDayOutcome.skipped => workoutDayMarkCounts,
+};
+
+/// What a screen reader says for the Workout card of a day that is not today.
+String workoutPastDaySpoken(WorkoutDayState state) =>
+    state.outcome == WorkoutDayOutcome.open
+    ? workoutPastDayCaption(state)
+    : '${workoutPastDayValue(state)}, ${workoutPastDayCaption(state)}';
+
+/// Spoken label of the "Rückgängig" action of a marked day.
+String workoutDayTakeBackLabel(WorkoutDayState state) =>
+    switch (state.outcome) {
+      WorkoutDayOutcome.rest => 'Ruhetag rückgängig machen',
+      WorkoutDayOutcome.skipped => 'Überspringen rückgängig machen',
+      _ => 'Rückgängig',
+    };
+
+/// What the workout area says about the daily goal "Workout heute": on or off,
+/// and a change that is saved but not valid yet.
+String workoutDailyGoalPlanText(WorkoutDailyGoalPlan plan) {
+  if (plan.hasPendingChange) {
+    return plan.tomorrow
+        ? 'Ab morgen ein. Training, Ruhetag oder Überspringen zählt dann als '
+              'erreicht.'
+        : 'Ab morgen aus.';
+  }
+  return plan.today
+      ? 'Ein. Training, Ruhetag oder Überspringen zählt als erreicht.'
+      : 'Aus. Einschalten bei den Zielen, gilt ab morgen.';
+}

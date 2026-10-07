@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:self_improvement/core/commands/command_runner.dart';
 import 'package:self_improvement/core/database/app_database.dart';
 import 'package:self_improvement/core/modules/module_id.dart';
 import 'package:self_improvement/core/notifications/application/reminder_service.dart';
@@ -9,6 +10,8 @@ import 'package:self_improvement/core/notifications/domain/reminder_status.dart'
 import 'package:self_improvement/core/notifications/domain/scheduled_reminder.dart';
 import 'package:self_improvement/core/notifications/platform/fake_reminder_platform.dart';
 import 'package:self_improvement/core/testing/data_harness.dart';
+import 'package:self_improvement/features/tasks/data/task_repository.dart';
+import 'package:self_improvement/features/tasks/domain/task.dart';
 import 'package:self_improvement/shared/local_date.dart';
 import 'package:self_improvement/shared/local_time.dart';
 
@@ -172,6 +175,61 @@ final class ReminderHarness {
         deletedAtUtc: deletedAt,
       ),
     );
+  }
+
+  // ---------------------------------------------------------------- tasks
+
+  /// The real task repository over the same database and command runner:
+  /// everything below goes through the real commands, so the reminder engine
+  /// sees exactly what the app writes.
+  late final TaskRepository tasks = TaskRepository(
+    database: database,
+    runner: data.runner,
+  );
+
+  /// Creates a task with an optional reminder and returns its id.
+  Future<String> createTask({
+    String title = 'Steuererklärung',
+    DateTime? reminderAt,
+  }) async {
+    final outcome = await tasks.create(
+      commandId: data.ids.newId(),
+      draft: TaskDraft(title: title, reminderAtUtc: reminderAt),
+    );
+    return outcome.entityId!;
+  }
+
+  /// Sets, moves (`at`) or removes (`null`) the reminder of a task; every other
+  /// field of the task stays.
+  Future<CommandOutcome> setReminder(String id, DateTime? at) async {
+    final task = (await tasks.findById(id))!;
+    return tasks.update(
+      commandId: data.ids.newId(),
+      id: id,
+      draft: TaskDraft(
+        title: task.title,
+        description: task.description,
+        priority: task.priority,
+        dueDate: task.dueDate,
+        tags: task.tags,
+        reminderAtUtc: at,
+      ),
+      expectedRowVersion: task.rowVersion,
+    );
+  }
+
+  Future<CommandOutcome> completeTask(String id) =>
+      tasks.setCompleted(commandId: data.ids.newId(), id: id, completed: true);
+
+  Future<CommandOutcome> reopenTask(String id) =>
+      tasks.setCompleted(commandId: data.ids.newId(), id: id, completed: false);
+
+  Future<CommandOutcome> deleteTask(String id) =>
+      tasks.delete(commandId: data.ids.newId(), id: id);
+
+  /// Runs the undo of [outcome] with a new command id.
+  Future<void> undo(CommandOutcome outcome) async {
+    await outcome.undo!.run(data.ids.newId());
   }
 
   // ---------------------------------------------------------------- focus

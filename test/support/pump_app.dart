@@ -28,8 +28,29 @@ const List<Size> responsiveSizes = <Size>[
   Size(430, 932),
 ];
 
+/// How long the tear down of [createTestHarness] waits for the database to
+/// close before it fails the test. Closing takes 0 to 16 ms in the whole suite
+/// (measured over 1350 tear downs of a full run), so the limit is far above
+/// anything normal and still well below the time a run would be left hanging.
+const Duration databaseCloseLimit = Duration(seconds: 20);
+
+/// Waits for [work] at most [limit]. When it has not finished by then, the
+/// result is a [TestFailure] with [message] instead of a wait without an end:
+/// a hang becomes a failure that names its cause.
+///
+/// Used for what can never return when a test went wrong, like closing the
+/// database while a subscription is still open (BS-98, R2-04). It must run in a
+/// zone with real timers (`WidgetTester.runAsync` or a plain `test`).
+Future<void> finishWithin(
+  Future<void> work,
+  Duration limit, {
+  required String message,
+}) => work.timeout(limit, onTimeout: () => throw TestFailure(message));
+
 /// Creates a [DataHarness] inside `runAsync` (real async I/O of the in-memory
-/// database) and disposes it when the test ends.
+/// database) and disposes it when the test ends, after taking down whatever the
+/// test still has mounted. Closing the database is limited to
+/// [databaseCloseLimit]; after that the test fails with the cause.
 ///
 /// With [onboarded] the onboarding state is seeded (all modules enabled, goal
 /// versions, dashboard cards); pass [enabledModules] to enable only some.
@@ -45,7 +66,28 @@ Future<DataHarness> createTestHarness(
     () => DataHarness.create(nowIso: nowIso, realProjection: realProjection),
   ))!;
   addTearDown(() async {
-    await tester.runAsync(harness.dispose);
+    // Take the app down before the database closes. A failed test leaves its
+    // widget tree mounted, Riverpod pauses the listeners of the pages that
+    // another page covers, and Drift's close() waits for the end of every
+    // listener, which a paused one never reaches: the tear down (and with it
+    // the whole run) would hang instead of reporting the failure (BS-98, R1-04).
+    // Taking the app down does not help in every case (a failing test whose
+    // navigator broke itself still hangs), so closing is also limited in time:
+    // the run ends with a failure that names the cause (BS-98, R2-04).
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.runAsync(
+      () => finishWithin(
+        harness.dispose(),
+        databaseCloseLimit,
+        message:
+            'The database did not close within ${databaseCloseLimit.inSeconds} '
+            's: a subscription is still open (a page or a provider that still '
+            'listens to a stream, for example a page that a failed test left '
+            'on the navigator). Drift waits for every subscription to end, so '
+            'the tear down would hang. Look at the failure of the test itself '
+            'first; this one only replaces a run without an end.',
+      ),
+    );
   });
   if (onboarded) {
     await tester.runAsync(

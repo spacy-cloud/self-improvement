@@ -12,6 +12,9 @@ import 'package:self_improvement/core/notifications/application/reminder_service
 /// - `app_settings` (master switch), `reminder_rules` (water slots)
 /// - `module_status_history` (modules switched on or off)
 /// - `habits` (new, edited time, archived, deleted, restored by undo)
+/// - `tasks` (a reminder set, changed or removed; the task completed, reopened,
+///   deleted or restored by undo; every write to a task triggers a run, which
+///   reads and finds nothing to do when no reminder is concerned)
 /// - `focus_sessions` (start, pause, resume, finish, discard)
 /// - `water_entries`, `goal_versions`, `daily_goal_snapshots` (the
 ///   "today's water goal is reached" fact)
@@ -46,6 +49,7 @@ final class ReminderAutoReconciler {
             TableUpdateQuery.onTable(_database.reminderRules),
             TableUpdateQuery.onTable(_database.moduleStatusHistory),
             TableUpdateQuery.onTable(_database.habits),
+            TableUpdateQuery.onTable(_database.tasks),
             TableUpdateQuery.onTable(_database.focusSessions),
             TableUpdateQuery.onTable(_database.waterEntries),
             TableUpdateQuery.onTable(_database.goalVersions),

@@ -13,7 +13,8 @@ final taskRepositoryProvider = Provider<TaskRepository>(
 );
 
 /// All active tasks (open and completed), oldest first. The screens use the
-/// derived [taskListProvider] and [dashboardTasksProvider] instead.
+/// derived [taskListProvider], [dashboardTasksProvider] and
+/// `todayChecklistProvider` instead.
 final tasksProvider = StreamProvider<List<Task>>(
   (ref) => ref.watch(taskRepositoryProvider).watchActive(),
 );
@@ -61,8 +62,11 @@ final taskListProvider = Provider<AsyncValue<TaskListView>>((ref) {
   return tasks.whenData((list) => buildTaskListView(list, filter, today));
 });
 
-/// The dashboard card: up to three open tasks that apply today (no due date or
-/// due up to today). Future tasks only show up in the "Alle" list.
+/// The open part of the dashboard card: up to three open tasks that apply today
+/// (no due date or due up to today). Future tasks only show up in the "Alle"
+/// list. The Home card itself ("Heute abhaken", tasks and habits) reads
+/// `todayChecklistProvider`, which builds on the same rule
+/// (`buildDashboardTasks`).
 final dashboardTasksProvider = Provider<AsyncValue<DashboardTasks>>((ref) {
   final tasks = ref.watch(tasksProvider);
   final today = ref.watch(todayProvider);

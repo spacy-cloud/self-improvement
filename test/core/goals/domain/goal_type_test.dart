@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:self_improvement/core/database/schema_keys.dart';
 import 'package:self_improvement/core/goals/domain/goal_keys.dart';
 import 'package:self_improvement/core/goals/domain/goal_type.dart';
 import 'package:self_improvement/core/modules/module_id.dart';
@@ -15,7 +16,13 @@ void main() {
           GoalType.focusMinutes: 'focus_minutes',
           GoalType.taskCompletion: 'task_completion',
           GoalType.workoutWeekly: 'workout_weekly',
+          GoalType.workoutDaily: 'workout_daily',
         },
+      );
+      expect(
+        GoalType.values.map((type) => type.key).toList(),
+        SchemaKeys.goalTypes,
+        reason: 'same keys, same order as the schema (BS-99)',
       );
       expect(
         GoalType.values.map((type) => type.key).toSet(),
@@ -47,6 +54,7 @@ void main() {
       expect(GoalType.focusMinutes.module, ModuleId.focus);
       expect(GoalType.taskCompletion.module, ModuleId.tasks);
       expect(GoalType.workoutWeekly.module, ModuleId.focus);
+      expect(GoalType.workoutDaily.module, ModuleId.focus);
     });
 
     test('only the weekly workout goal is not a daily goal', () {
@@ -59,6 +67,7 @@ void main() {
         GoalType.weightEntry,
         GoalType.focusMinutes,
         GoalType.taskCompletion,
+        GoalType.workoutDaily,
       ]);
       expect(
         GoalType.dailyTypes.map((type) => type.module),
@@ -74,6 +83,13 @@ void main() {
       expect(GoalType.focusMinutes.defaultTarget, 25);
       expect(GoalType.taskCompletion.defaultTarget, 1);
       expect(GoalType.workoutWeekly.defaultTarget, 3);
+      expect(GoalType.workoutDaily.defaultTarget, 1);
+    });
+
+    test('(BS-99) only "Workout heute" is off without a goal version', () {
+      expect(GoalType.values.where((type) => !type.defaultEnabled), [
+        GoalType.workoutDaily,
+      ]);
     });
 
     test('every default target is itself valid', () {
@@ -86,12 +102,16 @@ void main() {
       }
     });
 
-    test('only weight entry and task completion are switches', () {
-      expect(GoalType.values.where((type) => type.isSwitch), [
-        GoalType.weightEntry,
-        GoalType.taskCompletion,
-      ]);
-    });
+    test(
+      'weight entry, task completion and "Workout heute" are the switches',
+      () {
+        expect(GoalType.values.where((type) => type.isSwitch), [
+          GoalType.weightEntry,
+          GoalType.taskCompletion,
+          GoalType.workoutDaily,
+        ]);
+      },
+    );
 
     test('resolveTarget uses the stored value, the default or the fixed 1', () {
       expect(GoalType.water.resolveTarget(3000), 3000);
@@ -101,6 +121,8 @@ void main() {
       expect(GoalType.weightEntry.resolveTarget(null), 1);
       expect(GoalType.weightEntry.resolveTarget(7), 1);
       expect(GoalType.taskCompletion.resolveTarget(0), 1);
+      expect(GoalType.workoutDaily.resolveTarget(null), 1);
+      expect(GoalType.workoutDaily.resolveTarget(3), 1, reason: 'a switch');
     });
   });
 
@@ -173,7 +195,11 @@ void main() {
     });
 
     test('switch goals accept only the fixed target 1', () {
-      for (final type in [GoalType.weightEntry, GoalType.taskCompletion]) {
+      for (final type in [
+        GoalType.weightEntry,
+        GoalType.taskCompletion,
+        GoalType.workoutDaily,
+      ]) {
         expectValidation(type, {
           -1: GoalTargetValidation.belowMinimum,
           0: GoalTargetValidation.belowMinimum,

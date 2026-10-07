@@ -5,6 +5,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/core/database/app_database.dart';
 import 'package:self_improvement/core/database/schema_keys.dart';
+import 'package:self_improvement/core/goals/domain/goal_type.dart';
 import 'package:self_improvement/core/modules/module_id.dart';
 import 'package:self_improvement/core/testing/test_database.dart';
 import 'package:self_improvement/shared/local_date.dart';
@@ -29,8 +30,9 @@ void main() {
   tearDown(() => db.close());
 
   group('schema basics', () {
-    test('starts at schema version 1 with all 19 tables', () async {
-      expect(db.schemaVersion, 1);
+    test('starts at schema version 2 with all 20 tables', () async {
+      expect(db.schemaVersion, 2);
+      expect(AppDatabase.currentSchemaVersion, 2);
       final tables = await db
           .customSelect(
             "SELECT name FROM sqlite_master WHERE type = 'table' "
@@ -58,6 +60,7 @@ void main() {
         'command_receipts',
         'reminder_rules',
         'scheduled_notifications',
+        'workout_day_marks',
       });
     });
 
@@ -68,6 +71,14 @@ void main() {
 
     test('schema key lists match their domain counterparts', () {
       expect(ModuleId.values.map((m) => m.key).toList(), SchemaKeys.modules);
+      // Every goal type of the domain is allowed by the schema. The schema
+      // additionally has `workout_daily` (BS-99), which comes with the domain
+      // enum of that feature.
+      for (final type in GoalType.values) {
+        expect(SchemaKeys.goalTypes, contains(type.key), reason: type.key);
+      }
+      expect(SchemaKeys.goalTypes, contains('workout_daily'));
+      expect(SchemaKeys.goalTypes.toSet(), hasLength(7));
       expect(
         SchemaKeys.dashboardCardModule.keys.toSet(),
         SchemaKeys.dashboardCards.toSet(),
@@ -847,6 +858,272 @@ void main() {
     );
   });
 
+  group('schema 2 (BS-98): the data of BS-99, BS-97 and BS-111', () {
+    WorkoutDayMarksCompanion mark({
+      String id = 'k1',
+      LocalDate? date,
+      String kind = 'rest',
+      Value<DateTime?> deletedAt = const Value.absent(),
+    }) => WorkoutDayMarksCompanion.insert(
+      id: id,
+      localDate: date ?? fixtureDate,
+      kind: kind,
+      timezoneId: fixtureZone,
+      deletedAtUtc: deletedAt,
+      createdAtUtc: fixtureNow,
+      updatedAtUtc: fixtureNow,
+    );
+
+    test(
+      'workout_day_marks accepts rest and skipped, nothing else (BS-99)',
+      () async {
+        expect(SchemaKeys.workoutDayMarkKinds, ['rest', 'skipped']);
+        var day = fixtureDate;
+        for (final kind in SchemaKeys.workoutDayMarkKinds) {
+          await db
+              .into(db.workoutDayMarks)
+              .insert(mark(id: 'k-$kind', kind: kind, date: day));
+          day = day.addDays(1);
+        }
+        for (final kind in ['sick', 'Rest', '', 'workout']) {
+          await expectLater(
+            db
+                .into(db.workoutDayMarks)
+                .insert(mark(id: 'bad', kind: kind, date: day)),
+            violatesConstraint,
+            reason: '"$kind"',
+          );
+        }
+      },
+    );
+
+    test(
+      'a local date has one active mark; deleting frees the date (BS-99)',
+      () async {
+        await db.into(db.workoutDayMarks).insert(mark(id: 'a'));
+        await expectLater(
+          db.into(db.workoutDayMarks).insert(mark(id: 'b', kind: 'skipped')),
+          violatesConstraint,
+        );
+        // Soft delete (the undo of a mark) frees the day ...
+        await (db.update(db.workoutDayMarks)..where((m) => m.id.equals('a')))
+            .write(WorkoutDayMarksCompanion(deletedAtUtc: Value(fixtureNow)));
+        await db
+            .into(db.workoutDayMarks)
+            .insert(mark(id: 'b', kind: 'skipped'));
+        // ... and bringing the old one back while another is active is refused,
+        // which the repository must resolve (update instead of insert).
+        await expectLater(
+          (db.update(db.workoutDayMarks)..where((m) => m.id.equals('a'))).write(
+            const WorkoutDayMarksCompanion(deletedAtUtc: Value(null)),
+          ),
+          violatesConstraint,
+        );
+        await db
+            .into(db.workoutDayMarks)
+            .insert(mark(id: 'c', date: fixtureDate.addDays(1)));
+      },
+    );
+
+    test(
+      'workout_day_marks has the audit columns of the facts (BS-99)',
+      () async {
+        await db.into(db.workoutDayMarks).insert(mark());
+        final row = await db.select(db.workoutDayMarks).getSingle();
+        expect(row.rowVersion, 1);
+        expect(row.deletedAtUtc, isNull);
+        expect(row.createdAtUtc, fixtureNow);
+        expect(row.createdAtUtc.isUtc, isTrue);
+        expect(row.localDate, fixtureDate);
+        expect(row.timezoneId, fixtureZone);
+        await expectLater(
+          db.customStatement('UPDATE workout_day_marks SET row_version = 0'),
+          violatesConstraint,
+        );
+      },
+    );
+
+    test(
+      'goal_versions accepts every goal type including workout_daily (BS-99)',
+      () async {
+        for (final type in SchemaKeys.goalTypes) {
+          await db
+              .into(db.goalVersions)
+              .insert(
+                GoalVersionsCompanion.insert(
+                  id: 'g-$type',
+                  goalType: type,
+                  targetInteger: const Value(1),
+                  enabled: false,
+                  effectiveFromDate: fixtureDate,
+                  createdAtUtc: fixtureNow,
+                ),
+              );
+        }
+        final stored = await db.select(db.goalVersions).get();
+        expect(stored.map((g) => g.goalType), contains('workout_daily'));
+        await expectLater(
+          db
+              .into(db.goalVersions)
+              .insert(
+                GoalVersionsCompanion.insert(
+                  id: 'g-bad',
+                  goalType: 'workout_monthly',
+                  enabled: true,
+                  effectiveFromDate: fixtureDate,
+                  createdAtUtc: fixtureNow,
+                ),
+              ),
+          violatesConstraint,
+        );
+      },
+    );
+
+    test(
+      'step_days.source defaults to manual and takes manual or health (BS-97)',
+      () async {
+        expect(SchemaKeys.stepSources, ['manual', 'health']);
+        await db.into(db.stepDays).insert(stepRow(id: 'a'));
+        expect((await db.select(db.stepDays).getSingle()).source, 'manual');
+        var day = fixtureDate;
+        for (final source in SchemaKeys.stepSources) {
+          day = day.addDays(1);
+          await db
+              .into(db.stepDays)
+              .insert(
+                stepRow(
+                  id: 's-$source',
+                  date: day,
+                ).copyWith(source: Value(source)),
+              );
+        }
+        for (final source in ['watch', 'Health', '']) {
+          day = day.addDays(1);
+          await expectLater(
+            db
+                .into(db.stepDays)
+                .insert(
+                  stepRow(id: 'bad', date: day).copyWith(source: Value(source)),
+                ),
+            violatesConstraint,
+            reason: '"$source"',
+          );
+        }
+      },
+    );
+
+    test('app_settings: the health comparison is off and never ran by default (BS-97)', () async {
+      await db
+          .into(db.appSettings)
+          .insert(
+            AppSettingsCompanion.insert(
+              createdAtUtc: fixtureNow,
+              updatedAtUtc: fixtureNow,
+            ),
+          );
+      var row = await db.select(db.appSettings).getSingle();
+      expect(row.healthStepsSyncEnabled, isFalse);
+      expect(row.healthStepsLastSyncAtUtc, isNull);
+      final at = DateTime.utc(2026, 10, 3, 7, 59, 58, 123);
+      await db
+          .update(db.appSettings)
+          .write(
+            AppSettingsCompanion(
+              healthStepsSyncEnabled: const Value(true),
+              healthStepsLastSyncAtUtc: Value(at),
+            ),
+          );
+      row = await db.select(db.appSettings).getSingle();
+      expect(row.healthStepsSyncEnabled, isTrue);
+      expect(row.healthStepsLastSyncAtUtc, at);
+      expect(row.healthStepsLastSyncAtUtc!.isUtc, isTrue);
+      await expectLater(
+        db.customStatement(
+          'UPDATE app_settings SET health_steps_sync_enabled = 2',
+        ),
+        violatesConstraint,
+      );
+    });
+
+    test('tasks.reminder_*: an instant with its frozen date and zone, or nothing (BS-111)', () async {
+      await db.into(db.tasks).insert(taskRow(id: 'plain'));
+      final plain = await (db.select(
+        db.tasks,
+      )..where((t) => t.id.equals('plain'))).getSingle();
+      expect(plain.reminderAtUtc, isNull);
+      expect(plain.reminderLocalDate, isNull);
+      expect(plain.reminderTimezoneId, isNull);
+
+      final at = DateTime.utc(2026, 10, 7, 15, 30, 0, 250);
+      await db
+          .into(db.tasks)
+          .insert(
+            taskRow(id: 'with').copyWith(
+              reminderAtUtc: Value(at),
+              reminderLocalDate: Value(LocalDate(2026, 10, 7)),
+              reminderTimezoneId: const Value('Europe/Berlin'),
+            ),
+          );
+      final stored = await (db.select(
+        db.tasks,
+      )..where((t) => t.id.equals('with'))).getSingle();
+      expect(stored.reminderAtUtc, at);
+      expect(stored.reminderAtUtc!.isUtc, isTrue);
+      expect(stored.reminderLocalDate, LocalDate(2026, 10, 7));
+      expect(stored.reminderTimezoneId, 'Europe/Berlin');
+
+      // Partial reminders violate the coupling of the three columns.
+      for (final partial in <TasksCompanion>[
+        TasksCompanion(reminderAtUtc: Value(at)),
+        TasksCompanion(reminderLocalDate: Value(LocalDate(2026, 10, 7))),
+        const TasksCompanion(reminderTimezoneId: Value('UTC')),
+        TasksCompanion(
+          reminderAtUtc: Value(at),
+          reminderLocalDate: Value(LocalDate(2026, 10, 7)),
+        ),
+      ]) {
+        await expectLater(
+          (db.update(
+            db.tasks,
+          )..where((t) => t.id.equals('plain'))).write(partial),
+          violatesConstraint,
+        );
+      }
+      // Removing the reminder clears all three together.
+      await (db.update(db.tasks)..where((t) => t.id.equals('with'))).write(
+        const TasksCompanion(
+          reminderAtUtc: Value(null),
+          reminderLocalDate: Value(null),
+          reminderTimezoneId: Value(null),
+        ),
+      );
+    });
+
+    test(
+      'a completed task keeps its reminder; the two are independent (BS-111)',
+      () async {
+        await db
+            .into(db.tasks)
+            .insert(
+              taskRow(
+                id: 'done',
+                completedAt: Value(fixtureNow),
+                completedDate: Value(fixtureDate),
+                eligibility: const Value(true),
+              ).copyWith(
+                reminderAtUtc: Value(fixtureNow),
+                reminderLocalDate: Value(fixtureDate),
+                reminderTimezoneId: const Value(fixtureZone),
+              ),
+            );
+        expect(
+          (await db.select(db.tasks).getSingle()).reminderAtUtc,
+          fixtureNow,
+        );
+      },
+    );
+  });
+
   group('persistence across reopening', () {
     test('data survives closing and reopening a file database', () async {
       final dir = await Directory.systemTemp.createTemp('si_db_test');
@@ -864,7 +1141,7 @@ void main() {
       final version = await second
           .customSelect('PRAGMA user_version')
           .getSingle();
-      expect(version.read<int>('user_version'), 1);
+      expect(version.read<int>('user_version'), 2);
       // Constraints are still enforced after reopening.
       await expectLater(
         second.into(second.weightEntries).insert(weightRow(id: 'dup')),

@@ -4,50 +4,94 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:self_improvement/core/design/design.dart';
-import 'package:self_improvement/features/tasks/application/task_actions_controller.dart';
+import 'package:self_improvement/features/tasks/application/habit_providers.dart';
 import 'package:self_improvement/features/tasks/application/task_providers.dart';
-import 'package:self_improvement/features/tasks/domain/task_list.dart';
-import 'package:self_improvement/features/tasks/presentation/action_feedback.dart';
+import 'package:self_improvement/features/tasks/application/today_checklist_providers.dart';
+import 'package:self_improvement/features/tasks/domain/today_checklist.dart';
+import 'package:self_improvement/features/tasks/presentation/checklist_row.dart';
 import 'package:self_improvement/features/tasks/presentation/tasks_routes.dart';
-import 'package:self_improvement/features/tasks/presentation/tasks_widgets.dart';
+import 'package:self_improvement/shared/local_date.dart';
 
-/// The `tasks` card of the dashboard (full width): up to three open tasks that
-/// apply today, each with its own checkbox, so a task is completed with ONE
-/// tap, without opening it. Overdue tasks say so in words. Future tasks only
-/// show up in the list ("Alle").
+/// The `tasks` card of the dashboard (full width), "Heute abhaken" (BS-110):
+/// what is to be ticked off today, tasks and habits in one list.
+///
+/// Tasks and habits are two kinds and look different (square and round box,
+/// a type chip, the series of a habit). Each row ticks with ONE tap, without
+/// opening the record, through the same commands as the lists; the state comes
+/// from the same streams as the habits tab and the task list, so a check made
+/// anywhere shows up everywhere. A completed task or a checked habit stays in
+/// the list for the rest of the day (struck through), so a mistake is visible
+/// and can be undone with the box. The card lists at most three open tasks
+/// (`dashboardTaskLimit`) and [dashboardHabitLimit] habits; the rest is one
+/// line per kind that opens its list.
+///
+/// With [readOnly] the card shows the state and offers neither a tick nor the
+/// actions that create something.
+///
+/// With a [day] (a day that is not today, BS-93) it is the card of that day, and
+/// read-only: the tasks completed on that day and the habits of that day with
+/// their state (`buildDayChecklist`). It is then called "Aufgaben und
+/// Gewohnheiten", not "Heute abhaken", and a box cannot be changed here: a
+/// correction for an earlier day is made in the habits tab or the task list.
 class TasksDashboardCard extends ConsumerWidget {
-  const TasksDashboardCard({super.key});
+  const TasksDashboardCard({super.key, this.readOnly = false, this.day});
+
+  /// Shows the state only: no box can be changed, nothing can be created.
+  final bool readOnly;
+
+  /// The day shown; `null` is today.
+  final LocalDate? day;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tasks = ref.watch(dashboardTasksProvider);
-    return tasks.when(
-      loading: () => const _CardFrame(
-        subtitle: null,
-        children: <Widget>[SizedBox(height: 48)],
+    final day = this.day;
+    final readOnly = this.readOnly || day != null;
+    final checklist = day == null
+        ? ref.watch(todayChecklistProvider)
+        : ref.watch(dayChecklistProvider(day));
+    return checklist.when(
+      loading: () => _CardFrame(
+        title: _title(day),
+        progress: null,
+        allDone: false,
+        children: const <Widget>[SizedBox(height: 48)],
       ),
-      error: (error, stack) =>
-          ErrorState(onRetry: () => ref.invalidate(tasksProvider)),
+      error: (error, stack) => ErrorState(
+        onRetry: () {
+          ref
+            ..invalidate(tasksProvider)
+            ..invalidate(habitsProvider)
+            ..invalidate(habitCheckIndexProvider);
+        },
+      ),
       data: (data) => _CardFrame(
-        subtitle: data.applicableOpenCount == 0
-            ? 'Heute nichts offen'
-            : (data.applicableOpenCount == 1
-                  ? '1 Aufgabe für heute'
-                  : '${data.applicableOpenCount} Aufgaben für heute'),
-        quickAction: data.items.isEmpty
-            ? MetricCardAction(
-                label: 'Aufgabe anlegen',
-                icon: AppIcon.plus.data,
-                accent: AppAccent.habits,
-                onPressed: () => context.push(TaskRoutes.create),
-              )
-            : null,
+        title: _title(day),
+        progress: data.isEmpty ? null : data.progressText,
+        allDone: data.allDone,
         children: <Widget>[
-          if (data.items.isEmpty)
-            const _EmptyBody()
+          if (data.isEmpty)
+            _EmptyBody(readOnly: readOnly, pastDay: day != null)
           else ...<Widget>[
-            for (final item in data.items) _CardTaskRow(item: item),
-            if (data.moreCount > 0) _MoreRow(count: data.moreCount),
+            for (final entry in data.tasks)
+              ChecklistRow(
+                key: ValueKey<String>('checklist-task-${entry.id}'),
+                entry: entry,
+                today: data.today,
+                readOnly: readOnly,
+              ),
+            if (data.moreTasks > 0)
+              _MoreRow(kind: ChecklistKind.task, count: data.moreTasks),
+            for (final entry in data.habits)
+              ChecklistRow(
+                key: ValueKey<String>('checklist-habit-${entry.id}'),
+                entry: entry,
+                today: data.today,
+                readOnly: readOnly,
+              ),
+            if (data.moreHabits > 0)
+              _MoreRow(kind: ChecklistKind.habit, count: data.moreHabits),
+            if (data.habitPresence != HabitPresence.active && !readOnly)
+              _NoHabitHint(presence: data.habitPresence),
           ],
         ],
       ),
@@ -55,134 +99,211 @@ class TasksDashboardCard extends ConsumerWidget {
   }
 }
 
+/// The heading of the card: the live card is "Heute abhaken", the card of
+/// another day names what it holds.
+String _title(LocalDate? day) =>
+    day == null ? 'Heute abhaken' : 'Aufgaben und Gewohnheiten';
+
+/// The heading with the count outside the card and the card with the rows.
 class _CardFrame extends StatelessWidget {
   const _CardFrame({
-    required this.subtitle,
+    required this.title,
+    required this.progress,
+    required this.allDone,
     required this.children,
-    this.quickAction,
   });
 
-  final String? subtitle;
+  final String title;
+  final String? progress;
+  final bool allDone;
   final List<Widget> children;
-  final Widget? quickAction;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.tokens.colors;
-    return AppCard(
-      padding: EdgeInsets.zero,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Semantics(
-            container: true,
-            button: true,
-            label: subtitle == null ? 'Aufgaben' : 'Aufgaben, $subtitle',
-            hint: 'Öffnet die Aufgabenliste',
-            onTap: () => context.go(TaskRoutes.list),
-            excludeSemantics: true,
-            child: Material(
-              type: MaterialType.transparency,
-              child: InkWell(
-                onTap: () => context.go(TaskRoutes.list),
-                focusColor: colors.focus.withValues(alpha: 0.2),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    minHeight: AppSizes.touchMin,
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 14, 12, 8),
-                    child: Row(
-                      children: <Widget>[
-                        AppIconTile(
-                          icon: AppIcon.task.data,
-                          accent: AppAccent.habits,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              Text(
-                                'Aufgaben',
-                                style: AppTextStyles.titleCard.copyWith(
-                                  color: colors.textPrimary,
-                                ),
-                              ),
-                              if (subtitle != null)
-                                Text(
-                                  subtitle!,
-                                  style: AppTextStyles.captionDefault.copyWith(
-                                    color: colors.textSecondary,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        Icon(
-                          AppIcon.chevronRight.data,
-                          size: 20,
-                          color: colors.textSecondary,
-                        ),
-                      ],
-                    ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsetsDirectional.only(start: 10, end: 4),
+          child: Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 12,
+            runSpacing: 2,
+            children: <Widget>[
+              Semantics(
+                header: true,
+                child: Text(
+                  title,
+                  style: AppTextStyles.titleSection.copyWith(
+                    color: colors.textPrimary,
                   ),
                 ),
               ),
+              if (progress != null)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    if (allDone) ...<Widget>[
+                      ExcludeSemantics(
+                        child: Icon(
+                          AppIcon.check.data,
+                          size: 14,
+                          color: colors.primaryText,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                    ],
+                    Text(
+                      progress!,
+                      style: AppTextStyles.captionDefault.copyWith(
+                        color: allDone
+                            ? colors.primaryText
+                            : colors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        AppListGroup(dividerIndent: 0, children: children),
+      ],
+    );
+  }
+}
+
+/// Neither a task nor a habit for the day.
+class _EmptyBody extends StatelessWidget {
+  const _EmptyBody({required this.readOnly, required this.pastDay});
+
+  final bool readOnly;
+
+  /// The card of a day that is not today: it says what that day had.
+  final bool pastDay;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.tokens.colors;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            pastDay
+                ? 'An diesem Tag wurde keine Aufgabe erledigt, und es gab '
+                      'keine Gewohnheit.'
+                : 'Für heute ist nichts offen. Neue Aufgaben und Gewohnheiten '
+                      'erscheinen hier.',
+            style: AppTextStyles.bodyRegular.copyWith(
+              color: colors.textSecondary,
             ),
           ),
-          ...children,
-          if (quickAction != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: quickAction,
-            )
-          else
-            const SizedBox(height: 8),
+          if (!readOnly) ...<Widget>[
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 8,
+              children: <Widget>[
+                MetricCardAction(
+                  label: 'Aufgabe anlegen',
+                  icon: AppIcon.plus.data,
+                  accent: AppAccent.habits,
+                  onPressed: () => unawaited(context.push(TaskRoutes.create)),
+                ),
+                MetricCardAction(
+                  label: 'Gewohnheit anlegen',
+                  icon: AppIcon.plus.data,
+                  accent: AppAccent.habits,
+                  onPressed: () => unawaited(context.push(HabitRoutes.create)),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
   }
 }
 
-class _EmptyBody extends StatelessWidget {
-  const _EmptyBody();
+/// The way to the first habit: shown while no habit applies today.
+class _NoHabitHint extends StatelessWidget {
+  const _NoHabitHint({required this.presence});
+
+  final HabitPresence presence;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.tokens.colors;
+    final none = presence == HabitPresence.none;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-      child: Text(
-        'Für heute ist nichts offen. Neue Aufgaben erscheinen hier.',
-        style: AppTextStyles.bodyRegular.copyWith(color: colors.textSecondary),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            none ? 'Noch keine Gewohnheit' : 'Keine aktive Gewohnheit',
+            style: AppTextStyles.bodyStrong.copyWith(color: colors.textPrimary),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            none
+                ? 'Lege eine tägliche Gewohnheit an und hake sie hier mit '
+                      'einem Tipp ab.'
+                : 'Alle deine Gewohnheiten sind archiviert. Lege eine neue an.',
+            style: AppTextStyles.captionDefault.copyWith(
+              color: colors.textSecondary,
+            ),
+          ),
+          MetricCardAction(
+            label: 'Gewohnheit anlegen',
+            icon: AppIcon.plus.data,
+            accent: AppAccent.habits,
+            onPressed: () => unawaited(context.push(HabitRoutes.create)),
+          ),
+        ],
       ),
     );
   }
 }
 
+/// "und 2 weitere Aufgaben": what the card does not list, one line per kind,
+/// opens the list of that kind.
 class _MoreRow extends StatelessWidget {
-  const _MoreRow({required this.count});
+  const _MoreRow({required this.kind, required this.count});
 
+  final ChecklistKind kind;
   final int count;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.tokens.colors;
-    final text = count == 1 ? 'und 1 weitere' : 'und $count weitere';
+    final isTask = kind == ChecklistKind.task;
+    final noun = switch ((isTask, count)) {
+      (true, 1) => 'Aufgabe',
+      (true, _) => 'Aufgaben',
+      (false, 1) => 'Gewohnheit',
+      (false, _) => 'Gewohnheiten',
+    };
+    final text = 'und $count weitere $noun';
+    final target = isTask ? TaskRoutes.list : HabitRoutes.tab;
     return Semantics(
       container: true,
       button: true,
-      label: '$text Aufgaben, öffnet die Aufgabenliste',
-      onTap: () => context.go(TaskRoutes.list),
+      label:
+          '$count weitere $noun, öffnet die '
+          '${isTask ? 'Aufgabenliste' : 'Gewohnheitenliste'}',
+      onTap: () => context.go(target),
       excludeSemantics: true,
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: AppSizes.touchMin),
         child: Material(
           type: MaterialType.transparency,
           child: InkWell(
-            onTap: () => context.go(TaskRoutes.list),
+            onTap: () => context.go(target),
             focusColor: colors.focus.withValues(alpha: 0.2),
             child: Align(
               alignment: AlignmentDirectional.centerStart,
@@ -199,100 +320,6 @@ class _MoreRow extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// One task of the card: its checkbox and the title with the due text.
-class _CardTaskRow extends ConsumerWidget {
-  const _CardTaskRow({required this.item});
-
-  final TaskListItem item;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final colors = context.tokens.colors;
-    final task = item.task;
-    final busy = ref.watch(
-      taskActionsProvider.select((state) => state.isBusy(task.id)),
-    );
-    final container = ProviderScope.containerOf(context, listen: false);
-    final dueText = item.dueText;
-    final overdue = item.overdue;
-    final stacked = isLargeText(context);
-    final checkbox = RoundCheckbox(
-      value: false,
-      semanticLabel: task.title,
-      checkedStateLabel: 'erledigt',
-      uncheckedStateLabel: 'offen',
-      onChanged: busy
-          ? null
-          : (value) => unawaited(
-              setTaskCompleted(container, task.id, completed: value),
-            ),
-    );
-    final body = TappableBody(
-      onTap: () => context.push(TaskRoutes.edit(task.id)),
-      semanticLabel: item.semanticsLabel,
-      semanticHint: 'Öffnet die Aufgabe zum Bearbeiten',
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(stacked ? 16 : 4, 8, 16, 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              task.title,
-              style: AppTextStyles.bodyStrong.copyWith(
-                color: colors.textPrimary,
-              ),
-            ),
-            if (dueText != null)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  if (overdue) ...<Widget>[
-                    Icon(AppIcon.error.data, size: 14, color: colors.error),
-                    const SizedBox(width: 4),
-                  ],
-                  Flexible(
-                    child: Text(
-                      dueText,
-                      style: overdue
-                          ? AppTextStyles.captionStrong.copyWith(
-                              color: colors.error,
-                            )
-                          : AppTextStyles.captionDefault.copyWith(
-                              color: colors.textSecondary,
-                            ),
-                    ),
-                  ),
-                ],
-              ),
-          ],
-        ),
-      ),
-    );
-    if (stacked) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsetsDirectional.only(start: 10),
-            child: Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: checkbox,
-            ),
-          ),
-          body,
-        ],
-      );
-    }
-    return Row(
-      children: <Widget>[
-        const SizedBox(width: 10),
-        checkbox,
-        Expanded(child: body),
-      ],
     );
   }
 }

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:self_improvement/app/router/app_routes.dart';
 import 'package:self_improvement/app/shell/plus_entries.dart';
 import 'package:self_improvement/core/design/design.dart';
+import 'package:self_improvement/core/goals/application/goal_providers.dart';
 import 'package:self_improvement/core/providers/core_providers.dart';
 import 'package:self_improvement/features/modules/application/module_providers.dart';
 import 'package:self_improvement/features/modules/domain/module_presentation.dart';
@@ -42,10 +43,15 @@ Future<String?> showPlusSheet(
   );
 }
 
-/// Content of the plus menu: up to eight entries of the active modules in a
-/// two-column grid (one column at large text), its own close button, and the
-/// module choice when no entry is available (every module off), so the user is
-/// never stuck.
+/// Content of the plus menu: up to eight entries in a two-column grid (one
+/// column at large text), its own close button, and a way forward when no entry
+/// is available, so the user is never stuck.
+///
+/// An entry is offered when its module is on (BS-53) and, if it belongs to a
+/// goal of "Meine Ziele", when that goal is on (BS-117). Both follow the data
+/// live, without a restart. When goals hid entries, a hint says where to change
+/// that; when they hid every entry, the empty state leads to "Meine Ziele".
+/// When no module offers anything (every module off) the module choice follows.
 class PlusSheet extends ConsumerWidget {
   const PlusSheet({required this.onClose, required this.onSelected, super.key});
 
@@ -60,7 +66,16 @@ class PlusSheet extends ConsumerWidget {
     final modules = ref.watch(appModulesProvider);
     final statuses = ref.watch(moduleStatusesProvider).value;
     final focusOpen = ref.watch(openFocusSessionProvider).value ?? false;
-    final entries = statuses == null
+    final goalVersions = ref.watch(goalVersionsProvider);
+    final today = ref.watch(todayProvider);
+    // The menu waits for the goals like it waits for the module states, so no
+    // entry shows up that is hidden a moment later. A failed read of the goals
+    // must not leave the user without a menu: then the goals filter nothing.
+    final activeGoals = goalVersions.hasValue
+        ? activeGoalTypes(goalVersions.requireValue, today)
+        : null;
+    final goalsReady = goalVersions.hasValue || goalVersions.hasError;
+    final candidates = statuses == null || !goalsReady
         ? const <PlusEntry>[]
         : resolvePlusEntries(
             modules: modules,
@@ -68,6 +83,10 @@ class PlusSheet extends ConsumerWidget {
             focusSessionOpen: focusOpen,
             labelOf: (action) => action.dynamicLabel?.call(ref) ?? action.label,
           );
+    final entries = activeGoals == null
+        ? candidates
+        : filterPlusEntriesByGoals(candidates, activeGoals);
+    final hiddenByGoals = candidates.length - entries.length;
     final allOff = statuses != null && allModulesOff(statuses);
 
     return Semantics(
@@ -108,11 +127,9 @@ class PlusSheet extends ConsumerWidget {
               const SizedBox(height: AppSpacing.s8),
               _Header(onClose: onClose),
               const SizedBox(height: AppSpacing.s16),
-              if (statuses == null)
+              if (statuses == null || !goalsReady)
                 const SizedBox(height: 96, child: NeutralLoading())
-              else if (entries.isEmpty)
-                _NoEntries(allOff: allOff, onSelected: onSelected)
-              else
+              else if (entries.isNotEmpty) ...<Widget>[
                 AdaptiveGrid(
                   minCellWidth: 150,
                   children: <Widget>[
@@ -124,6 +141,14 @@ class PlusSheet extends ConsumerWidget {
                       ),
                   ],
                 ),
+                if (hiddenByGoals > 0) ...<Widget>[
+                  const SizedBox(height: AppSpacing.s12),
+                  const _HiddenByGoalsHint(),
+                ],
+              ] else if (hiddenByGoals > 0)
+                _NoGoalEntries(onSelected: onSelected)
+              else
+                _NoEntries(allOff: allOff, onSelected: onSelected),
             ],
           ),
         ),
@@ -231,6 +256,96 @@ class _PlusTile extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Under the entries when goals of "Meine Ziele" hide some of them (Figma
+/// `4118:3643`): where to change that. Plain text, like the frame; the hidden
+/// entries stay reachable through their modules.
+class _HiddenByGoalsHint extends StatelessWidget {
+  const _HiddenByGoalsHint();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.tokens.colors;
+    return Text(
+      'Nicht dabei? Unter Profil · Meine Ziele legst du fest, was hier '
+      'erscheint.',
+      style: AppTextStyles.captionDefault.copyWith(color: colors.textSecondary),
+    );
+  }
+}
+
+/// Every entry of the active modules belongs to a goal that is off: the empty
+/// state with the way to "Meine Ziele" (Figma `4118:4444`). No data is lost,
+/// the entries are still reachable through their modules and screens.
+class _NoGoalEntries extends StatelessWidget {
+  const _NoGoalEntries({required this.onSelected});
+
+  final ValueChanged<String> onSelected;
+
+  static const String _title = 'Noch nichts zum Eintragen';
+  static const String _message =
+      'Lege unter Profil · Meine Ziele fest, was du hier eintragen möchtest. '
+      'Deine bisherigen Daten bleiben erhalten.';
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.tokens.colors;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Center(
+          child: ExcludeSemantics(
+            child: Container(
+              width: 64,
+              height: 64,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: colors.accentTint(AppAccent.primary),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                AppIcon.target.data,
+                size: 30,
+                color: colors.accent(AppAccent.primary),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        // Title and explanation are read as one block, like every empty state.
+        Semantics(
+          container: true,
+          label: '$_title. $_message',
+          excludeSemantics: true,
+          child: Column(
+            children: <Widget>[
+              Text(
+                _title,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.titleSection.copyWith(
+                  color: colors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                _message,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodyRegular.copyWith(
+                  color: colors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        PrimaryButton(
+          label: 'Meine Ziele öffnen',
+          onPressed: () => onSelected(AppRoutes.goals),
+        ),
+      ],
     );
   }
 }

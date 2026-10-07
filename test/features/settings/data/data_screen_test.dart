@@ -12,12 +12,14 @@ import 'package:self_improvement/core/backup/import_preview.dart';
 import 'package:self_improvement/core/backup/platform/backup_file_gateway.dart';
 import 'package:self_improvement/core/backup/reset_service.dart';
 import 'package:self_improvement/core/backup/testing/in_memory_backup_adapters.dart';
+import 'package:self_improvement/core/config/app_config.dart';
 import 'package:self_improvement/core/database/app_database.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/core/providers/core_providers.dart';
 import 'package:self_improvement/core/testing/data_harness.dart';
 
 import '../../../core/backup/support/backup_fixtures.dart' show jsonCopy;
+import '../../../core/backup/support/v1_backup_support.dart';
 import 'data_test_support.dart';
 
 /// Widget tests of "Daten & Sicherung" against a real in-memory database
@@ -281,8 +283,8 @@ void main() {
         expect(find.text('sicherung-2026-09-07.json'), findsOneWidget);
         expect(find.text('Mia Muster'), findsOneWidget);
         expect(find.text('3. Okt. 2026, 10:00 Uhr'), findsOneWidget);
-        expect(find.text('1.0.0'), findsOneWidget);
-        expect(find.text('Version 1'), findsOneWidget);
+        expect(find.text(AppConfig.appVersion), findsOneWidget);
+        expect(find.text('Version 2'), findsOneWidget);
         expect(find.text('25'), findsOneWidget, reason: 'entries in total');
         // Counts per area (the rich fixture holds these numbers).
         for (final row in <(String, String)>[
@@ -323,6 +325,44 @@ void main() {
         expect(env.canceller.calls, 0);
         expect(env.listener.calls, 0);
         expect(env.feedback.events, isEmpty);
+      },
+    );
+
+    testWidgets(
+      'a file of v0.1.0 shows its own format version; replacing keeps its data (AT30, BS-98)',
+      (tester) async {
+        final env = await createDataEnv(tester);
+        pickFile(
+          env,
+          v1Bytes(richBackupFile),
+          name: 'sicherung-aus-v0-1-0.json',
+        );
+        await openData(tester, env);
+
+        await tapText(tester, 'Sicherung auswählen');
+
+        expect(find.text('Sicherung wiederherstellen?'), findsOneWidget);
+        expect(find.text('sicherung-aus-v0-1-0.json'), findsOneWidget);
+        expect(find.text('Version 1'), findsOneWidget, reason: 'of the file');
+        expect(find.text('Version 2'), findsNothing);
+        expect(find.text('Mia Muster'), findsOneWidget);
+
+        await tapText(tester, 'Ersetzen und wiederherstellen');
+
+        // The file is read through the upward step and the data is there with
+        // the defaults of version 2.
+        final dump = await env.dump(tester);
+        expect(dump['workout_day_marks'], isEmpty);
+        expect(dump['step_days'], hasLength(3));
+        expect(
+          dump['step_days']!.every((row) => row.contains('source: manual')),
+          isTrue,
+        );
+        expect(dump['tasks'], hasLength(3));
+        expect(
+          dump['app_settings']!.single,
+          contains('healthStepsSyncEnabled: false'),
+        );
       },
     );
 
@@ -523,7 +563,9 @@ void main() {
 
       expect(find.text('0.9.2'), findsOneWidget);
       expect(
-        find.textContaining('stammt aus App-Version 0.9.2 (diese App: 1.0.0)'),
+        find.textContaining(
+          'stammt aus App-Version 0.9.2 (diese App: ${AppConfig.appVersion})',
+        ),
         findsOneWidget,
       );
     });
@@ -596,7 +638,7 @@ void main() {
       ),
       (
         'a wrong schema version',
-        (s) => encodeJson({...s.json, 'schemaVersion': 2}),
+        (s) => encodeJson({...s.json, 'schemaVersion': 3}),
         'Schema-Version dieser Datei wird nicht unterstützt',
       ),
       (

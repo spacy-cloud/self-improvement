@@ -61,7 +61,9 @@ final class OnboardingDraft {
 /// ONE command: profile values, module activation history, goal versions
 /// effective from today and the default dashboard cards are written together;
 /// `onboarding_completed` becomes true only with that commit. Entered body
-/// values are profile data, never weight measurements.
+/// values are profile data, never weight measurements. A goal that is off by
+/// default ([GoalType.defaultEnabled], the daily workout goal) gets no version
+/// unless the draft sets it.
 class OnboardingRepository {
   OnboardingRepository({
     required this._database,
@@ -144,7 +146,13 @@ class OnboardingRepository {
         }
 
         for (final type in GoalType.values) {
-          final setting = draft.goals[type] ?? const GoalSetting();
+          final chosen = draft.goals[type];
+          if (chosen == null && !type.defaultEnabled) {
+            // "No version" means off (the optional daily workout goal): only
+            // an explicit choice writes a version for such a goal.
+            continue;
+          }
+          final setting = chosen ?? const GoalSetting();
           await _goals.upsert(
             GoalVersion(
               type: type,

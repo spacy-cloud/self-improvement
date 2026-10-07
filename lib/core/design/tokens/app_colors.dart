@@ -111,6 +111,7 @@ class AppColors {
     required this.tintFocus,
     required this.tintHabits,
     required this.dayRing,
+    required this.dayRingComplete,
     required this.scrim,
     required this.shadow,
     required this.snackBarSurface,
@@ -240,9 +241,19 @@ class AppColors {
   /// Icon tile tint of the habits accent. See [tintWater].
   final Color tintHabits;
 
-  /// Arc colour of the day ring. Not a Figma variable: hard-coded `#E2D11E` in
-  /// all Home frames. The ring always has a text alternative.
+  /// Arc colour of the day ring while some, but not all goals are reached (and
+  /// the default of a [ProgressRing] without a stand). Not a Figma variable:
+  /// hard-coded `#E2D11E` in all Home frames. The ring always has a text
+  /// alternative. With no goal reached there is no arc, only the track.
   final Color dayRing;
+
+  /// Arc colour of the day ring when all goals of the day are reached
+  /// (`ProgressRing.goals`, BS-121). Not a Figma variable of its own: the frames
+  /// "Ziele-Ring – Zustände" (`4127:316`, Dark `4127:365`, OLED `4127:414`) draw
+  /// the full ring with `color/primary`, so the values equal [primary]. It is a
+  /// role of its own so that the ring can change without touching the accent
+  /// fill. The ring always has a text alternative.
+  final Color dayRingComplete;
 
   /// Barrier colour behind modal sheets (Figma backdrop: black at 50 %).
   final Color scrim;
@@ -373,6 +384,7 @@ class AppColors {
     tintFocus,
     tintHabits,
     dayRing,
+    dayRingComplete,
     scrim,
     shadow,
     snackBarSurface,
@@ -427,6 +439,7 @@ class AppColors {
       tintFocus: mix(a.tintFocus, b.tintFocus),
       tintHabits: mix(a.tintHabits, b.tintHabits),
       dayRing: mix(a.dayRing, b.dayRing),
+      dayRingComplete: mix(a.dayRingComplete, b.dayRingComplete),
       scrim: mix(a.scrim, b.scrim),
       shadow: mix(a.shadow, b.shadow),
       snackBarSurface: mix(a.snackBarSurface, b.snackBarSurface),
@@ -498,6 +511,7 @@ class AppColors {
     tintFocus: Color(0xFFEEF0FD),
     tintHabits: Color(0xFFF3EFFD),
     dayRing: Color(0xFFE2D11E),
+    dayRingComplete: Color(0xFF20B65C),
     scrim: Color(0x80000000),
     shadow: Color(0x0D000000),
     snackBarSurface: Color(0xFF1F2328),
@@ -547,6 +561,7 @@ class AppColors {
     tintFocus: Color(0xFF303142),
     tintHabits: Color(0xFF363242),
     dayRing: Color(0xFFE2D11E),
+    dayRingComplete: Color(0xFF2FCB6E),
     scrim: Color(0x80000000),
     shadow: Color(0x26000000),
     snackBarSurface: Color(0xFF1F2328),
@@ -596,6 +611,7 @@ class AppColors {
     tintFocus: Color(0xFF242536),
     tintHabits: Color(0xFF2A2636),
     dayRing: Color(0xFFE2D11E),
+    dayRingComplete: Color(0xFF2FCB6E),
     scrim: Color(0x80000000),
     shadow: Color(0x26000000),
     snackBarSurface: Color(0xFF1F2328),
