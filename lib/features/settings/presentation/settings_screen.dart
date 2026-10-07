@@ -12,12 +12,15 @@ import 'package:self_improvement/core/settings/app_settings_value.dart';
 import 'package:self_improvement/features/profile/presentation/profile_routes.dart';
 import 'package:self_improvement/features/profile/presentation/profile_widgets.dart';
 import 'package:self_improvement/features/reminders/presentation/reminders_section.dart';
+import 'package:self_improvement/features/settings/application/about_info.dart';
 import 'package:self_improvement/features/settings/application/settings_actions.dart';
 import 'package:self_improvement/features/settings/application/settings_providers.dart';
+import 'package:self_improvement/features/settings/presentation/neutral_icon_tile.dart';
 
-/// "Einstellungen" (Figma `4024:2`, reminders block `4055:416`): profile
-/// entry, theme, reduced motion, haptics, the reminders block (owned by the
-/// reminders feature), modules, data and backup, version and licences.
+/// "Einstellungen" (Figma `4024:2`, reminders block `4055:416`, version row
+/// `4119:254`): profile entry, theme, reduced motion, haptics, the reminders
+/// block (owned by the reminders feature), modules, data and backup, version
+/// (opens "Über die App") and licences.
 ///
 /// Every row does something; there are no account or cloud switches. Deviation
 /// from the frame: export, import and reset are one entry "Daten & Sicherung",
@@ -156,17 +159,7 @@ class _SettingsContent extends ConsumerWidget {
     final systemReducesMotion = MediaQuery.disableAnimationsOf(context);
     final bodyOn = modules[ModuleId.body] ?? true;
 
-    Widget neutralTile(AppIcon icon) => ExcludeSemantics(
-      child: Container(
-        width: AppSizes.iconTile,
-        height: AppSizes.iconTile,
-        decoration: BoxDecoration(
-          color: colors.surfaceMuted,
-          borderRadius: BorderRadius.circular(AppRadii.tile),
-        ),
-        child: Icon(icon.data, size: 20, color: colors.textSecondary),
-      ),
-    );
+    Widget neutralTile(AppIcon icon) => NeutralIconTile(icon.data);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -312,16 +305,21 @@ class _SettingsContent extends ConsumerWidget {
         AppListGroup(
           children: [
             if (large)
-              EntryListTile(
+              EntryListTile.chevron(
                 title: 'Version',
                 subtitle: AppConfig.appVersion,
                 leading: neutralTile(AppIcon.info),
+                semanticLabel: AboutInfo.versionRowLabel(),
+                onTap: () => context.push(SettingsRoutes.about),
               )
             else
               EntryListTile.value(
                 title: 'Version',
                 value: AppConfig.appVersion,
+                showChevron: true,
                 leading: neutralTile(AppIcon.info),
+                semanticLabel: AboutInfo.versionRowLabel(),
+                onTap: () => context.push(SettingsRoutes.about),
               ),
             EntryListTile.chevron(
               title: 'Lizenzen',

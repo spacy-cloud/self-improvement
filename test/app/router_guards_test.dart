@@ -9,6 +9,7 @@ import 'package:self_improvement/features/gamification/presentation/streak_scree
 import 'package:self_improvement/features/modules/presentation/modules_screen.dart';
 import 'package:self_improvement/features/profile/presentation/goals_screen.dart';
 import 'package:self_improvement/features/profile/presentation/profile_edit_screen.dart';
+import 'package:self_improvement/features/settings/presentation/about_screen.dart';
 import 'package:self_improvement/features/settings/presentation/data_screen.dart';
 import 'package:self_improvement/features/settings/presentation/licenses_screen.dart';
 import 'package:self_improvement/features/settings/presentation/settings_screen.dart';
@@ -232,6 +233,7 @@ void main() {
       '/settings/modules': ModulesScreen,
       '/settings/data': DataScreen,
       '/settings/licenses': LicensesScreen,
+      '/settings/about': AboutScreen,
     };
     for (final entry in cases.entries) {
       testWidgets('${entry.key} opens ${entry.value}', (tester) async {
