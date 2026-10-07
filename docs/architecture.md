@@ -1,6 +1,6 @@
 # Architektur
 
-Dieses Dokument beschreibt die tatsächlich umgesetzte Architektur und die Verträge, auf die sich alle Features stützen. Es wird mit den Arbeitspaketen fortgeschrieben (Jira-Epic [BS-51](https://spacy-cloud.atlassian.net/browse/BS-51)); beschrieben ist der Code-Stand `c0ce096`. Fachliche Regeln stehen in der Funktions- und technischen Spezifikation des Teams; hier stehen Struktur, Verträge und Muster.
+Dieses Dokument beschreibt die tatsächlich umgesetzte Architektur und die Verträge, auf die sich alle Features stützen. Es wird mit den Arbeitspaketen fortgeschrieben (Jira-Epic [BS-51](https://spacy-cloud.atlassian.net/browse/BS-51)); beschrieben ist der Code-Stand `577a853` (Ende der Kette der Pull Requests des Releases v0.2.0; der Stand von V1 war `c0ce096`). Fachliche Regeln stehen in der Funktions- und technischen Spezifikation des Teams; hier stehen Struktur, Verträge und Muster.
 
 ## 1. Schichten
 
@@ -10,7 +10,7 @@ UI (Widgets) -> Controller (Riverpod Notifier) -> Repository / Command -> Drift 
 ```
 
 - Widgets enthalten weder SQL noch Punkte- oder Zielregeln. Sie lesen Providers und rufen Controller auf. Geprüft per Importsuche: Keine Datei unter `presentation/` oder `lib/core/design/` importiert Drift oder etwas aus `core/database/`; `lib/app/` importiert Drift nirgends und die Datenbankklasse nur für den Start (`bootstrap/app_services.dart`).
-- Alle fachlichen Regeln sind reine Dart-Funktionen in `domain/` ohne Drift-, Riverpod- und Widget-Import. 45 der 97 `domain/`-Dateien importieren aus Flutter nur `foundation.dart` (für `@immutable` und einzelne Vergleichshilfen).
+- Alle fachlichen Regeln sind reine Dart-Funktionen in `domain/` ohne Drift-, Riverpod- und Widget-Import. 54 der 108 `domain/`-Dateien importieren aus Flutter nur `foundation.dart` (für `@immutable` und einzelne Vergleichshilfen).
 - Jede Änderung ist ein **Command** (Abschnitt 4): atomar, idempotent, mit Undo.
 - Abgeleitete Werte (Tagesring, Streak, XP, Analyse) werden aus den Fakten berechnet und nie als eigene Wahrheit gespeichert.
 - Plattformfunktionen (Benachrichtigungen, Dateien, Health-Schritte) liegen hinter Schnittstellen (`ReminderPlatform`, Teilen und Dateiauswahl in `lib/core/backup/`, `HealthStepsSource` in `lib/core/health/`); die Domain kennt keine Android-Klassen.
@@ -130,12 +130,14 @@ Fünf mitgelieferte Module (`body`, `nutrition`, `focus`, `tasks`, `gamification
 |---|---|
 | `id`, `title`, `description`, `icon` | stabile Kennung (`ModuleId`) und deutscher Anzeigetext für die Modulverwaltung |
 | `routes` | Routen des Moduls, einmal registriert und zentral durch den Modulstatus geschützt (Pfade statisch vor parametrisch) |
-| `dashboardCards` | `DashboardCardDescriptor` (`cardId` aus `SchemaKeys.dashboardCards`, `defaultRank`, `fullWidth`, Builder) |
+| `dashboardCards` | `DashboardCardDescriptor` (`cardId` aus `SchemaKeys.dashboardCards`, `defaultRank`, `fullWidth`, Builder, optional `dayBuilder` für die Karte eines vergangenen Tages, BS-93) |
 | `quickActions` | `QuickAction` für das Plus-Menü (`id`, `route`, `plusOrder`, optional `dynamicLabel`); es gibt genau acht Einträge in fester Reihenfolge |
 | `initialize(Ref)`, `dispose()` | idempotente Vorbereitung beim Start und bei Reaktivierung, Freigabe beim Ausschalten; nie Daten anfassen |
 | `canDeactivate(Ref)` | `CanDeactivate` oder `MustResolveFirst` (zum Beispiel eine offene Fokus-Sitzung) |
 
-Der Modulstatus ist eine Append-only-Historie; Deaktivieren löscht nichts (`ModuleManager`, Fokus-Sperre bei offener Sitzung). Kartenreihenfolge und Sichtbarkeit sind persistent (`DashboardCardRepository`, Drag **und** Auf/Ab-Aktionen). Die Navigation besteht aus vier Tabs in einer `StatefulShellRoute`, den Kernseiten und den Modulrouten; Einzelheiten stehen in [screens/shell.md](screens/shell.md).
+Der Modulstatus ist eine Append-only-Historie; Deaktivieren löscht nichts (`ModuleManager`, Fokus-Sperre bei offener Sitzung). Kartenreihenfolge und Sichtbarkeit sind persistent (`DashboardCardRepository`, Drag **und** Auf/Ab-Aktionen). Die Navigation besteht aus vier Tabs in einer `StatefulShellRoute`, den Kernseiten (darunter seit v0.2.0 `/goals/today` und `/settings/about`) und den Modulrouten; Einzelheiten stehen in [screens/shell.md](screens/shell.md).
+
+**Home zeigt einen Tag (BS-93, D-029).** `selectedDayProvider` hält den gewählten Tag nur im Speicher (`null` heißt heute), `browsedDayProvider` begrenzt ihn auf heute und die sieben Tage davor, nie vor dem Profilstart; ein neuer Kalendertag wirft die Wahl weg. `DashboardView` trägt den Tag und den Status dieses Tages, gebaut aus dem Snapshot und den Fakten des Tages (`dayStatusProvider`). Für einen anderen Tag baut jedes Modul seine Karte über `dayBuilder` selbst, nur lesend; ein Modul ohne `dayBuilder` fehlt an diesen Tagen, statt die Zahlen von heute zu zeigen. Die Seite „Ziele heute“ liest dieselbe `DashboardView` und rechnet keine zweite Zahl ([screens/dashboard-gamification.md](screens/dashboard-gamification.md), Abschnitte 12 und 13).
 
 ## 8. Muster für ein Feature (Referenz: Gewichtsfluss)
 
@@ -159,7 +161,7 @@ Regeln für jede Mutation: erst `validate...` (wirft `ValidationFailure` mit Fel
 
 ## 10. iOS-Vorbereitung
 
-Keine Android-Imports in Domain und Daten; Benachrichtigungen und Dateien liegen hinter Schnittstellen; Projektdateien für iOS sind vorhanden. Ein CI-Workflow baut eine unsignierte IPA (BS-95); Der iOS-Tester hat sie am 2026-10-04 auf einem iPhone 15 Pro ohne blockierende Fehler ausprobiert (BS-96, Rückmeldung des Testers, drei Folgetickets); VoiceOver und weitere Geräte sind ungeprüft (siehe [known-limitations.md](known-limitations.md)).
+Keine Android-Imports in Domain und Daten; Benachrichtigungen und Dateien liegen hinter Schnittstellen; Projektdateien für iOS sind vorhanden. Ein CI-Workflow baut eine unsignierte IPA (BS-95); der iOS-Tester hat die IPA des Stands v0.1.0 am 2026-10-04 auf einem iPhone 15 Pro ohne blockierende Fehler ausprobiert (BS-96, Rückmeldung des Testers, drei Folgetickets, die v0.2.0 umsetzt oder entscheidet). Der Stand v0.2.0 ist auf keinem iPhone geprüft; VoiceOver und weitere Geräte sind ungeprüft, die Schritte aus Health gibt es auf iOS nicht (Abschnitt 13; siehe [known-limitations.md](known-limitations.md)).
 
 ## 11. Start der App
 

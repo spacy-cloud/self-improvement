@@ -76,6 +76,7 @@ Alle Unterschiede stehen in den Einstiegen, nie in den Abläufen:
 - Flugmodus (AT01): die App nutzt kein Netz, der Schalter wird aber nicht gesetzt.
 - Zeitzonen- und Sommerzeitwechsel am Gerät (AT25), Hintergrund und Fortsetzen, harte Prozessbeendigung, Gerätestart.
 - Messung mit 10.000 Einträgen am Gerät (AT36).
+- Die Funktionen von v0.2.0 (Ziele heute, Tage blättern, Heute abhaken, Plus-Menü nach Zielen, Erinnerung je Aufgabe, Schritte aus Health, Über die App) und das Update einer echten v0.1.0-Datenbank: kein Emulator-Ablauf, nur Host-Tests und der CI-Build; die Punkte für ein Gerät stehen in der [Geräte-Checkliste](geraete-checkliste-v0.2.0.md).
 
 ## Ehrliche Grenzen
 
