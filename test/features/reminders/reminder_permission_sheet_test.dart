@@ -52,7 +52,10 @@ void main() {
       findsOneWidget,
     );
     expect(find.textContaining('Keine Werbung'), findsOneWidget);
-    expect(find.textContaining('Android kann sie verzögern'), findsOneWidget);
+    expect(
+      find.textContaining('das System kann sie verzögern'),
+      findsOneWidget,
+    );
     expect(find.textContaining('garantiert'), findsNothing);
     expect(result, isNull, reason: 'nothing is decided by opening it');
   });
@@ -61,16 +64,16 @@ void main() {
     for (final (permission, text) in <(NotificationPermission, String)>[
       (
         NotificationPermission.denied,
-        'Android-Status: Benachrichtigungen sind für diese App nicht erlaubt.',
+        'Systemstatus: Benachrichtigungen sind für diese App nicht erlaubt.',
       ),
       (
         NotificationPermission.unavailable,
-        'Android-Status: Der Status der Benachrichtigungen ist nicht '
+        'Systemstatus: Der Status der Benachrichtigungen ist nicht '
             'verfügbar.',
       ),
       (
         NotificationPermission.granted,
-        'Android-Status: Benachrichtigungen sind erlaubt.',
+        'Systemstatus: Benachrichtigungen sind erlaubt.',
       ),
     ]) {
       testWidgets(permission.name, (tester) async {
@@ -90,9 +93,9 @@ void main() {
           )
         >[
           (
-            '"Weiter zur Android-Abfrage"',
+            '"Weiter zur Systemabfrage"',
             ReminderPermissionChoice.askSystem,
-            (t) => t.tap(find.text('Weiter zur Android-Abfrage')),
+            (t) => t.tap(find.text('Weiter zur Systemabfrage')),
           ),
           (
             '"Einstellungen öffnen"',
@@ -156,7 +159,7 @@ void main() {
           await open(tester, size: size, textScale: scale);
           expect(tester.takeException(), isNull);
           for (final label in <String>[
-            'Weiter zur Android-Abfrage',
+            'Weiter zur Systemabfrage',
             'Einstellungen öffnen',
             'Später',
           ]) {
