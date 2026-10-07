@@ -1,12 +1,13 @@
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router/go_router.dart';
+import 'package:self_improvement/app/router/app_router.dart';
 import 'package:self_improvement/app/router/app_routes.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/core/modules/module_registry.dart';
 import 'package:self_improvement/features/body/presentation/weight_form_screen.dart';
 import 'package:self_improvement/features/body/steps/presentation/steps_form_screen.dart';
+import 'package:self_improvement/features/dashboard/presentation/dashboard_routes.dart';
 import 'package:self_improvement/features/focus/presentation/workout_form_screen.dart';
 import 'package:self_improvement/features/nutrition/presentation/meal_form_screen.dart';
 import 'package:self_improvement/features/nutrition/presentation/water_custom_sheet.dart';
@@ -398,36 +399,17 @@ final List<_Form> _forms = <_Form>[
   ),
 ];
 
-/// The paths of [routes] and of their children (as in the route sweep).
-Iterable<String> _paths(List<RouteBase> routes, [String prefix = '']) sync* {
-  for (final route in routes) {
-    if (route is! GoRoute) {
-      continue;
-    }
-    final full = route.path.startsWith('/')
-        ? route.path
-        : '${prefix == '/' ? '' : prefix}/${route.path}';
-    yield full;
-    yield* _paths(route.routes, full);
-  }
-}
-
-/// Every page of the app that has no id in its path: the core pages and the
-/// pages of all bundled modules, found from the route tables themselves.
+/// Every page of the app that has no id in its path, read from the route table
+/// itself: the tabs, the core pages and the pages of all bundled modules. A new
+/// page is covered without touching this file; the hand-kept list it replaces
+/// had lost the page "Über die App" (BS-98, R1-05). The onboarding is left out
+/// (an onboarded app sends it to Home); the tasks view of the Habits tab is a
+/// query and no path of its own, so it is added.
 final List<String> _pages = <String>{
-  AppRoutes.home,
-  AppRoutes.analysis,
-  AppRoutes.habits,
+  for (final path in allRoutePaths(buildAppRoutes(modules: bundledModules)))
+    if (!path.contains(':') && path != AppRoutes.onboarding) path,
   AppRoutes.habitsTasks,
-  AppRoutes.profile,
-  AppRoutes.profileEdit,
-  AppRoutes.goals,
-  AppRoutes.settings,
-  AppRoutes.modules,
-  AppRoutes.data,
-  AppRoutes.licenses,
-  for (final module in bundledModules) ..._paths(module.routes),
-}.where((path) => !path.contains(':')).toList()..sort();
+}.toList()..sort();
 
 /// What the scroll view around [element] does with the keyboard on a drag, or
 /// `null` when no scroll view is around it.
@@ -736,7 +718,7 @@ void main() {
   );
 
   testWidgets(
-    'every text field on every page of the app closes the keyboard on a tap beside it and on a drag of its page (BS-112, AT33)',
+    'every text field on every page of the app closes the keyboard on a tap beside it and on a drag of its page (BS-112, R1-05, AT33)',
     (tester) async {
       final app = await pumpFullApp(tester, size: _screen);
       final withFields = <String>[];
@@ -771,6 +753,15 @@ void main() {
       }
 
       expect(problems, isEmpty);
+      expect(
+        _pages,
+        containsAll(<String>[
+          AppRoutes.about,
+          DashboardRoutes.goalsToday,
+          AppRoutes.licenses,
+        ]),
+        reason: 'the sweep has the pages that a hand-kept list lost (R1-05)',
+      );
       expect(
         withFields,
         containsAll(<String>[

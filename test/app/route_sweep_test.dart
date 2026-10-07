@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:self_improvement/app/router/app_router.dart';
 import 'package:self_improvement/app/router/app_routes.dart';
 import 'package:self_improvement/core/goals/domain/workout_day_mark_kind.dart';
 import 'package:self_improvement/core/modules/module_registry.dart';
@@ -138,6 +139,21 @@ void main() {
   test('the sweep finds the core and the module routes', () {
     expect(_routes, containsAll(<String>['/', '/weight/new', '/water']));
     expect(_routes.length, greaterThan(25));
+  });
+
+  test('the sweep list has every route of the route table that has no id (BS-98, R1-05, AT33)', () {
+    final table = <String>{
+      for (final path in allRoutePaths(buildAppRoutes(modules: bundledModules)))
+        if (!path.contains(':') && path != AppRoutes.onboarding) path,
+    };
+    expect(
+      table.difference(_routes.toSet()),
+      isEmpty,
+      reason:
+          'a page of the app is missing from the sweep: the core pages are '
+          'listed by hand in _routes, add it there (the onboarding needs a '
+          'not yet onboarded app and has its own tests)',
+    );
   });
 
   for (final setup in _setups) {
