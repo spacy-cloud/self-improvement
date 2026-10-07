@@ -1,3 +1,5 @@
+import 'dart:ui' show Tristate;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/core/design/design.dart';
@@ -137,27 +139,26 @@ void main() {
     testWidgets('(BS-93) "Zurück zu heute" shows today from any day, and the '
         'focus goes to the date', (tester) async {
       final home = await pumpRealHome(tester);
+      final semantics = tester.ensureSemantics();
       await showDay(tester, home, LocalDate(2026, 9, 28));
       expect(find.text('Montag, 28. September'), findsOneWidget);
       expect(find.text('Zurück zu heute'), findsOneWidget);
+      expect(
+        FocusManager.instance.primaryFocus?.debugLabel,
+        isNot('home-date'),
+      );
 
       await _tap(tester, find.text('Zurück zu heute'));
       expect(find.text('Samstag, 3. Oktober'), findsOneWidget);
       expect(find.text('Nicht heute'), findsNothing);
       expect(find.text('Dein Tag im Überblick'), findsOneWidget);
       // The button that had the focus is gone with the note: the date has it,
-      // so a screen reader does not lose its place (Q02).
-      final focused = FocusManager.instance.primaryFocus;
-      expect(focused, isNotNull);
-      expect(
-        find.descendant(
-          of: find.byWidgetPredicate(
-            (widget) => widget is Focus && widget.focusNode == focused,
-          ),
-          matching: find.text('Samstag, 3. Oktober'),
-        ),
-        findsOneWidget,
-      );
+      // so a screen reader does not lose its place (Q02). The date's own node,
+      // not just any focus scope above it.
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'home-date');
+      final node = tester.getSemantics(find.text('Samstag, 3. Oktober'));
+      expect(node.flagsCollection.isFocused, Tristate.isTrue);
+      semantics.dispose();
     });
 
     testWidgets('(BS-93, AT34) every arrow is a button of at least 48 x 48 '
