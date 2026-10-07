@@ -885,7 +885,8 @@ void main() {
     );
   });
 
-  group('read only (a day that cannot be changed, BS-93 later)', () {
+  group('read only (the card shows the state and changes nothing, as for a day '
+      'before today, BS-93)', () {
     testWidgets(
       'the state is shown, no box can be changed and no command runs (BS-110)',
       (tester) async {

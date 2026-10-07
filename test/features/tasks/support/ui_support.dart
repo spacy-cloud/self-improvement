@@ -230,8 +230,9 @@ String locationOf(GoRouter router) =>
     router.routerDelegate.currentConfiguration.uri.toString();
 
 /// A dashboard page that hosts only the `tasks` card, like the dashboard does
-/// (inside a scroll view, full width). With [readOnly] it hosts the card the
-/// way a day that cannot be changed would build it (BS-93, later).
+/// (inside a scroll view, full width). With [readOnly] it hosts the card in the
+/// state of the card of a day before today (BS-93): it shows the state and
+/// changes nothing.
 Widget cardHost({bool readOnly = false}) {
   final card = const TasksModule().dashboardCards.single;
   return Scaffold(
