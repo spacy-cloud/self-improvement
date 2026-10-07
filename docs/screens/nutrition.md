@@ -42,6 +42,7 @@ Routenreihenfolge in `NutritionModule.routes`: `/water`, `/water/:id`, `/nutriti
 
 - **Wasser**: echte Summe mit Ziel („1,5 / 2,5 l“), Balken, Prozent- bzw. Zielstatus als Text, Schnellwahl-Buttons, bei einem Fehler Hinweis mit „Erneut versuchen“.
 - **Ernährung**: Anzahl der Mahlzeiten, bekannte Kalorien bzw. „Kalorien unvollständig“, Aktion „Mahlzeit eintragen“. Ohne Mahlzeit nur „–“ und der Weg zum Eintragen.
+- **An einem vergangenen Tag (BS-93)**: Home kann einen der letzten sieben Tage zeigen ([dashboard-gamification.md](dashboard-gamification.md) Abschnitt 13). Beide Karten sind dann eigene Widgets (`WaterPastDayCard`, `NutritionPastDayCard`) über denselben Modellen (`waterDayProvider` ruft dieselbe Funktion wie `waterTodayProvider` mit dem Tag auf, `mealsDayProvider` gab es schon): Wasser zeigt die Summe dieses Tages gegen das Ziel, das an **diesem** Tag galt (Snapshot), mit dem wirklichen Prozentwert und dem Sprechtext „Wasser an diesem Tag: …“; Ernährung die Mahlzeiten des Tages und die bekannten Kalorien. **Ohne Schnellzugriffe und ohne „Mahlzeit eintragen“** (ein Tipp ginge auf heute); die Karte öffnet wie sonst die Seite, dort läuft das Eintragen für einen früheren Tag über das Formular. Ein Tag ohne Eintrag sagt „Nichts eingetragen“ bzw. „Keine Mahlzeit eingetragen“ und zeigt keine „0“.
 
 ## 3. Abweichungen vom Figma-Entwurf und Gründe
 
