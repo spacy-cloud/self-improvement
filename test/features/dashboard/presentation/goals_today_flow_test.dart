@@ -4,15 +4,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/app/router/app_routes.dart';
+import 'package:self_improvement/app/screens/module_disabled_screen.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/core/modules/module_id.dart';
 import 'package:self_improvement/core/providers/command_providers.dart';
 import 'package:self_improvement/features/body/application/weight_providers.dart';
 import 'package:self_improvement/features/body/domain/weight_entry.dart';
+import 'package:self_improvement/features/body/presentation/weight_overview_screen.dart';
+import 'package:self_improvement/features/body/steps/presentation/steps_overview_screen.dart';
 import 'package:self_improvement/features/dashboard/presentation/dashboard_routes.dart';
 import 'package:self_improvement/features/dashboard/presentation/goals_today_screen.dart';
 import 'package:self_improvement/features/dashboard/presentation/widgets/day_overview_card.dart';
+import 'package:self_improvement/features/focus/presentation/focus_start_screen.dart';
+import 'package:self_improvement/features/focus/presentation/workout_overview_screen.dart';
+import 'package:self_improvement/features/nutrition/application/water_providers.dart';
+import 'package:self_improvement/features/nutrition/domain/water_entry.dart';
+import 'package:self_improvement/features/nutrition/presentation/water_screen.dart';
 import 'package:self_improvement/features/profile/presentation/goals_screen.dart';
+import 'package:self_improvement/features/tasks/application/habit_providers.dart';
+import 'package:self_improvement/features/tasks/domain/habit.dart';
+import 'package:self_improvement/features/tasks/presentation/habits_tab_screen.dart';
 import 'package:self_improvement/shared/local_date.dart';
 
 import '../../../app/support/app_harness.dart';
@@ -264,6 +275,152 @@ void main() {
 
       await tester.tap(_backButton());
       await app.settle();
+      expect(find.text('0 von 4'), findsOneWidget);
+    });
+  });
+
+  group('a row opens the real module, the page is current on the way back '
+      '(BS-105)', () {
+    testWidgets('(C02, AT23) "Wasser" opens the water page; a glass saved '
+        'there shows on the page after back', (tester) async {
+      final app = await _pumpApp(tester);
+      await _openGoalsToday(app);
+      expect(find.text('0 von 2,5 l · 0 %'), findsOneWidget);
+
+      await tester.tap(find.text('Wasser'));
+      await app.settle();
+      expect(app.location, '/water');
+      expect(find.byType(WaterScreen), findsOneWidget);
+
+      await app.run(
+        () => app.container
+            .read(waterRepositoryProvider)
+            .create(
+              commandId: 'glass',
+              draft: WaterDraft(
+                amountMl: 250,
+                occurredAtUtc: app.harness.clock.nowUtc(),
+              ),
+            ),
+      );
+      await app.settle();
+      await tester.tap(_backButton());
+      await app.settle();
+
+      expect(app.location, DashboardRoutes.goalsToday);
+      expect(find.byType(GoalsTodayScreen), findsOneWidget);
+      expect(find.text('0,25 von 2,5 l · 10 %'), findsOneWidget);
+      expect(find.text('0 von 2,5 l · 0 %'), findsNothing);
+    });
+
+    for (final (title, path, screen) in <(String, String, Type)>[
+      ('Schritte', '/steps', StepsOverviewScreen),
+      ('Gewicht erfassen', '/weight', WeightOverviewScreen),
+      ('Fokus', '/focus', FocusStartScreen),
+      ('Workouts diese Woche', '/workouts', WorkoutOverviewScreen),
+    ]) {
+      testWidgets('(C02) "$title" opens $path, back shows the page', (
+        tester,
+      ) async {
+        final app = await _pumpApp(tester);
+        await _openGoalsToday(app);
+        await tester.ensureVisible(find.text(title));
+        await tester.pump();
+        await tester.tap(find.text(title));
+        await app.settle();
+        expect(app.location, path);
+        expect(find.byType(screen), findsOneWidget);
+        await tester.tap(_backButton());
+        await app.settle();
+        expect(app.location, DashboardRoutes.goalsToday);
+        expect(find.text('0 von 5'), findsOneWidget);
+      });
+    }
+
+    testWidgets('(C02) "Aufgabe erledigen" opens the task list: the tab '
+        'Habits, and back leads to Home', (tester) async {
+      final app = await _pumpApp(tester);
+      await _openGoalsToday(app);
+      await tester.ensureVisible(find.text('Aufgabe erledigen'));
+      await tester.pump();
+      await tester.tap(find.text('Aufgabe erledigen'));
+      await app.settle();
+      expect(app.location, AppRoutes.habits);
+      expect(app.fullLocation, AppRoutes.habitsTasks);
+      expect(find.byType(HabitsTabScreen), findsOneWidget);
+      expect(find.byType(AppBottomNavBar), findsOneWidget);
+      expect(await app.systemBack(), isTrue);
+      expect(app.location, AppRoutes.home);
+    });
+
+    testWidgets('(C02) a habit is a goal of the day and opens the habit '
+        'list', (tester) async {
+      final app = await _pumpApp(tester);
+      await app.run(
+        () => app.container
+            .read(habitRepositoryProvider)
+            .create(
+              commandId: 'habit',
+              draft: const HabitDraft(title: 'Lesen'),
+            ),
+      );
+      await app.settle();
+      await _openGoalsToday(app);
+      // The ring counted the habit: one more goal.
+      expect(find.text('0 von 6'), findsOneWidget);
+      expect(find.text('Lesen'), findsOneWidget);
+      expect(find.text('Noch nicht abgehakt'), findsOneWidget);
+      await tester.ensureVisible(find.text('Lesen'));
+      await tester.pump();
+      await tester.tap(find.text('Lesen'));
+      await app.settle();
+      expect(app.location, AppRoutes.habits);
+      expect(find.byType(HabitsTabScreen), findsOneWidget);
+    });
+
+    testWidgets('(C02) "Ziele bearbeiten" opens the real goal editor, back '
+        'shows the page', (tester) async {
+      final app = await _pumpApp(tester);
+      await _openGoalsToday(app);
+      await tester.ensureVisible(find.text('Ziele bearbeiten'));
+      await tester.pump();
+      await tester.tap(find.text('Ziele bearbeiten'));
+      await app.settle();
+      expect(app.location, AppRoutes.goals);
+      expect(find.byType(GoalsScreen), findsOneWidget);
+      await tester.tap(_backButton());
+      await app.settle();
+      expect(app.location, DashboardRoutes.goalsToday);
+      expect(find.text('0 von 5'), findsOneWidget);
+    });
+
+    testWidgets('(C03) a module that is switched off while its page is open: '
+        'the page says so, and the page below has lost the goal', (
+      tester,
+    ) async {
+      final app = await _pumpApp(tester);
+      await _openGoalsToday(app);
+      await tester.tap(find.text('Wasser'));
+      await app.settle();
+      expect(find.byType(WaterScreen), findsOneWidget);
+
+      await app.run(
+        () => app.container
+            .read(moduleManagerProvider)
+            .setEnabled(
+              commandId: app.harness.ids.newId(),
+              module: ModuleId.nutrition,
+              enabled: false,
+            ),
+      );
+      await app.settle();
+      expect(find.byType(ModuleDisabledScreen), findsOneWidget);
+      expect(find.byType(WaterScreen), findsNothing);
+
+      await tester.tap(_backButton());
+      await app.settle();
+      expect(app.location, DashboardRoutes.goalsToday);
+      expect(find.text('Wasser'), findsNothing);
       expect(find.text('0 von 4'), findsOneWidget);
     });
   });
