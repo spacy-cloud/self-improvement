@@ -101,7 +101,7 @@ Ticket [BS-110](https://spacy-cloud.atlassian.net/browse/BS-110), Entscheidung D
 
 ## 9. Tests und Abnahme-IDs
 
-Befehl: `flutter test test/features/dashboard test/features/gamification/presentation` (639 Testfälle, grün). Die Tabelle nennt die Dateien zu Dashboard, Streak und Fortschritt (BS-74, BS-58, BS-68, BS-69, BS-121); die Tests zu „Heute abhaken“ stehen in [tasks-habits.md](tasks-habits.md), die zu „Ziele heute“ in Abschnitt 12.9, die zum Blättern durch die Tage in Abschnitt 13.9. Der Stand des Gesamtlaufs steht in [test-report.md](../test-report.md).
+Befehl: `flutter test test/features/dashboard test/features/gamification/presentation` (645 Testfälle, grün). Die Tabelle nennt die Dateien zu Dashboard, Streak und Fortschritt (BS-74, BS-58, BS-68, BS-69, BS-121); die Tests zu „Heute abhaken“ stehen in [tasks-habits.md](tasks-habits.md), die zu „Ziele heute“ in Abschnitt 12.9, die zum Blättern durch die Tage in Abschnitt 13.9. Der Stand des Gesamtlaufs steht in [test-report.md](../test-report.md).
 
 | Datei | Fälle | Abnahme-IDs |
 |---|---:|---|

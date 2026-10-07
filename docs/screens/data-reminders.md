@@ -96,7 +96,7 @@ Zwei Mutationsproben bestätigen, dass die Tests greifen (großzügige Wortprüf
 
 ## 7. Verdrahtung beim App-Start
 
-Die Oberflächen setzen voraus, dass die App beim Start einiges verdrahtet. Stand `577a853` ist das erledigt (`lib/app/wiring/app_overrides.dart`, `lib/app/wiring/app_wiring.dart`, `lib/app/app.dart`, `lib/app/router/`):
+Die Oberflächen setzen voraus, dass die App beim Start einiges verdrahtet. Stand `a90f3b1` ist das erledigt (`lib/app/wiring/app_overrides.dart`, `lib/app/wiring/app_wiring.dart`, `lib/app/app.dart`, `lib/app/router/`):
 
 1. `feedbackServiceProvider` ist mit der Snackbar-Implementierung überschrieben (`SnackBarFeedbackService`); beide Oberflächen lesen sie.
 2. `notificationCancellerProvider` ist mit `PlatformNotificationCanceller` überschrieben (storniert alle ausstehenden Systembenachrichtigungen der Plattform nach Import und Reset). Es ist dasselbe Verhalten wie `ReminderNotificationCanceller` aus `reminder_data_ports.dart`; die App nutzt ihre eigene Klasse.

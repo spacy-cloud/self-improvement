@@ -444,7 +444,7 @@ Stand: 2026-10-03, Code-Stand `c0ce096` (V1). Die Abweichungen der Entwürfe von
 
 ### 9.2 Ergänzungen des Designsystems
 
-Bausteine und Parameter, die im Figma-Designsystem nicht vorkommen und für die Screens nötig wurden. Jede Ergänzung ist in `lib/core/design` oder `lib/core/feedback` vorhanden (geprüft am Code-Stand `577a853`) und mit Tests belegt (`test/core/design`, `test/core/feedback`, Tests der Screens, die sie nutzen).
+Bausteine und Parameter, die im Figma-Designsystem nicht vorkommen und für die Screens nötig wurden. Jede Ergänzung ist in `lib/core/design` oder `lib/core/feedback` vorhanden (geprüft am Code-Stand `a90f3b1`) und mit Tests belegt (`test/core/design`, `test/core/feedback`, Tests der Screens, die sie nutzen).
 
 | Baustein | Ergänzung | Zweck | Datei und Verwendung |
 |---|---|---|---|
