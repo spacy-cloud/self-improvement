@@ -10,14 +10,16 @@ import 'package:self_improvement/core/backup/backup_providers.dart';
 import 'package:self_improvement/core/notifications/application/reminder_providers.dart';
 import 'package:self_improvement/core/providers/core_providers.dart';
 import 'package:self_improvement/core/time/clock_service.dart';
+import 'package:self_improvement/features/body/steps/application/health_steps_controller.dart';
 import 'package:self_improvement/features/focus/application/focus_providers.dart';
 import 'package:self_improvement/features/modules/application/module_lifecycle.dart';
 import 'package:self_improvement/shared/local_time.dart';
 
 /// Everything that keeps running for the lifetime of the app after a
 /// successful start: the module lifecycle (`initialize` for active modules,
-/// `dispose` when one is switched off), the reminder triggers, the clock
-/// (resume and midnight),
+/// `dispose` when one is switched off), the reminder triggers, the triggers of
+/// the comparison with the health interface (start and resume; nothing is read
+/// while the switch is off), the clock (resume and midnight),
 /// the cleanup of temporary export files and the way notifications lead into
 /// the app.
 ///
@@ -53,7 +55,10 @@ final class AppWiring {
     container
       ..read(moduleLifecycleProvider)
       ..read(reminderAutoReconcileProvider)
-      ..read(reminderLifecycleProvider);
+      ..read(reminderLifecycleProvider)
+      // Steps from the health interface: one comparison now (start) and one on
+      // every resume. Ends at once while the switch is off.
+      ..read(healthStepsAutoSyncProvider);
     _clock = _ClockLifecycle(container)..attach();
     // Leftover temporary export copies from an earlier session (never throws).
     unawaited(container.read(backupServiceProvider).cleanUpTemporaryExports());

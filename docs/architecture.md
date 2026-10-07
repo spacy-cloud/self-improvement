@@ -13,7 +13,7 @@ UI (Widgets) -> Controller (Riverpod Notifier) -> Repository / Command -> Drift 
 - Alle fachlichen Regeln sind reine Dart-Funktionen in `domain/` ohne Drift-, Riverpod- und Widget-Import. 45 der 97 `domain/`-Dateien importieren aus Flutter nur `foundation.dart` (für `@immutable` und einzelne Vergleichshilfen).
 - Jede Änderung ist ein **Command** (Abschnitt 4): atomar, idempotent, mit Undo.
 - Abgeleitete Werte (Tagesring, Streak, XP, Analyse) werden aus den Fakten berechnet und nie als eigene Wahrheit gespeichert.
-- Plattformfunktionen (Benachrichtigungen, Dateien) liegen hinter Schnittstellen (`ReminderPlatform`, Teilen und Dateiauswahl in `lib/core/backup/`); die Domain kennt keine Android-Klassen.
+- Plattformfunktionen (Benachrichtigungen, Dateien, Health-Schritte) liegen hinter Schnittstellen (`ReminderPlatform`, Teilen und Dateiauswahl in `lib/core/backup/`, `HealthStepsSource` in `lib/core/health/`); die Domain kennt keine Android-Klassen.
 - Ausnahmen, die der Code macht: Die Erinnerungs-Engine liest die Datenbank an zwei Stellen direkt in ihrer `application/`-Schicht (`notification_entry_resolver.dart`, `reminder_auto_reconciler.dart`). `core/` kennt in vier Dateien Feature-Code: die Modulregistrierung (`core/modules/module_registry.dart`, die fünf Modulklassen) und den XP-Projektor des Moduls Gamification (`core/goals/data/projection_synchronizer_impl.dart`, `core/providers/core_providers.dart`, `core/testing/data_harness.dart`).
 - Features importieren aus anderen Features nur Dateien aus `domain/`, Provider aus `application/` und kleine Hilfen aus `presentation/` (Routen, gemeinsame Widgets), nie eine Datei aus `data/` (Repository-Implementierungen). Auch das ist eine Importsuche, kein Test: Nur `test/features/settings/architecture_test.dart` und `test/core/notifications/architecture_test.dart` prüfen Importregeln, für ihren eigenen Bereich.
 
@@ -42,6 +42,7 @@ lib/
     errors/                       typisierte Fehler (AppFailure)
     feedback/                     FeedbackService (Vertrag)
     goals/                        application/, domain/ (Ziele, Snapshots, Tagesstatus, Streak), data/ (Snapshots, Fakten, Status, XP-Abgleich)
+    health/                       Schnittstelle zur Health-Quelle (domain/: HealthStepsSource, Tagesfenster; platform/: Fake und Adapter), siehe Abschnitt 13
     modules/                      Modulvertrag, Registry der fünf Module, Status, ModuleManager, Kartenkonfiguration
     notifications/                Erinnerungs-Engine (application/, data/, domain/, platform/)
     onboarding/, profile/, settings/   Repositories und Befehle für Start, Profil und Einstellungen
@@ -169,7 +170,7 @@ Von `main()` bis zum ersten echten Frame (Code: `lib/main.dart`, `lib/app/app.da
 3. Scheitert das, wird die Datenbank geschlossen und ein `MigrationFailure` zeigt „Daten konnten nicht geöffnet werden“ mit „Erneut versuchen“; es wird nie automatisch etwas gelöscht oder zurückgesetzt.
 4. Gelingt es, baut die laufende App den `GoRouter` (mit dem Guard für das Onboarding) und einen eigenen `ProviderContainer` mit abgeschaltetem automatischem Provider-Retry und diesen Overrides (`buildAppOverrides`): geöffnete Datenbank, Uhr, Zonenquelle, die fünf Module, Router, Snackbar-Feedback, Wasserziel-Prüfung für Erinnerungen, Benachrichtigungs-Canceller und Backup-Listener.
 5. **Vor dem ersten echten Frame** (`_prepare`): die Erinnerungs-Plattform wird initialisiert (ein Fehler dort lässt die App trotzdem starten, die Einstellungen zeigen das Problem), die Gerätezone wird gelesen, und `profileProvider`, `moduleStatusesProvider` und `appSettingsProvider` werden gelesen. Damit gibt es weder ein falsches Theme noch einen falschen Screen im ersten Frame.
-6. Danach erscheint die App (`MaterialApp.router` mit dem Theme aus den Einstellungen und dem Schalter für reduzierte Bewegung) und `AppWiring.start()` verdrahtet das Dauerhafte: Modul-Lebenszyklus (`initialize` der aktiven Module), automatischer Abgleich und Lebenszyklus der Erinnerungen, Uhr (Rückkehr in die App und Mitternacht), Aufräumen temporärer Export- und Dateiauswahl-Kopien, Tipps auf Benachrichtigungen und die Start-Nutzlast (nur nach abgeschlossenem Onboarding).
+6. Danach erscheint die App (`MaterialApp.router` mit dem Theme aus den Einstellungen und dem Schalter für reduzierte Bewegung) und `AppWiring.start()` verdrahtet das Dauerhafte: Modul-Lebenszyklus (`initialize` der aktiven Module), automatischer Abgleich und Lebenszyklus der Erinnerungen, Abgleich mit Health (Start und Rückkehr in die App; bei ausgeschaltetem Schalter endet er sofort), Uhr (Rückkehr in die App und Mitternacht), Aufräumen temporärer Export- und Dateiauswahl-Kopien, Tipps auf Benachrichtigungen und die Start-Nutzlast (nur nach abgeschlossenem Onboarding).
 
 ## 12. Ein Befehl
 
@@ -186,3 +187,19 @@ Vom Tipp auf „Speichern“ bis zur Rückmeldung (Referenz: Gewichtseintrag):
 4. Nach dem Commit veröffentlicht der Runner `ActivityCommitted` oder `ActivityRemoved` (mit XP vorher und nachher), danach zusätzliche Ereignisse.
 5. Die Oberfläche meldet über `FeedbackService.showSaved(message, undo: outcome.undo)`; die Datenbankstreams (`watchComputed`) aktualisieren Dashboard, Ring und Karten von selbst.
 6. „Rückgängig“ (8 Sekunden) führt `UndoAction.run` mit einer **neuen** Befehls-ID aus, mit Prüfung der Zeilenversion: Wurde der Datensatz inzwischen geändert, entsteht ein Konflikt statt eines Überschreibens. Ein zweiter Tipp auf „Rückgängig“ wird ignoriert.
+
+## 13. Schnittstelle zur Health-Quelle (BS-97)
+
+Schritte können aus der Health-App des Telefons übernommen werden (Android: Health Connect; iOS folgt erst nach einem positiven Spike, siehe [known-limitations.md](known-limitations.md)). Die Entscheidungen stehen in D-031 bis D-033 ([implementation-decisions.md](implementation-decisions.md)).
+
+| Teil | Datei | Rolle |
+|---|---|---|
+| Schnittstelle | `lib/core/health/domain/health_steps_source.dart` | `HealthStepsSource`: `displayName`, `availability`, `access`, `requestAccess`, `totalSteps`, `openInstallPage`, `openAccessSettings`. **Nur lesend, nur Schritte, nur Summen:** `totalSteps` fragt die von der Schnittstelle aggregierte Summe eines Zeitraums, es gibt keine Methode für Rohdatensätze, zum Schreiben oder für andere Datenarten (ein Test hält das fest). Nur `requestAccess` zeigt den Systemdialog, und nur nach dem Erklärtext. |
+| Tagesfenster | `lib/core/health/domain/health_day_range.dart` | `healthDayRange` (ein lokaler Kalendertag als Zeitraum von Mitternacht bis Mitternacht in der Zone der Uhr, mit der wirklichen Länge von 23, 24,5 oder 25 Stunden an Tagen mit Zeitumstellung) und `healthSyncWindow` (heute und die sechs Tage davor). Uhr und Zone sind injizierbar (`FakeClock`). |
+| Adapter | `lib/core/health/platform/` | `UnsupportedHealthStepsSource` (Standard: kein Zugriff, Schalter ausgeblendet), `FakeHealthStepsSource` (Tests: Verfügbarkeit, Zugriff, Datensätze, Fehler, aufgezeichnete Aufrufe, Gates); der Adapter für Android kommt mit dem Plattformkanal. |
+| Konfliktregel | `lib/features/body/steps/domain/step_source.dart` | `StepSource` (`manual`, `health`) und `decideHealthDay`: von Hand eingetragen hat Vorrang, Health füllt leere Tage und aktualisiert nur eigene Werte, „keine Daten“ ändert nichts (D-032). |
+| Schreiben | `StepsRepository.applyHealthTotals` | Wendet die Regel je Tag an, in **einem** Befehl (`steps.health.sync`) mit Tagesziel-Snapshot und XP je geänderten Tag; ändert sich nichts, läuft kein Befehl. Die Entscheidung fällt innerhalb der Transaktion noch einmal, ein gleichzeitiger manueller Eintrag gewinnt. |
+| Abgleich | `lib/features/body/steps/application/health_steps_sync.dart` | `HealthStepsSync.reconcile`: Schalter und Modul prüfen, Verfügbarkeit und Zugriff prüfen (kein Dialog), die sieben Tage lesen, schreiben, den Zeitpunkt speichern. Wirft nie: jede Störung endet als typisiertes Ergebnis (`HealthSyncKind`). |
+| Zustand und Auslöser | `lib/features/body/steps/application/health_steps_controller.dart` | `HealthStepsController` (Einschalten mit Zugriff und erstem Abgleich, Ausschalten, „Zugriff erlauben“, Abgleich per Aktion), `healthStepsStatusProvider` (`HealthStepsStatus.condition`: `hidden`, `unknown`, `off`, `ready`, `interfaceMissing`, `interfaceOutdated`, `accessMissing`, `failed`) und die Auslöser Start und Rückkehr (`HealthStepsAutoSync`, gelesen in `AppWiring.start`). |
+
+Der Wunsch (`app_settings.health_steps_sync_enabled`) steht in den Einstellungen und in der Sicherung, die Berechtigung nie: Sie wird bei jedem Abgleich vom Gerät gefragt. Nach einem Import kann der Schalter deshalb an sein, ohne dass Zugriff besteht; der Zustand heißt dann `accessMissing`, und kein Abgleich liest etwas, bevor die Nutzerin den Zugriff erlaubt hat. Solange der Schalter aus ist, fragt weder der Start noch die Rückkehr das Gerät; die Verfügbarkeit liest erst die Einstellungsseite, damit sie den Schalter bei Geräten ohne Schnittstelle ausblenden kann.
