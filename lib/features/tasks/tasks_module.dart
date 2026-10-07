@@ -73,6 +73,7 @@ final class TasksModule extends SelfImprovementModule {
       defaultRank: SchemaKeys.defaultCardOrder.indexOf(cardId),
       fullWidth: true,
       builder: (context, ref) => const TasksDashboardCard(),
+      dayBuilder: (context, ref, day) => TasksDashboardCard(day: day),
     ),
   ];
 

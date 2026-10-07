@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/features/dashboard/presentation/dashboard_routes.dart';
 import 'package:self_improvement/features/gamification/application/gamification_providers.dart';
-import 'package:self_improvement/features/gamification/data/gamification_repository.dart';
+import 'package:self_improvement/features/gamification/domain/level.dart';
 import 'package:self_improvement/features/gamification/presentation/gamification_labels.dart';
 import 'package:self_improvement/features/gamification/presentation/widgets/accent_progress_bar.dart';
 
@@ -26,20 +26,40 @@ class XpDashboardCard extends ConsumerWidget {
         onRetry: () => ref.invalidate(gamificationSummaryProvider),
       );
     }
-    return _XpCard(summary: summary.value);
+    final data = summary.value;
+    return XpCardBody(level: data?.level, totalXp: data?.totalXp);
   }
 }
 
-class _XpCard extends StatelessWidget {
-  const _XpCard({required this.summary});
+/// The body of the XP card: level, XP inside the level with its bar, the XP
+/// missing to the next level and the total. The card opens the progress page.
+///
+/// [level] and [totalXp] are `null` while the numbers are not read yet (a dash,
+/// never a made-up value). With [stand] (a line such as "Stand am Ende dieses
+/// Tages", BS-93) the card says which moment the numbers belong to.
+class XpCardBody extends StatelessWidget {
+  /// Creates the body.
+  const XpCardBody({
+    required this.level,
+    required this.totalXp,
+    this.stand,
+    super.key,
+  });
 
-  /// The numbers, or `null` while they are not read yet.
-  final GamificationSummary? summary;
+  /// Level and progress inside it, or `null` while loading.
+  final LevelProgress? level;
+
+  /// Total XP, or `null` while loading.
+  final int? totalXp;
+
+  /// Which moment the numbers belong to; `null` is now.
+  final String? stand;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.tokens.colors;
-    final data = summary;
+    final level = this.level;
+    final totalXp = this.totalXp;
     final header = Row(
       children: <Widget>[
         Icon(
@@ -60,7 +80,7 @@ class _XpCard extends StatelessWidget {
     );
     final String label;
     final List<Widget> details;
-    if (data == null) {
+    if (level == null || totalXp == null) {
       label = 'XP und Level, wird geladen';
       details = <Widget>[
         Text(
@@ -69,8 +89,9 @@ class _XpCard extends StatelessWidget {
         ),
       ];
     } else {
-      final level = data.level;
-      label = 'XP und Level: ${levelSemanticLabel(level, data.totalXp)}';
+      label =
+          'XP und Level: ${levelSemanticLabel(level, totalXp)}'
+          '${stand == null ? '' : ', $stand'}';
       details = <Widget>[
         Wrap(
           crossAxisAlignment: WrapCrossAlignment.end,
@@ -100,11 +121,18 @@ class _XpCard extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          '${xpToNextLevelText(level)} · ${totalXpText(data.totalXp)}',
+          '${xpToNextLevelText(level)} · ${totalXpText(totalXp)}',
           style: AppTextStyles.captionDefault.copyWith(
             color: colors.textSecondary,
           ),
         ),
+        if (stand != null)
+          Text(
+            stand!,
+            style: AppTextStyles.captionDefault.copyWith(
+              color: colors.textSecondary,
+            ),
+          ),
       ];
     }
     return AppCard(

@@ -3,6 +3,7 @@ import 'package:self_improvement/core/providers/core_providers.dart';
 import 'package:self_improvement/features/body/data/weight_repository.dart';
 import 'package:self_improvement/features/body/domain/weight_entry.dart';
 import 'package:self_improvement/features/body/domain/weight_overview.dart';
+import 'package:self_improvement/shared/local_date.dart';
 
 final weightRepositoryProvider = Provider<WeightRepository>(
   (ref) => WeightRepository(
@@ -74,3 +75,27 @@ final weightCardProvider = Provider<AsyncValue<WeightCardModel>>((ref) {
         AsyncData(buildWeightCard(entriesNewestFirst: list, today: today)),
   );
 });
+
+/// The weight card as it stood at the end of one day (BS-93): the latest
+/// measurement up to that day, the curve of the seven days ending on it and the
+/// week comparison against the day a week before it. A measurement made after
+/// that day plays no part; the card is built by the same function as
+/// [weightCardProvider], so the two cannot disagree about a day. Released when
+/// no card shows it.
+final weightCardOnProvider = Provider.autoDispose
+    .family<AsyncValue<WeightCardModel>, LocalDate>((ref, day) {
+      final entries = ref.watch(weightEntriesProvider);
+      return entries.when(
+        loading: () => const AsyncLoading(),
+        error: AsyncError.new,
+        data: (list) => AsyncData(
+          buildWeightCard(
+            entriesNewestFirst: [
+              for (final entry in list)
+                if (!entry.localDate.isAfter(day)) entry,
+            ],
+            today: day,
+          ),
+        ),
+      );
+    });

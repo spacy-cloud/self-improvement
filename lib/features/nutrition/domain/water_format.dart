@@ -51,3 +51,30 @@ String waterProgressLabel(WaterToday today) {
       '$percent Prozent erreicht';
   return today.goalReached ? '$base, Tagesziel erreicht.' : '$base.';
 }
+
+/// Like [waterProgressLabel] for a day that is not today (BS-93): the same
+/// states, worded without "heute", and a day without an entry says so instead
+/// of reading as zero.
+///
+/// - nothing entered: `Wasser an diesem Tag: nichts eingetragen, Tagesziel
+///   2,5 l.` (or `kein Tagesziel`)
+/// - without a target: `Wasser an diesem Tag: 1,25 l, kein Tagesziel.`
+/// - below the target: `Wasser an diesem Tag: 1,25 l von 2,5 l, 50 Prozent
+///   erreicht.`
+/// - at or above: `..., 112 Prozent erreicht, Tagesziel erreicht.`
+String waterDayProgressLabel(WaterToday day) {
+  final target = day.targetMl;
+  final percent = day.percent;
+  if (day.isEmpty) {
+    return 'Wasser an diesem Tag: nichts eingetragen, '
+        '${target == null ? 'kein Tagesziel' : 'Tagesziel ${formatWaterLiters(target)}'}.';
+  }
+  final total = formatWaterLiters(day.totalMl);
+  if (target == null || percent == null) {
+    return 'Wasser an diesem Tag: $total, kein Tagesziel.';
+  }
+  final base =
+      'Wasser an diesem Tag: $total von ${formatWaterLiters(target)}, '
+      '$percent Prozent erreicht';
+  return day.goalReached ? '$base, Tagesziel erreicht.' : '$base.';
+}

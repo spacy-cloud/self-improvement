@@ -39,6 +39,15 @@ final habitTodayProvider = Provider<AsyncValue<HabitDay>>(
   (ref) => _habitDay(ref, (today) => today),
 );
 
+/// The habit list of ONE given day (BS-93): the same model as
+/// [habitDayProvider], built by the same function from the same streams, for
+/// the day Home shows when it is not today. It is not tied to the week strip of
+/// the habits tab and takes no selection. Released when no card shows it.
+final habitOnDayProvider = Provider.autoDispose
+    .family<AsyncValue<HabitDay>, LocalDate>(
+      (ref, day) => _habitDay(ref, (today) => day),
+    );
+
 /// Builds the [HabitDay] of the day [pick] chooses from today, from the habit
 /// and check streams; an error wins, then loading, then the data.
 AsyncValue<HabitDay> _habitDay(
