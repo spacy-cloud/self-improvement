@@ -87,48 +87,44 @@ void main() {
 
   group('every destination is a route of the app (BS-105, C02, C03)', () {
     final table = _pathsOf(buildAppRoutes(modules: bundledModules));
-    final destinations = <String, GoalDestination>{
-      for (final type in GoalType.values) type.key: expected[type]!,
-      'habit': const GoalDestination('/habits', isTab: true),
+    // The real rows, so the destination is the one the page uses.
+    final rows = <String, GoalsDayRow>{
+      for (final type in GoalType.dailyTypes) type.key: _rowOf(type),
+      GoalType.workoutWeekly.key: _weeklyRow(),
+      'habit': _habitRow(),
     };
 
-    for (final entry in destinations.entries) {
-      test('(C02) ${entry.key}: ${entry.value.route} is registered', () {
-        final path = Uri.parse(entry.value.route).path;
-        expect(table, contains(path));
+    for (final entry in rows.entries) {
+      test('(C02) ${entry.key}: the page is registered', () {
+        final destination = goalDestination(entry.value);
+        expect(table, contains(Uri.parse(destination.route).path));
       });
-    }
 
-    for (final type in GoalType.values) {
-      final destination = expected[type]!;
-      test('(C03) ${type.key}: the page belongs to the module of the goal', () {
-        final path = Uri.parse(destination.route).path;
-        if (destination.isTab) {
-          // The Habits tab is a core destination; its content is the one of
-          // the tasks module and the tab gate follows that module.
-          expect(path, AppRoutes.habits);
-          expect(type.module, ModuleId.tasks);
-          return;
-        }
-        final owner = bundledModules.singleWhere(
-          (module) => module.id == type.module,
-        );
-        expect(
-          _pathsOf(owner.routes),
-          contains(path),
-          reason:
-              'a goal of ${type.module.key} must lead to a route that '
-              'the module guards (switched off: "Modul ausgeschaltet")',
-        );
-      });
-    }
-
-    test('(C03) the habit goal belongs to the tasks module, like its tab', () {
-      expect(_habitRow().module, ModuleId.tasks);
-      expect(
-        _pathsOf(buildAppRoutes(modules: bundledModules)),
-        contains(AppRoutes.habits),
+      test(
+        '(C03) ${entry.key}: the page belongs to the module of the goal',
+        () {
+          final row = entry.value;
+          final destination = goalDestination(row);
+          final path = Uri.parse(destination.route).path;
+          if (destination.isTab) {
+            // The Habits tab is a core destination; its content is the one of
+            // the tasks module and the tab gate follows that module.
+            expect(path, AppRoutes.habits);
+            expect(row.module, ModuleId.tasks);
+            return;
+          }
+          final owner = bundledModules.singleWhere(
+            (module) => module.id == row.module,
+          );
+          expect(
+            _pathsOf(owner.routes),
+            contains(path),
+            reason:
+                'a goal of ${row.module.key} must lead to a route that the '
+                'module guards (switched off: "Modul ausgeschaltet")',
+          );
+        },
       );
-    });
+    }
   });
 }
