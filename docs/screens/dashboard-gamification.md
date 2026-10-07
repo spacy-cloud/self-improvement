@@ -151,7 +151,7 @@ Ticket [BS-99](https://spacy-cloud.atlassian.net/browse/BS-99), Entscheidungen D
 
 ## 12. v0.2.0: „Ziele heute“ und die antippbare Tageskarte (BS-100)
 
-Ticket [BS-100](https://spacy-cloud.atlassian.net/browse/BS-100) (Bug: Die Kachel „Ziele“ auf Home ließ sich nicht antippen, Ziele und Fortschritt waren nicht einsehbar) mit den Teilaufgaben BS-103 (Seite „Ziele heute“) und BS-104 (Karte antippbar). BS-105 (Aktion „Ziele bearbeiten“, Sprung zum Modul je Ziel) und BS-106 (Host-Tests und Doku dazu) folgen im zweiten Pull Request. BS-101 (der Entwurf) liegt in der Figma-Datei LF10-Desing-App, Seite „v0.2.0 – Neue Screens“; seine Freigabe liegt bei Joern. BS-107 (Prüfung auf dem Gerät) ist offen. Entscheidung D-027 ([../implementation-decisions.md](../implementation-decisions.md)).
+Ticket [BS-100](https://spacy-cloud.atlassian.net/browse/BS-100) (Bug: Die Kachel „Ziele“ auf Home ließ sich nicht antippen, Ziele und Fortschritt waren nicht einsehbar) mit den Teilaufgaben BS-103 (Seite „Ziele heute“), BS-104 (Karte antippbar), BS-105 (Aktion „Ziele bearbeiten“, Sprung zum Modul je Ziel) und BS-106 (Host-Tests und Doku). BS-101 (der Entwurf) liegt in der Figma-Datei LF10-Desing-App, Seite „v0.2.0 – Neue Screens“; seine Freigabe liegt bei Joern. BS-107 (Prüfung auf dem Gerät) ist offen, die Checkliste steht in 12.11. Entscheidung D-027 ([../implementation-decisions.md](../implementation-decisions.md)).
 
 ### 12.1 Route, Figma-Knoten und Dateien
 
@@ -170,12 +170,12 @@ Ticket [BS-100](https://spacy-cloud.atlassian.net/browse/BS-100) (Bug: Die Kache
 
 Die Route `/goals/today` (`DashboardRoutes.goalsToday`) ist eine Kernseite über der Shell, registriert wie `/goals` (Abschnitt 3.1 in [shell.md](shell.md)); sie ist nicht durch ein Modul geschützt, weil der Tagesring auch bei ausgeschalteten Modulen läuft: ihre Zeilen kommen nur von aktiven Modulen. Dark und OLED entstehen aus den Theme-Tokens.
 
-Dateien (alle unter `lib/features/dashboard/`): `domain/goals_day.dart` (Modell und Texte, rein), `application/goals_today_providers.dart` (`goalsTodayProvider`), `presentation/goals_today_screen.dart` (Seite), `presentation/widgets/goals_day_view.dart` (Inhalt), `goals_summary_card.dart` (Ring und Kopf), `goal_row_tile.dart` (eine Zeile), `goal_visuals.dart` (Symbol, Akzent und Balken je Ziel), `not_today_banner.dart` (Hinweis „Nicht heute“) und die Karte `day_overview_card.dart` (nur die Antippbarkeit). Geändert in gemeinsamen Dateien: `app_router.dart` (die Route), `dashboard_routes.dart` (die Konstante), `home_screen.dart` (eine Zeile: `onTap` der Karte).
+Dateien (alle unter `lib/features/dashboard/`): `domain/goals_day.dart` (Modell und Texte, rein), `application/goals_today_providers.dart` (`goalsTodayProvider`), `presentation/goals_today_screen.dart` (Seite), `presentation/widgets/goals_day_view.dart` (Inhalt), `goals_summary_card.dart` (Ring und Kopf), `goal_row_tile.dart` (eine Zeile), `goal_visuals.dart` (Symbol, Akzent und Balken je Ziel), `not_today_banner.dart` (Hinweis „Nicht heute“), `presentation/goal_destinations.dart` (welches Ziel zu welcher Seite führt) und die Karte `day_overview_card.dart` (nur die Antippbarkeit). Geändert in gemeinsamen Dateien: `app_router.dart` (die Route), `dashboard_routes.dart` (die Konstante), `home_screen.dart` (eine Zeile: `onTap` der Karte).
 
 ### 12.2 Datenfluss: dieselben Zahlen wie der Ring
 
 - `goalsTodayProvider` liest `dashboardViewProvider`, also `DashboardView.dayStatus` mit `DayStatus.goals`: dasselbe Objekt, das der Ring auf Home zählt. Das Modell `GoalsDay` übernimmt `DayStatus.fulfilledCount` und `applicableCount` unverändert („x von y“) und rechnet keine zweite Zahl. Ob eine Zeile „erreicht“ ist, entscheidet allein `GoalProgress.fulfilled`; die übrigen Quellen ändern nur Worte.
-- Es erscheinen nur anwendbare Tagesziele (ausgeschaltete Ziele und Ziele ausgeschalteter Module sind im Tagesstatus nicht anwendbar), also gibt es genau y Zeilen und x erreichte. Zeigt Home einmal einen anderen Tag (BS-93), liest die Seite denselben Status und baut daraus den Zustand „Nicht heute“ (12.9).
+- Es erscheinen nur anwendbare Tagesziele (ausgeschaltete Ziele und Ziele ausgeschalteter Module sind im Tagesstatus nicht anwendbar), also gibt es genau y Zeilen und x erreichte. Zeigt Home einmal einen anderen Tag (BS-93), liest die Seite denselben Status und baut daraus den Zustand „Nicht heute“ (12.10).
 - Drei weitere Quellen liefern Worte und das Wochenziel, nie Zahlen des Rings, und werden nur gelesen, wenn die Seite sie braucht: die Namen der Gewohnheiten (nur wenn ein Gewohnheitsziel gilt, `habitsProvider`), wie „Workout heute“ beantwortet wurde (Workout, Ruhetag oder Überspringen, nur wenn dieses Ziel heute gilt, `workoutDayStateProvider`) und die Workouts der Woche (nur wenn das Fokus-Modul an ist und ein Tagesziel gilt, `workoutWeekSummaryProvider`). Geladen wird erst, wenn alle da sind; ein Fehler in einer Quelle ist ein Fehler der Seite („Erneut versuchen“ liest alles neu).
 - Die Seite hält keine Regel: Prozent, Einheiten und Texte stehen in `goals_day.dart`; Datum und Tageswechsel laufen über `todayProvider` und die injizierte Uhr.
 
@@ -191,12 +191,13 @@ Dateien (alle unter `lib/features/dashboard/`): `domain/goals_day.dart` (Modell 
 | Ein einziges Ziel | „1 von 1 Ziel erreicht“ (erreicht) mit „Du hast dein Tagesziel erreicht.“, Kopf der Liste „Tagesziel“ im Singular |
 | Kein Tagesziel | `EmptyState` „Noch keine Tagesziele“ mit „Ziele festlegen“ (öffnet `/goals`), kein Ring, nie „0 von 0“; gilt auch, solange noch kein Tagesstatus existiert (vor dem Profilstart) |
 | Wochenziel | Gruppe „Wochenziel · nicht im Tagesring“ unter der Liste, wenn heute mindestens ein Tagesziel gilt und das Fokus-Modul an ist |
-| Vergangener Tag (BS-93) | Hinweis „Nicht heute“ mit Datum und „Zurück zu heute“, Kopf „Du siehst die Werte dieses Tages.“, Zeilen mit Wörtern der Vergangenheit („Nicht gewogen“), kein Wochenziel; die Seite zeigt heute, bis BS-93 einen anderen Tag in `DashboardView` legt (12.9) |
+| Aktion „Ziele bearbeiten“ | Schaltfläche am Ende der Seite, nach dem Wochenziel; öffnet den Ziele-Editor `/goals`. Im Zustand „Kein Tagesziel“ steht stattdessen „Ziele festlegen“ |
+| Vergangener Tag (BS-93) | Hinweis „Nicht heute“ mit Datum und „Zurück zu heute“, Kopf „Du siehst die Werte dieses Tages.“, Zeilen mit Wörtern der Vergangenheit („Nicht gewogen“), kein Wochenziel; die Seite zeigt heute, bis BS-93 einen anderen Tag in `DashboardView` legt (12.10) |
 | 200 % Schrift oder unter 300 px Kartenbreite | Ring über den Texten, Zeile gestapelt: Name, darunter das Status-Wort, dann Stand und Balken, ohne Pfeil (wie `4114:501`); die Seite scrollt |
 
 ### 12.4 Zeilen: Stand, Ziel und Status
 
-Jede Zeile hat Symbol und Akzent des Moduls (wie auf seiner Karte auf Home, Gewohnheiten mit ihrem eigenen Symbol), den Namen aus dem Ziele-Editor, ein Status-Wort, Stand und Ziel mit Einheit und einen Balken (`AppProgressBar`, für Workout und Gewohnheiten derselbe Balken im Akzent über `AccentProgressBar`). Der Status steht nie nur in der Farbe: „Offen“ (ruhig), „Erreicht“ (Haken), „Ruhetag“ (Mond), „Übersprungen“ (Symbol wie im Sheet). Die Prozentzahl ist der wirkliche Wert, gerundet auf ganze Prozent, und nie 100 vor dem Ziel (9.950 von 10.000 sind 99 %); über dem Ziel steht der wirkliche Wert (112 %), der Balken bleibt voll. Das ist dieselbe Regel wie auf der Wasser- und der Schrittseite (ein Test vergleicht beide).
+Jede Zeile ist ein Button (12.6) und hat Symbol und Akzent des Moduls (wie auf seiner Karte auf Home, Gewohnheiten mit ihrem eigenen Symbol), den Namen aus dem Ziele-Editor, ein Status-Wort, Stand und Ziel mit Einheit und einen Balken (`AppProgressBar`, für Workout und Gewohnheiten derselbe Balken im Akzent über `AccentProgressBar`). Der Status steht nie nur in der Farbe: „Offen“ (ruhig), „Erreicht“ (Haken), „Ruhetag“ (Mond), „Übersprungen“ (Symbol wie im Sheet). Die Prozentzahl ist der wirkliche Wert, gerundet auf ganze Prozent, und nie 100 vor dem Ziel (9.950 von 10.000 sind 99 %); über dem Ziel steht der wirkliche Wert (112 %), der Balken bleibt voll. Das ist dieselbe Regel wie auf der Wasser- und der Schrittseite (ein Test vergleicht beide).
 
 | Ziel | Reihenfolge | Zeile (Beispiel) |
 |---|---|---|
@@ -218,7 +219,27 @@ Die Reihenfolge ist die des Ziele-Editors (`goalDisplayOrder`).
 - Ohne anwendbares Ziel bleibt „Noch keine Tagesziele“ mit „Ziele festlegen“ unverändert (`NoGoalsCard`).
 - Zurück (Pfeil der Seite oder Android-Zurück) führt nach Home, mit unveränderter Scrollposition (die Seite liegt per `push` über der Shell); bei einem Direktaufruf ohne darunterliegende Seite führt Zurück nach Home statt in eine Sackgasse (`leaveToHome`).
 
-### 12.6 Abweichungen vom Entwurf und Gründe (Q03)
+### 12.6 Sprung zum Modul und „Ziele bearbeiten“ (BS-105)
+
+Jede Zeile (auch die des Wochenziels) ist ein Button mit Pfeil rechts; ein Tipp öffnet die Seite des Moduls. Die Zuordnung steht an **einer** Stelle, `goalDestination` in `presentation/goal_destinations.dart`; ein Test hält sie fest, prüft für jeden `GoalType`, dass es eine Zuordnung gibt, dass die Seite eine Route der App ist und dass sie zum Modul des Ziels gehört (ein ausgeschaltetes Modul zeigt dort „… ist ausgeschaltet“, `guardModuleRoutes`).
+
+| Zeile | Seite | Art |
+|---|---|---|
+| Wasser | `/water` (`WaterRoutes.screen`) | über die Seite gelegt (`push`) |
+| Schritte | `/steps` (`StepsRoutes.overview`) | `push` |
+| Gewicht erfassen | `/weight` (`WeightRoutes.overview`) | `push` |
+| Fokus | `/focus` (`FocusRoutes.start`) | `push` |
+| Workout heute, Wochenziel „Workouts diese Woche“ | `/workouts` (`WorkoutRoutes.overview`) | `push` |
+| Aufgabe erledigen | `/habits?tab=tasks` (`TaskRoutes.list`) | Tab „Habits“, `go` |
+| Gewohnheit | `/habits` (`HabitRoutes.tab`) | Tab „Habits“, `go` |
+
+- Module werden über die Seite gelegt: **Zurück** zeigt „Ziele heute“ mit den aktuellen Zahlen (die Seite liest ihre Quellen live; ein im Wasser-Modul gespeichertes Glas steht danach als „0,25 von 2,5 l · 10 %“ auf der Seite). Die zwei Ziele im Tab „Habits“ wechseln zum Tab, wie die Aufgabenkarte auf Home es mit `go` tut: Ein Tab-Ziel ersetzt den Stapel, deshalb führt **Zurück** von dort nach Home, nicht zur Übersicht (bekannte Grenze, [known-limitations.md](../known-limitations.md)).
+- Ein Ziel eines ausgeschalteten Moduls hat gar keine Zeile (12.2); wird das Modul bei geöffneter Modulseite ausgeschaltet, zeigt die Seite „… ist ausgeschaltet“, und die Übersicht darunter hat die Zeile und die Zahl schon nicht mehr.
+- Die Gewohnheit führt zur Liste (`/habits`), nicht zur Detailseite der einzelnen Gewohnheit, wie im Ticket.
+- **„Ziele bearbeiten“** (Schaltfläche am Ende der Seite, 52 dp hoch, Umriss) öffnet den vorhandenen Ziele-Editor `/goals` über die Seite; Zurück zeigt die Seite wieder. Ohne Tagesziel gibt es sie nicht, dort führt „Ziele festlegen“ (BS-103) zum Editor.
+- Sprechtext einer Zeile: der Text aus 12.4 und „öffnen“ („Wasser, 1,5 von 2,5 Litern, 60 Prozent, noch offen, öffnen“), Rolle Button, die Tippfläche ist die ganze Zeile (mindestens 56 dp hoch). Bei 200 % Schrift stapelt die Zeile und der Pfeil entfällt (wie im Entwurf `4114:501`); die Zeile bleibt als Ganzes ein Button.
+
+### 12.7 Abweichungen vom Entwurf und Gründe (Q03)
 
 Der Entwurf ist nicht freigegeben; Figma wurde nicht verändert. Bei einer Abweichung wurde nichts still entschieden:
 
@@ -232,33 +253,63 @@ Der Entwurf ist nicht freigegeben; Figma wurde nicht verändert. Bei einer Abwei
 8. Wochenziel: wie `4114:327` in jedem Zustand mit Tagesziel; die älteren Frames `4112:60` bis `4112:444` zeigen es nicht (Entscheidung: Wochenziel getrennt, zählt nicht mit). Ohne Tagesziel und an einem vergangenen Tag steht es nicht dort.
 9. Stapeln: unter 300 px Kartenbreite stapelt die Zeile auch bei normaler Schrift (bei 320 px Bildschirmbreite), sonst bräche der Name in der Zeile mit dem Status-Wort.
 10. Home-Karte `4115:249`: Der Entwurf zeigt noch die Pokalzeile „Weiter so!“ und „Bleib dran!“, die App zeigt Titel und sachlichen Satz (BS-121, Abschnitt 6 Punkt 1). Pfeil und gedrückter Zustand sind wie im Entwurf; die Rundung der Karte ist 16 statt 17 px (Abschnitt 8.4 in [design-handoff.md](../design-handoff.md)).
+11. Zurück nach „Aufgabe erledigen“ und Gewohnheiten: Beide öffnen den Tab „Habits“ (`go`, wie die Aufgabenkarte auf Home); dort führt Zurück nach Home. Das Ticket BS-105 erwartet nach „Zurück“ die Übersicht; das gilt für alle Seiten, die über die Übersicht gelegt werden (Wasser, Schritte, Gewicht, Fokus, Workouts, Editor).
+12. Die Gewohnheit führt zur Liste, nicht zu ihrer Detailseite (Ticket: `/habits`).
+13. Die Zeile bleibt bei 200 % ein Button ohne Pfeil (Entwurf `4114:501` zeichnet keinen Pfeil); das Wochenziel ist wie alle Zeilen antippbar (der Entwurf `4114:327` zeichnet den Pfeil auch dort).
 
-### 12.7 Barrierefreiheit
+### 12.8 Barrierefreiheit
 
-- Tippflächen mindestens 48 x 48: die ganze Karte auf Home, der Zurück-Pfeil, „Ziele festlegen“, „Zurück zu heute“; `androidTapTargetGuideline` und `labeledTapTargetGuideline` sind für die Seite in allen Zuständen (bis hin zu Workout, zwei Gewohnheiten und Wochenziel) bei 320, 360, 393 und 430 px mit Textskalierung 1,0 und 2,0 grün, ebenso für die Karte.
-- Sprechtexte: Kopfkarte als ein Element („Samstag, 3. Oktober. 2 von 5 erreicht. Noch 3 Ziele offen. Bleib dran!“), jede Zeile als ein Element („Wasser, 1,5 von 2,5 Litern, 60 Prozent, noch offen“, „Workout heute, Ruhetag, zählt als erreicht, keine XP, die Streak bleibt“), Überschriften der Gruppen als Überschriften; Balken, Status-Wörter und Symbole in einer Zeile werden nicht einzeln gelesen. Zustand nie nur über Farbe.
+- Tippflächen mindestens 48 x 48: die ganze Karte auf Home, jede Zeile, „Ziele bearbeiten“, der Zurück-Pfeil, „Ziele festlegen“, „Zurück zu heute“; `androidTapTargetGuideline` und `labeledTapTargetGuideline` sind für die Seite in allen Zuständen (bis hin zu Workout, zwei Gewohnheiten und Wochenziel) bei 320, 360, 393 und 430 px mit Textskalierung 1,0 und 2,0 grün, ebenso für die Karte.
+- Sprechtexte: Kopfkarte als ein Element („Samstag, 3. Oktober. 2 von 5 erreicht. Noch 3 Ziele offen. Bleib dran!“), jede Zeile als ein Button („Wasser, 1,5 von 2,5 Litern, 60 Prozent, noch offen, öffnen“, „Workout heute, Ruhetag, zählt als erreicht, keine XP, die Streak bleibt, öffnen“), Überschriften der Gruppen als Überschriften; Balken, Status-Wörter und Symbole in einer Zeile werden nicht einzeln gelesen. Zustand nie nur über Farbe.
 - Textkontrast (`textContrastGuideline`) ist in Light, Dark und OLED grün, auch mit gedrückter Karte, mit Status-Wörtern und mit dem Hinweis „Nicht heute“.
 - Bewegung: der Ring und die Balken laufen über `AppMotion` (bei reduzierter Bewegung sofort); die Seite nutzt `appRoute`, der Seitenübergang folgt „Reduzierte Bewegung“.
 
-### 12.8 Tests und Nachweise
+### 12.9 Tests und Nachweise
 
 Befehl: `flutter test test/features/dashboard test/app/route_sweep_test.dart test/app/route_guard_test.dart test/app/router_guards_test.dart`. Der Stand des Gesamtlaufs steht in [test-report.md](../test-report.md) (vom Koordinator geführt).
 
 | Datei | Fälle | Abnahme-IDs |
 |---|---:|---|
 | `test/features/dashboard/domain/goals_day_test.dart` | 47 | C04 |
-| `.../presentation/goals_today_screen_test.dart` | 54 | AT33, AT34, AT35, C04, C06, Q01, Q02 |
-| `.../presentation/goals_today_flow_test.dart` | 14 | AT23, AT33, C02, C03, C04 |
+| `.../presentation/goals_today_screen_test.dart` | 69 | AT33, AT34, AT35, C02, C04, C06, Q01, Q02 |
+| `.../presentation/goals_today_flow_test.dart` | 23 | AT23, AT33, C02, C03, C04 |
+| `.../presentation/goal_destinations_test.dart` | 19 | C02, C03 |
 | `.../presentation/day_overview_card_tap_test.dart` | 26 | AT33, AT34, AT35, C04, Q02 |
 | `test/app/route_sweep_test.dart` (die neue Route) | 19 | AT33, AT35 |
 | `test/app/router_guards_test.dart` (neuer Fall `/goals/today`) | 1 | C02 |
 
 - Die Zahlen: `goals_day_test.dart` prüft das Modell rein (fünf Stände, anwendbare und nicht anwendbare Ziele, Gewohnheiten, Reihenfolge, Texte jedes Standes und der Vergangenheit, Workout in allen Zuständen, Wochenziel getrennt), darunter einen Eigenschaftstest über den ganzen Bereich („100 %“ steht genau dann, wenn das Ziel erreicht ist) und den Vergleich der Prozentregel mit `waterPercent` und `StepsProgress.percent`. `goals_today_screen_test.dart` zeigt die Seite in allen Zuständen mit Tagesstatus-Überschreibung (Texte, Ring-Bögen, Zeilen), mit Ruhetag, Überspringen, Workout, Gewohnheiten und Wochenziel, die Sprechtexte, vier Breiten bei 100 und 200 % mit den Richtlinien, drei Themes mit `textContrastGuideline`, Laden, Fehler mit Wiederholen und den Zustand „Nicht heute“. `goals_today_flow_test.dart` läuft in der echten App: Tipp auf die Karte, Zurück (Pfeil, Systemzurück, Direktaufruf, Scrollposition), Home und Seite sagen in jedem Stand dasselbe „x von y“ und malen denselben Ring (die Bögen werden gelesen, wie sie gemalt werden), ein gespeichertes Gewicht ändert Ring und Seite zugleich, ein ausgeschaltetes Modul nimmt sein Ziel aus Ring und Seite.
+- Sprung zum Modul (BS-105, BS-106): `goal_destinations_test.dart` hält die Zuordnung fest (jeder `GoalType`, die Gewohnheit, jede Seite ist eine Route der App und gehört zum Modul des Ziels). `goals_today_screen_test.dart` tippt jede Zeile in einer kleinen Router-App und sieht, wohin sie führt (Modul über der Seite, Zurück zeigt die Seite; die zwei Tab-Ziele wechseln den Tab), „Ziele bearbeiten“, Rolle, Sprechtext und 48 dp, Pfeil bei 100 % und keiner beim Stapeln, eine Ansicht ohne Rückrufe (nur Anzeige). `goals_today_flow_test.dart` öffnet in der echten App Wasser, Schritte, Gewicht, Fokus, Workouts, Aufgabenliste, Gewohnheit und den Zieleditor und kommt zurück: ein im Wasser-Modul gespeichertes Glas steht danach auf der Seite, ein bei geöffneter Modulseite ausgeschaltetes Modul nimmt sein Ziel von der Seite darunter.
 - Der Routen-Durchlauf (`route_sweep_test.dart`) enthält `/goals/today` in der Liste der Kernrouten (fünf Größen, zwei davon mit einem Monat Daten, dunkel und OLED) und in der Gruppe der Seiten, die sich mit „Workout heute“ ändern (Ruhetag, Überspringen, Workout und offen, bei 320 px mit 200 % und bei 393 px, dunkel und OLED).
-- Mutationsproben (lokal, nicht eingecheckt; Produktivcode vorübergehend geändert, danach mit `git checkout` zurückgesetzt). Zahlen: „anwendbar“ zählt alle Ziele statt der anwendbaren (5 scheiternde Tests), Zeilen enthalten auch nicht anwendbare Ziele (4), „erreicht“ fällt um eins zu klein aus (31), das Wochenziel zählt im Ring mit (26), Prozent liest 100 vor dem Ziel (4), Wasser in Millilitern statt Litern (8), Zeilen in der Reihenfolge des Tagesstatus statt des Editors (2), der Ruhetag behält den Status „Erreicht“ (2), Gewohnheiten fehlen (15). Navigation: die Karte ohne Tippaktion (11), der Zurück-Pfeil der Seite ohne Wirkung (mindestens 1, danach hing der Lauf), die Route nicht registriert (2 in den Routentabellen, danach hing der Lauf), „Ziele festlegen“ ohne Ziel (1). Karte: der Ring wird zusätzlich vorgelesen (4), kein gedrückter Zustand (4), kein Pfeil (9), der Sprechtext ohne Zahlen (7). Bei den beiden Mutationen mit scheiternden Tests der echten App endete der Lauf von `flutter test` nicht (er blockierte nach den ersten Fehlern und wurde nach 75 Sekunden abgebrochen); gezählt sind die bis dahin gemeldeten Fehler.
-- Visueller Vergleich (Q03): `goals_today_visual_test.dart` schreibt mit `GOALS_TODAY_PNG=1` Bilder nach `build/goals_today/` (Hell, Dunkel, OLED, 200 % bei 320 und 393 px, mit Ruhetag und Wochenziel, ohne Ziel, vergangener Tag, Karte auf Home und gedrückt); sie wurden gegen die Knoten aus 12.1 verglichen, die Abweichungen stehen in 12.6.
+- Mutationsproben (lokal, nicht eingecheckt; Produktivcode vorübergehend geändert, danach mit `git checkout` zurückgesetzt). Zahlen: „anwendbar“ zählt alle Ziele statt der anwendbaren (5 scheiternde Tests), Zeilen enthalten auch nicht anwendbare Ziele (4), „erreicht“ fällt um eins zu klein aus (31), das Wochenziel zählt im Ring mit (26), Prozent liest 100 vor dem Ziel (4), Wasser in Millilitern statt Litern (8), Zeilen in der Reihenfolge des Tagesstatus statt des Editors (2), der Ruhetag behält den Status „Erreicht“ (2), Gewohnheiten fehlen (15). Navigation: die Karte ohne Tippaktion (11), der Zurück-Pfeil der Seite ohne Wirkung (mindestens 1, danach hing der Lauf), die Route nicht registriert (2 in den Routentabellen, danach hing der Lauf), „Ziele festlegen“ ohne Ziel (1). Karte: der Ring wird zusätzlich vorgelesen (4), kein gedrückter Zustand (4), kein Pfeil (9), der Sprechtext ohne Zahlen (7). Sprung zum Modul: Wasser führt zu den Schritten (2), „Aufgabe erledigen“ wird übergelegt statt gewechselt (2), die Zeilen ohne Tippaktion (11), die Zeile des Wochenziels ohne Tippaktion (2), „Ziele bearbeiten“ ohne Wirkung (1), die Gewohnheit führt zum Formular „Neue Gewohnheit“ (3), das Wochenziel führt zum Fokus (2), Module mit `go` statt `push` (5), der Sprechtext ohne „öffnen“ (3), die Zeile nicht als Button ausgezeichnet (1). Bei den beiden Mutationen mit scheiternden Tests der echten App endete der Lauf von `flutter test` nicht (er blockierte nach den ersten Fehlern und wurde nach 75 Sekunden abgebrochen); gezählt sind die bis dahin gemeldeten Fehler.
+- Visueller Vergleich (Q03): `goals_today_visual_test.dart` schreibt mit `GOALS_TODAY_PNG=1` Bilder nach `build/goals_today/` (Hell, Dunkel, OLED, 200 % bei 320 und 393 px, mit Ruhetag und Wochenziel, ohne Ziel, vergangener Tag, Karte auf Home und gedrückt); sie wurden gegen die Knoten aus 12.1 verglichen, die Abweichungen stehen in 12.7.
 
-### 12.9 Übergabe an BS-93 (vergangene Tage) und offene Punkte
+### 12.10 Übergabe an BS-93 (vergangene Tage) und offene Punkte
 
 - BS-93 baut auf der Seite auf: `buildGoalsDay` nimmt den Status **irgendeines** Tages (`isToday` folgt aus Datum und heute), `GoalsDayView` zeigt für einen anderen Tag den Hinweis „Nicht heute“ und nimmt `onBackToToday`. Offen für BS-93: `DashboardView.dayStatus` für den gewählten Tag füllen, `onBackToToday` an der Seite verdrahten und für den Tag die Quellen von Workout (`workoutOutcome`) und Gewohnheiten liefern; ohne `workoutOutcome` sagt eine erreichte Workout-Zeile „Eintrag vorhanden“. Der Satz „Du hast heute …“ der Home-Karte ist an heute gebunden (BS-121).
 - Nur Host-Tests: nichts davon ist auf einem Gerät gesehen (TalkBack, VoiceOver, Systemschrift); BS-107 bleibt offen. Der Sichtvergleich mit Figma war per Augenschein an im Host gerenderten Bildern (Hell, Dunkel, OLED mit 393 px, 200 % mit 320 und 393 px), kein Pixelvergleich; `goals_today_visual_test.dart` schreibt die Bilder mit `GOALS_TODAY_PNG=1` nach `build/goals_today/` (nicht im Repository).
+
+### 12.11 Checkliste für die Prüfung auf dem Gerät (BS-107)
+
+Voraussetzung: Ein Gerät mit installiertem Build (Android mit TalkBack, zusätzlich ein iPhone mit VoiceOver, Rahmen BS-96). Daten: Profil nicht am ersten Tag (sonst zeigt Home die Begrüßung statt der Karte), die Module Körper, Ernährung, Fokus und Aufgaben an, mindestens ein Ziel erreicht und eines offen (zum Beispiel ein Gewicht eingetragen, Wasser unter dem Ziel), eine Gewohnheit angelegt; für Punkt 9 zusätzlich das Tagesziel „Workout heute“ eingeschaltet (gilt ab morgen) und ein Ruhetag gesetzt. Ergebnis je Punkt: **ok**, **Fehler** (mit Beschreibung) oder **nicht geprüft**; dazu Gerät und Version.
+
+| Nr. | Schritt | Erwartung | Ergebnis |
+|---|---|---|---|
+| 1 | Home mit TalkBack durchwischen (nach rechts) | Reihenfolge: Datum, „Dein Tag im Überblick“ (als Überschrift angesagt), die Karte, danach die Karten der Module. Die Karte ist **ein** Element, kein Ring, Titel und Satz einzeln | |
+| 2 | Ansage der Karte | „Ziele heute, 2 von 4 erreicht, Details öffnen“ (mit den echten Zahlen) und die Rolle „Schaltfläche“ | |
+| 3 | Karte per Doppeltipp öffnen | Die Seite „Ziele heute“ öffnet; der Fokus liegt am Anfang der Seite (Zurück-Schaltfläche oder Titel), nicht auf Home | |
+| 4 | Seite durchwischen | Zurück, „Ziele heute“, die Kopfkarte als ein Element („Samstag, 3. Oktober. 2 von 5 erreicht. Noch 3 Ziele offen. Bleib dran!“), Überschrift „Tagesziele“, die Zeilen in der Reihenfolge Wasser, Schritte, Fokus, Gewicht, (Workout), Aufgabe, Gewohnheiten, dann „Wochenziel · nicht im Tagesring“ mit seiner Zeile, zuletzt „Ziele bearbeiten“ | |
+| 5 | Ansage einer Zeile | zum Beispiel „Wasser, 1,5 von 2,5 Litern, 60 Prozent, noch offen, öffnen“ und Rolle „Schaltfläche“; Balken, Status-Wort und Symbol werden nicht einzeln angesagt | |
+| 6 | Zeile „Wasser“ per Doppeltipp öffnen, dort einen Eintrag speichern, zurück | Wasserseite öffnet; „Zurück“ (Schaltfläche und Zurück-Geste) führt zur Seite „Ziele heute“; die Zahlen sind aktuell (Eintrag sichtbar); der Fokus liegt sinnvoll (auf der Seite, nicht verloren) | |
+| 7 | „Aufgabe erledigen“ oder eine Gewohnheit öffnen | Der Tab „Habits“ öffnet; Zurück führt nach Home (die Seite „Ziele heute“ liegt dann nicht mehr darunter) | |
+| 8 | „Ziele bearbeiten“ öffnen und zurück | Der Zieleditor öffnet; Zurück zeigt „Ziele heute“ | |
+| 9 | Mit „Workout heute“ und Ruhetag | Zeile „Workout heute“ mit „Ruhetag“, angesagt als „Workout heute, Ruhetag, zählt als erreicht, keine XP, die Streak bleibt, öffnen“ | |
+| 10 | Von „Ziele heute“ zurück nach Home | Home steht wie vorher (gleiche Scrollposition), der Fokus liegt auf der Karte oder am Anfang von Home, die Zahlen stimmen | |
+| 11 | Bedienung ohne Gesten (externe Tastatur oder Schalterzugriff, auf dem iPhone die Tastaturnavigation) | Karte, Zeilen, „Ziele bearbeiten“ und Zurück sind per Tab-Taste erreichbar und mit Enter auslösbar; der Fokusrahmen ist sichtbar | |
+| 12 | Systemschrift auf die größte Stufe (200 %) | Home-Karte und Seite ohne abgeschnittenen Text und ohne Überlappung; Ring über den Texten, Zeilen gestapelt (Status-Wort unter dem Namen, ohne Pfeil); alles erreichbar, die Seite scrollt | |
+| 13 | Hell und Dunkel (und OLED, falls eingestellt) | Text überall lesbar; Ring grau, gelb oder grün nach Stand; der gedrückte Zustand der Karte (grüne Tönung und grüner Rand) ist beim Halten sichtbar | |
+| 14 | „Reduzierte Bewegung“ an | Seitenwechsel ohne Übergang, Ring und Balken springen auf den Wert | |
+| 15 | Eine Zeile mit dem Finger halten und wegziehen | Es öffnet sich nichts | |
+| 16 | iPhone mit VoiceOver: Punkte 1 bis 10 wiederholen, zusätzlich Rotor „Überschriften“ | „Tagesziele“ und „Wochenziel · nicht im Tagesring“ sind über den Rotor erreichbar; sonst wie oben | |
+
+Befunde werden eigene Tickets; das Ergebnis geht danach in `docs/test-report.md` und, wenn es eine Grenze ist, in `docs/known-limitations.md`.
