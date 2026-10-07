@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:self_improvement/core/database/app_database.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/core/feedback/feedback_service.dart';
 import 'package:self_improvement/core/goals/domain/workout_day_mark_kind.dart';
+import 'package:self_improvement/core/modules/module_id.dart';
 import 'package:self_improvement/core/modules/module_registry.dart';
 import 'package:self_improvement/core/testing/data_harness.dart';
 import 'package:self_improvement/features/body/application/weight_providers.dart';
@@ -341,6 +343,44 @@ Future<void> seedCompletedTask(
       completed: true,
     ),
   );
+}
+
+/// A module that was off from the day [off] up to the day before [backOn] and
+/// is on again from [backOn] on: the two rows of the module history that two
+/// module changes write (a change counts on the day it was made). Written
+/// BEFORE Home is pumped (give it to `pumpRealHome` as `seed`) and before any
+/// record of those days: the snapshot of a day is built from this history when
+/// it is first read, and it keeps what the day had.
+Future<void> seedModuleOffBetween(
+  DataHarness harness,
+  ModuleId module, {
+  required LocalDate off,
+  required LocalDate backOn,
+}) async {
+  final now = harness.clock.nowUtc();
+  final database = harness.database;
+  await database
+      .into(database.moduleStatusHistory)
+      .insert(
+        ModuleStatusHistoryCompanion.insert(
+          id: harness.ids.newId(),
+          moduleId: module.key,
+          effectiveAtUtc: now.add(const Duration(minutes: 1)),
+          localDate: off,
+          enabled: false,
+        ),
+      );
+  await database
+      .into(database.moduleStatusHistory)
+      .insert(
+        ModuleStatusHistoryCompanion.insert(
+          id: harness.ids.newId(),
+          moduleId: module.key,
+          effectiveAtUtc: now.add(const Duration(minutes: 2)),
+          localDate: backOn,
+          enabled: true,
+        ),
+      );
 }
 
 /// A habit that existed from [startedOn] on, checked on [checked], written

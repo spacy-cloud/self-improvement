@@ -10,7 +10,10 @@ import 'package:self_improvement/features/focus/presentation/focus_routes.dart';
 import 'package:self_improvement/shared/local_date.dart';
 
 /// The `focus` card of Home for a day that is not today (BS-93): the saved focus
-/// time of the sessions completed on [day] against the goal of that day.
+/// time of the sessions completed on [day] against the goal that counted on that
+/// day (the one in the snapshot of that day, like the ring). When the goal did
+/// not apply then, for example because the module was off that day, the card
+/// says "Kein Tagesziel an diesem Tag" and names no minutes that were missing.
 ///
 /// It only shows. The open session, "Fokus fortsetzen" and starting one belong
 /// to the present and are not offered here; the card opens the start screen,
@@ -38,7 +41,7 @@ class FocusPastDayCard extends ConsumerWidget {
             onRetry: () {
               ref
                 ..invalidate(focusSessionsOnProvider(day))
-                ..invalidate(goalVersionsProvider);
+                ..invalidate(dayStatusProvider(day));
             },
           ),
           data: (summary) => _build(context, summary),

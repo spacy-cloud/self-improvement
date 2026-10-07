@@ -124,15 +124,15 @@ String focusTodaySpoken(FocusTodaySummary summary) {
 
 /// The line under the bar of the focus card for a day that is not today
 /// (BS-93): what the sessions of that day reached, in the past tense, or that
-/// there was no session. A day without a session is not told as "0 Min.".
+/// there was no session. A day without a session is not told as "0 Min.". A
+/// day on which the goal did not apply (switched off, or the module was off)
+/// says so, as the water and the steps card do, and names no missing minutes.
 String focusDayCaption(FocusTodaySummary summary) {
   if (summary.isEmpty) {
     return 'Keine Sitzung an diesem Tag';
   }
   if (summary.goalMinutes == null) {
-    return summary.sessionCount == 1
-        ? '1 Sitzung'
-        : '${summary.sessionCount} Sitzungen';
+    return 'Kein Tagesziel an diesem Tag';
   }
   if (summary.goalReached) {
     return 'Tagesziel erreicht';

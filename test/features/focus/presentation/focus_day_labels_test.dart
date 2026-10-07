@@ -52,14 +52,19 @@ void main() {
       );
     });
 
-    test('(BS-93) without a goal the sessions are counted', () {
+    test('(BS-93, R2-02) a day on which the goal did not apply says so, like '
+        'the water and the steps card, and names no missing minutes', () {
       expect(
         focusDayCaption(summary(seconds: 600, sessions: 1, goal: null)),
-        '1 Sitzung',
+        'Kein Tagesziel an diesem Tag',
       );
       expect(
         focusDayCaption(summary(seconds: 1800, sessions: 3, goal: null)),
-        '3 Sitzungen',
+        'Kein Tagesziel an diesem Tag',
+      );
+      expect(
+        focusDayCaption(summary(seconds: 600, sessions: 1, goal: null)),
+        isNot(contains('fehlten')),
       );
     });
 
