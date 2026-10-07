@@ -590,6 +590,7 @@ class _WeightValueField extends StatelessWidget {
                     ),
                     onChanged: onChanged,
                     onSubmitted: onSubmitted,
+                    onTapOutside: dismissKeyboardOnTapOutside,
                   ),
                 ),
               ),

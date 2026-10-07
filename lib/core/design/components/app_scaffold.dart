@@ -11,7 +11,9 @@ import 'package:self_improvement/core/design/tokens/app_tokens.dart';
 /// [primaryAction] and an optional [bottomNavigationBar].
 ///
 /// * The body scrolls (content never clips on large text); with
-///   `scrollable: false` the body manages its own scrolling (lists).
+///   `scrollable: false` the body manages its own scrolling (lists). Dragging
+///   it closes the keyboard (`onDrag`): every form is a page of this scaffold,
+///   and on iOS the number pad has no key that closes it (BS-112, D-018).
 /// * The [primaryAction] sits below the scroll area and moves above the
 ///   keyboard (`resizeToAvoidBottomInset`), so it stays reachable.
 /// * Content is centred and limited to [maxContentWidth] on wide screens.
@@ -134,6 +136,8 @@ class AppScaffold extends StatelessWidget {
           child: scrollable
               ? SingleChildScrollView(
                   controller: scrollController,
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
                   padding: padding,
                   child: body,
                 )
