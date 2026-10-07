@@ -956,6 +956,32 @@ void main() {
   });
 
   group('a day that is not today (BS-103, BS-93 prepared)', () {
+    testWidgets('(C04) a status of another day, as BS-93 will put it into the '
+        'dashboard view, is shown as that day', (tester) async {
+      final harness = await createHarness(tester, startedOn: _secondDay);
+      await pumpGoalsToday(
+        tester,
+        harness,
+        overrides: <Override>[
+          todayStatusOverride(
+            statusOf(goalStates['some']!, date: LocalDate(2026, 10, 1)),
+          ),
+        ],
+      );
+      expect(find.text('Nicht heute'), findsOneWidget);
+      expect(find.text('1. Oktober · nur ansehen'), findsOneWidget);
+      expect(find.text('Donnerstag, 1. Oktober'), findsOneWidget);
+      expect(find.text('2 von 5 erreicht'), findsOneWidget);
+      expect(find.text('Du siehst die Werte dieses Tages.'), findsOneWidget);
+      // The words of the past, no weekly goal, and no way back yet: the page
+      // that pages through the days wires it.
+      expect(find.text('Gewogen'), findsOneWidget);
+      expect(find.text('Workouts diese Woche'), findsNothing);
+      expect(find.text('Zurück zu heute'), findsNothing);
+      // The rows still lead to their modules.
+      expect(find.byIcon(AppIcon.chevronRight.data), findsNWidgets(5));
+    });
+
     Future<void> pumpPast(
       WidgetTester tester, {
       VoidCallback? onBack,
