@@ -13,6 +13,17 @@ Wird laufend ergänzt. Offene Anforderungen stehen zusätzlich in [requirements-
 - **Die Migration ist nur auf dem Host geprüft.** Die Tests migrieren eine mit dem Code von v0.1.0 erzeugte Datenbank mit synthetischen Daten (SQLite im Prozess des Testrechners, auch über den Produktionsstart `AppRuntime.create()` mit einer Datei). Das Update einer echten Datenbank auf einem Telefon ist nicht geprüft; ein Fehlschlag lässt die Datei auf Schema 1 und zeigt die Startfehlerseite mit „Erneut versuchen“.
 - **Neue Felder haben nach dem Update Standardwerte, keine Geschichte.** Vorhandene Schrittwerte gelten als von Hand eingetragen (`manual`), der Abgleich mit der Health-App ist aus, keine Aufgabe hat eine Erinnerung, kein Tag ist als Ruhetag oder übersprungen markiert.
 
+## Erinnerung je Aufgabe (BS-111, D-030)
+
+- **Nur Host-Tests, nichts auf einem Gerät.** Zustellung, Antippen aus der Benachrichtigungsleiste und dem Sperrbildschirm, Kaltstart aus der Benachrichtigung, das Verhalten nach „Beenden erzwingen“ und die Dialoge für Datum und Uhrzeit sind auf keinem Gerät gesehen (Samsung S25 und iPhone stehen aus). Die Tests nutzen eine Fake-Plattform; was das Betriebssystem tatsächlich zustellt, belegen sie nicht.
+- **Obergrenze und Reihenfolge.** Die Erinnerung einer Aufgabe zählt zu den höchstens 40 geplanten Benachrichtigungen (iOS hält höchstens 64) und ist nicht an das Sieben-Tage-Fenster gebunden. Liegen mehr als 40 nähere Erinnerungen davor (zum Beispiel alle fünf Trink-Uhrzeiten und mehrere Gewohnheiten), wird sie erst bei einem späteren Abgleich geplant, spätestens beim nächsten Öffnen der App, sobald sie unter den nächsten 40 liegt. Wer die App bis dahin nicht öffnet, bekommt sie nicht. Die Einstellungen und das Aufgabenformular nennen die Grenze, sobald sie erreicht ist (`planLimitReached`), aber nicht, welche Erinnerung betroffen ist.
+- **Absoluter Zeitpunkt.** Nach einer Reise in eine andere Zeitzone kommt die Erinnerung zum selben Zeitpunkt, in der neuen Ortszeit also zu einer anderen Uhrzeit; das Formular zeigt die Ortszeit der aktuellen Zone und sagt nicht, in welcher Zone sie gesetzt wurde (die Zone steht in der Datenbank und in der Sicherung).
+- **Eine angezeigte Benachrichtigung bleibt.** Erledigt oder löscht man die Aufgabe, nachdem die Benachrichtigung erschienen ist, bleibt sie in der Leiste des Geräts, bis sie weggewischt oder angetippt wird (die App entfernt nur noch Geplantes). Ein Tipp darauf öffnet das Formular der Aufgabe, bei einer gelöschten Aufgabe die Aufgabenliste.
+- **Kein eigener Detailbildschirm.** Das Antippen öffnet das Formular „Aufgabe bearbeiten“ (so zeigt es der Entwurf `4121:733`); die Aufgabe wird in der Liste nicht hervorgehoben, und die Liste zeigt keine Erinnerungen an (kein Entwurf dafür).
+- **Abgelaufene Erinnerungen bleiben stehen.** Eine Erinnerung, deren Zeitpunkt vorbei ist, wird nicht automatisch entfernt; das Formular nennt sie „vorbei“, bis die Nutzerin sie ändert oder entfernt.
+- **Wortbruch.** Bei 320 px Breite und 200 % Schrift bricht ein langes Wort im Hinweis des Formulars („Benachrichtigungen“, „Systemeinstellungen“) mitten im Wort um, wie im Banner der Einstellungen.
+- **Ungenau getaktet wie alle Erinnerungen.** Das System kann die Benachrichtigung um einige Minuten verzögern; das Formular sagt „ungefähr zu dieser Zeit“.
+
 ## Formale offene Punkte (kein Implementierungsblocker)
 
 - **App-Name** ([BS-47](https://spacy-cloud.atlassian.net/browse/BS-47)): sichtbarer Platzhalter „App-Name“ (`AppConfig.appName`).

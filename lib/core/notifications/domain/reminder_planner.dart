@@ -58,12 +58,16 @@ final class ReminderPlan {
 ///   ([ReminderPlanSkip]); the caller then cancels everything pending.
 /// - **Horizon.** Seven local calendar days: today and the next six, found by
 ///   calendar arithmetic ([LocalDate.addDays]) and never by adding 24 hours,
-///   so a day with a daylight saving change is still exactly one day.
+///   so a day with a daylight saving change is still exactly one day. The
+///   horizon applies to what recurs (water slots, habits). It does not apply to
+///   a task reminder, see below.
 /// - **Cap.** At most [maxNotifications] (40) future notifications overall,
 ///   ordered by fire time; on equal time the focus end comes first, then
-///   habits, then water, then by semantic key. What the cap cuts is reported
-///   in [ReminderPlan.droppedByLimit]; it is planned on a later run when days
-///   have passed.
+///   tasks, then habits, then water, then by semantic key. 40 stays below the
+///   64 pending notifications iOS keeps, so the cap also protects against
+///   that limit. What the cap cuts is reported in
+///   [ReminderPlan.droppedByLimit]; it is planned on a later run when time has
+///   passed and the nearest ones are gone.
 /// - **Water.** Every enabled rule of module `nutrition` on every day of the
 ///   horizon whose wall clock time is still ahead. When today's water goal is
 ///   already reached, today's remaining water reminders are dropped; later
@@ -72,6 +76,17 @@ final class ReminderPlan {
 ///   every day it applies: from its start date; archiving works from tomorrow,
 ///   so on the archive day itself the habit still applies and from
 ///   `archivedFrom` on it does not; soft deleted habits never.
+/// - **Tasks.** Module `tasks`. One notification per open task with a reminder
+///   (`tasks.reminder_at_utc`), at exactly that instant, under the key
+///   `task:<id>`. A reminder is one moment the user chose, not a recurring
+///   one, so it is **not** limited to the seven day horizon: it is planned as
+///   soon as its instant lies ahead (a reminder in three weeks must not depend
+///   on the app being opened in the week before it). It competes for the 40
+///   places by fire time like everything else. Completing or deleting the task
+///   removes it from the plan, reopening or restoring puts it back, changing
+///   the reminder moves it under the same key. The instant is absolute: it
+///   does not follow a change of the device time zone, and a daylight saving
+///   change cannot move it.
 /// - **Focus end.** Module `focus`. Exactly one notification for a *running*
 ///   session, at the persisted segment start plus the remaining planned
 ///   seconds. A paused or awaiting session has none. Pause, completion,
@@ -138,6 +153,7 @@ final class ReminderPlanner {
     }
     if (inputs.isModuleEnabled(ModuleId.tasks)) {
       _planHabits(inputs, days, add);
+      _planTasks(inputs, add);
     }
     if (inputs.isModuleEnabled(ModuleId.focus)) {
       _planFocusEnd(inputs, add);
@@ -216,6 +232,29 @@ final class ReminderPlanner {
           ),
         );
       }
+    }
+  }
+
+  /// A task reminder is a single instant: planned when it lies strictly ahead,
+  /// whatever the distance (see the class documentation).
+  void _planTasks(
+    ReminderInputs inputs,
+    void Function(PlannedNotification) add,
+  ) {
+    for (final task in inputs.tasks) {
+      final fireAt = task.reminderAtUtc;
+      if (!fireAt.isAfter(inputs.nowUtc)) {
+        continue;
+      }
+      add(
+        PlannedNotification(
+          semanticKey: ReminderKeys.task(task.id),
+          kind: ReminderKind.task,
+          fireAtUtc: fireAt,
+          route: NotificationRoutes.taskEdit(task.id),
+          title: ReminderTexts.taskTitle,
+        ),
+      );
     }
   }
 

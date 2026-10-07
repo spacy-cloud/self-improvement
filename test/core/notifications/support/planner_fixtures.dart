@@ -25,6 +25,7 @@ ReminderInputs plannerInputs({
   List<WaterReminderRule> water = const [],
   bool waterGoalReached = false,
   List<HabitReminderInput> habits = const [],
+  List<TaskReminderInput> tasks = const [],
   FocusEndInput? focus,
 }) => ReminderInputs(
   nowUtc: now,
@@ -35,6 +36,7 @@ ReminderInputs plannerInputs({
   waterRules: water,
   waterGoalReachedToday: waterGoalReached,
   habits: habits,
+  tasks: tasks,
   focusSession: focus,
 );
 
@@ -65,6 +67,10 @@ HabitReminderInput habitInput(
   archivedFrom: archivedFrom,
   deleted: deleted,
 );
+
+/// An open task whose reminder is due at [at] (UTC).
+TaskReminderInput taskInput(int n, {required DateTime at}) =>
+    TaskReminderInput(id: uuid(n), reminderAtUtc: at);
 
 /// A running focus session whose current segment started at [segmentStart].
 FocusEndInput runningFocus({

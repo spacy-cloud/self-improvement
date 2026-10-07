@@ -419,7 +419,8 @@ void main() {
         ReminderTexts.limitNotice,
         ReminderTexts.deliveryNotice,
       ];
-      expect(texts, hasLength(7));
+      // One title per kind (water, habit, task, focus end) and four notes.
+      expect(texts, hasLength(ReminderKind.values.length + 4));
       expect(<String>[
         for (final text in texts)
           if (platformNameIn(text) != null) text,

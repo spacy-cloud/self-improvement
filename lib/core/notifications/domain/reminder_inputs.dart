@@ -56,6 +56,23 @@ final class HabitReminderInput {
       (archivedFrom == null || day < archivedFrom!);
 }
 
+/// What the planner needs to know about an open task with a reminder (BS-111).
+///
+/// The reader hands over only tasks that are not deleted, not completed and
+/// have a reminder, so everything here is meant to be reminded; whether the
+/// instant is still ahead is the planner's decision.
+@immutable
+final class TaskReminderInput {
+  const TaskReminderInput({required this.id, required this.reminderAtUtc});
+
+  final String id;
+
+  /// The instant the notification is due (`tasks.reminder_at_utc`, UTC). A
+  /// single moment the user chose: it is not repeated and not tied to a
+  /// local wall clock time.
+  final DateTime reminderAtUtc;
+}
+
 /// State of an open focus session.
 enum OpenFocusStatus {
   running,
@@ -135,6 +152,7 @@ final class ReminderInputs {
     this.waterRules = const [],
     this.waterGoalReachedToday = false,
     this.habits = const [],
+    this.tasks = const [],
     this.focusSession,
   });
 
@@ -160,6 +178,9 @@ final class ReminderInputs {
   final bool waterGoalReachedToday;
 
   final List<HabitReminderInput> habits;
+
+  /// The open tasks with a reminder.
+  final List<TaskReminderInput> tasks;
 
   /// The open focus session (running, paused or awaiting confirmation).
   final FocusEndInput? focusSession;

@@ -10,6 +10,7 @@ abstract final class TaskFields {
   static const String description = 'description';
   static const String dueDate = 'dueDate';
   static const String tags = 'tags';
+  static const String reminder = 'reminder';
 }
 
 /// Maximum title length in characters.
@@ -17,6 +18,33 @@ const int maxTaskTitleLength = 120;
 
 /// Maximum description length in characters.
 const int maxTaskDescriptionLength = 1000;
+
+/// The hint for a reminder that cannot be set because its instant is not in
+/// the future, or null when [reminderAtUtc] is fine (no reminder, or one that
+/// lies after [nowUtc]).
+///
+/// A reminder that is [unchangedAtUtc] (the one the task already has) is never
+/// rejected, even when it has passed meanwhile: only SETTING a reminder
+/// (a new one or another time) needs the future, so editing the title of a task
+/// whose reminder has gone off still saves.
+String? taskReminderError(
+  DateTime? reminderAtUtc, {
+  required DateTime nowUtc,
+  DateTime? unchangedAtUtc,
+}) {
+  if (reminderAtUtc == null) {
+    return null;
+  }
+  if (unchangedAtUtc != null &&
+      reminderAtUtc.isAtSameMomentAs(unchangedAtUtc)) {
+    return null;
+  }
+  if (!reminderAtUtc.isAfter(nowUtc)) {
+    return 'Dieser Zeitpunkt ist schon vorbei. Wähle einen späteren Zeitpunkt '
+        'für die Erinnerung.';
+  }
+  return null;
+}
 
 /// Validates [draft] and returns it normalised: trimmed title, a blank
 /// description stored as null, tags trimmed and deduplicated case-insensitively
@@ -26,7 +54,9 @@ const int maxTaskDescriptionLength = 1000;
 /// once). Lengths are counted in characters (Unicode code points), exactly like
 /// the database constraints. The priority is an enum and therefore always valid;
 /// the due date is any calendar day (a past day makes the task overdue
-/// immediately, which is allowed).
+/// immediately, which is allowed). The reminder is not judged here: whether it
+/// lies in the future needs the clock ([taskReminderError]); it is carried over
+/// unchanged.
 TaskDraft validateTaskDraft(TaskDraft draft) {
   final errors = <String, String>{};
 
@@ -66,5 +96,6 @@ TaskDraft validateTaskDraft(TaskDraft draft) {
     priority: draft.priority,
     dueDate: draft.dueDate,
     tags: tags,
+    reminderAtUtc: draft.reminderAtUtc,
   );
 }

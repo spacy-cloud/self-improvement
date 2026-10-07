@@ -10,6 +10,8 @@ import 'package:self_improvement/shared/local_time.dart';
 ///
 /// - `water:2026-10-03:10:00`: the water slot at 10:00 on that local day
 /// - `habit:<habitId>:2026-10-03`: the reminder of one habit on that local day
+/// - `task:<taskId>`: the reminder of one task (one instant, so no day in the
+///   key; a changed reminder time moves the notification under the same key)
 /// - `focus_end:<sessionId>`: the end of one focus session
 ///
 /// The key stays the same when the fire time moves (the habit time was edited,
@@ -22,6 +24,8 @@ abstract final class ReminderKeys {
 
   static String habit(String habitId, LocalDate day) =>
       '${ReminderKind.habit.key}:$habitId:${day.toIso()}';
+
+  static String task(String taskId) => '${ReminderKind.task.key}:$taskId';
 
   static String focusEnd(String sessionId) =>
       '${ReminderKind.focusEnd.key}:$sessionId';
@@ -60,11 +64,12 @@ final class PlannedNotification {
   /// The known in-app route; it is also the notification payload.
   final String route;
 
-  /// Neutral German title (no health values, no user text).
+  /// Neutral German title (no health values, no user text, never the title of
+  /// a habit or a task).
   final String title;
 
   /// The `reminder_rules` row this notification comes from (water slots);
-  /// `null` for habit reminders and the focus end.
+  /// `null` for habit reminders, task reminders and the focus end.
   final String? sourceRuleId;
 
   @override
