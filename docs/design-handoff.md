@@ -134,7 +134,7 @@ Weitere Tokens: Modulfarben (`color/module/*`), Abstände 4/8/12/16/24/32, Radie
 
 - iPhone-Statusleiste, Dynamic Island und Home-Indikator sind nur Figma-Rahmen; Android nutzt echte Systemleisten.
 - Schlafwerte entfallen; keine erfundenen Werte (km, kcal, Aktivminuten ohne Datenquelle).
-- Einstellungen ohne Konto/Cloud/Health; lokales Profil, „Alle Daten zurücksetzen“ statt „Konto löschen“.
+- Einstellungen ohne Konto/Cloud; Health nur als Schalter „Schritte aus Health übernehmen“ (BS-97, Entwurf `4122:314`, nur Android), keine weiteren Health-Zeilen; lokales Profil, „Alle Daten zurücksetzen“ statt „Konto löschen“.
 - Plus-Menü mit 8 Einträgen und Schließen im Sheet; die rote X-Taste in der Navigation ist zusätzlich erlaubt.
 - Detailseite Wasser entfällt; „Wasser eintragen“ deckt Tagesstand und Verlauf ab.
 - Workout-Erfassung enthält zusätzlich Muskelgruppen und Intensität (optional, über F03 hinaus); die Trainingskategorie folgt Kraft/Cardio/Mobility/Sport.
@@ -284,7 +284,8 @@ Die Figma-Icons sind eigene Vektorpfade. Eingesetzt werden gleichwertige Materia
 | Fehlerhinweis am Feld | `Icons.error_outline_rounded` | `error` |
 | Hinweiskarte (`Hint / bulb`) | `Icons.lightbulb_outline_rounded` | `hint` |
 | Ladefehler (Wolke mit Ausrufezeichen) | `Icons.cloud_off_rounded` | `cloudOff` |
-| Erneut versuchen (Kreispfeil) | `Icons.refresh_rounded` | `retry` |
+| Erneut versuchen (Kreispfeil), Aktualisieren der Health-Schritte (`icon/refresh`, BS-97) | `Icons.refresh_rounded` | `retry` |
+| Health (Herz, `icon/heart`, BS-97) | `Icons.favorite_border_rounded` | `heart` |
 | Leerer Zustand (Pflanze, eigene Illustration) | `Icons.eco_outlined` | `sprout` |
 | Leerzustand des Plus-Menüs bei ausgeblendeten Zielen (`icon/target`, Zielscheibe; Entwurf `4118:4444`, BS-117) | `Icons.track_changes_rounded` | `target` |
 | „Nur lokal“ (Schloss) | `Icons.lock_outline_rounded` | `lock` |

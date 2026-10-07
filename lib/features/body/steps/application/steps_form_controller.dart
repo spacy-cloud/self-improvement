@@ -8,6 +8,7 @@ import 'package:self_improvement/core/errors/app_failure.dart';
 import 'package:self_improvement/core/providers/core_providers.dart';
 import 'package:self_improvement/features/body/steps/application/steps_providers.dart';
 import 'package:self_improvement/features/body/steps/domain/step_day.dart';
+import 'package:self_improvement/features/body/steps/domain/step_source.dart';
 import 'package:self_improvement/features/body/steps/domain/steps_input.dart';
 import 'package:self_improvement/shared/local_date.dart';
 
@@ -33,6 +34,7 @@ final class StepsFormState {
     required this.date,
     required this.dirty,
     this.existingSteps,
+    this.existingSource,
     this.fieldErrors = const {},
     this.submitting = false,
     this.submitFailure,
@@ -45,6 +47,11 @@ final class StepsFormState {
   /// explicitly); null means no record yet.
   final int? existingSteps;
 
+  /// Where the stored value of [date] comes from; null without a record. A
+  /// value from Health becomes a value typed in when the form is saved, and
+  /// the form says so.
+  final StepSource? existingSource;
+
   final bool dirty;
   final Map<String, String> fieldErrors;
   final bool submitting;
@@ -52,11 +59,15 @@ final class StepsFormState {
 
   bool get replacesExisting => existingSteps != null;
 
+  /// The stored value of [date] came from Health.
+  bool get replacesHealth => existingSource == StepSource.health;
+
   StepsFormState copyWith({
     String? stepsText,
     LocalDate? date,
     bool? dirty,
     int? Function()? existingSteps,
+    StepSource? Function()? existingSource,
     Map<String, String>? fieldErrors,
     bool? submitting,
     AppFailure? Function()? submitFailure,
@@ -65,6 +76,9 @@ final class StepsFormState {
     date: date ?? this.date,
     dirty: dirty ?? this.dirty,
     existingSteps: existingSteps == null ? this.existingSteps : existingSteps(),
+    existingSource: existingSource == null
+        ? this.existingSource
+        : existingSource(),
     fieldErrors: fieldErrors ?? this.fieldErrors,
     submitting: submitting ?? this.submitting,
     submitFailure: submitFailure == null ? this.submitFailure : submitFailure(),
@@ -135,7 +149,10 @@ class StepsFormController extends Notifier<StepsFormState> {
     if (generation != _generation || !ref.mounted) {
       return;
     }
-    state = state.copyWith(existingSteps: () => existing?.steps);
+    state = state.copyWith(
+      existingSteps: () => existing?.steps,
+      existingSource: () => existing?.source,
+    );
   }
 
   void setStepsText(String text) => state = state.copyWith(
@@ -150,6 +167,7 @@ class StepsFormController extends Notifier<StepsFormState> {
       dirty: true,
       fieldErrors: _without(StepsFields.date),
       existingSteps: () => null,
+      existingSource: () => null,
     );
     unawaited(_loadExisting(date));
   }
@@ -216,6 +234,7 @@ class StepsFormController extends Notifier<StepsFormState> {
         submitting: false,
         dirty: false,
         existingSteps: () => null,
+        existingSource: () => null,
       );
       return StepsDeleted(outcome);
     } on AppFailure catch (failure) {
