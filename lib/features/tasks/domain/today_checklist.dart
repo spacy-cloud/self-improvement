@@ -59,6 +59,7 @@ final class ChecklistEntry {
     required this.semanticsLabel,
     this.subtitle,
     this.overdue = false,
+    this.dayWord = 'heute',
   });
 
   final ChecklistKind kind;
@@ -87,16 +88,20 @@ final class ChecklistEntry {
   /// kind comes first, then the title, the state, series or due text.
   final String semanticsLabel;
 
+  /// How the day of a habit is named in the spoken states: "heute", or "an
+  /// diesem Tag" on a day that is not today (BS-93).
+  final String dayWord;
+
   /// The spoken name of the box: "Aufgabe Steuer machen", "Gewohnheit Lesen".
   String get checkboxLabel => '${kind.label} $title';
 
   /// The spoken state of a checked box. A habit belongs to the day.
   String get checkedStateLabel =>
-      kind == ChecklistKind.habit ? 'heute erledigt' : 'erledigt';
+      kind == ChecklistKind.habit ? '$dayWord erledigt' : 'erledigt';
 
   /// The spoken state of an unchecked box.
   String get uncheckedStateLabel =>
-      kind == ChecklistKind.habit ? 'heute offen' : 'offen';
+      kind == ChecklistKind.habit ? '$dayWord offen' : 'offen';
 }
 
 /// Everything the card shows.
@@ -201,6 +206,52 @@ TodayChecklist buildTodayChecklist({
   );
 }
 
+/// Builds the card for a day that is not today (BS-93): what the day had to
+/// tick off, as far as it is a fact. [habitDay] is the habit list of that day
+/// (`HabitDay.date`, the habits that applied then with their checks); the tasks
+/// are the ones COMPLETED on that day.
+///
+/// An open task of that day is not rebuilt: whether it was due then cannot be
+/// known from what is stored (the due date may have changed since), so the card
+/// names only the tasks that were done, and the habits of the day with their
+/// state, done or open. Every habit is listed (there is no "und N weitere"
+/// line: it would open a list of another day). The counts are those of the rows.
+TodayChecklist buildDayChecklist({
+  required Iterable<Task> tasks,
+  required HabitDay habitDay,
+  required LocalTime? Function(Task task) completedAt,
+}) {
+  assert(
+    !habitDay.isToday,
+    'The card of today is built by buildTodayChecklist',
+  );
+  final day = habitDay.date;
+  const dayWord = 'an diesem Tag';
+  final completed = <TaskListItem>[
+    for (final task in tasks)
+      if (task.isCompleted && task.completedLocalDate == day)
+        TaskListItem(task: task, today: day),
+  ]..sort((a, b) => compareTasks(a.task, b.task));
+  final habitItems = habitDay.items;
+  final checkedHabits = habitItems.where((item) => item.checked).length;
+  return TodayChecklist(
+    today: day,
+    tasks: List.unmodifiable(<ChecklistEntry>[
+      for (final item in completed) _taskEntry(item, completedAt),
+    ]),
+    habits: List.unmodifiable(<ChecklistEntry>[
+      for (final item in habitItems) _habitEntry(item, dayWord: dayWord),
+    ]),
+    moreTasks: 0,
+    moreHabits: 0,
+    doneCount: completed.length + checkedHabits,
+    totalCount: completed.length + habitItems.length,
+    habitPresence: habitItems.isEmpty
+        ? HabitPresence.none
+        : HabitPresence.active,
+  );
+}
+
 ChecklistEntry _taskEntry(
   TaskListItem item,
   LocalTime? Function(Task task) completedAt,
@@ -233,7 +284,7 @@ ChecklistEntry _taskEntry(
   );
 }
 
-ChecklistEntry _habitEntry(HabitDayItem item) {
+ChecklistEntry _habitEntry(HabitDayItem item, {String dayWord = 'heute'}) {
   final habit = item.habit;
   final series = item.seriesText;
   final hint = item.archiveHint;
@@ -249,9 +300,10 @@ ChecklistEntry _habitEntry(HabitDayItem item) {
     done: item.checked,
     editable: item.editable,
     subtitle: subtitle.isEmpty ? null : subtitle,
+    dayWord: dayWord,
     semanticsLabel: <String>[
       '${ChecklistKind.habit.label} ${habit.title}',
-      item.checked ? 'heute erledigt' : 'heute offen',
+      item.checked ? '$dayWord erledigt' : '$dayWord offen',
       ?series,
       ?hint,
     ].join(', '),

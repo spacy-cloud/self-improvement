@@ -6,6 +6,7 @@ import 'package:self_improvement/features/tasks/application/habit_providers.dart
 import 'package:self_improvement/features/tasks/application/task_providers.dart';
 import 'package:self_improvement/features/tasks/domain/task.dart';
 import 'package:self_improvement/features/tasks/domain/today_checklist.dart';
+import 'package:self_improvement/shared/local_date.dart';
 import 'package:self_improvement/shared/local_time.dart';
 
 /// The Home card "Heute abhaken": today's tasks and habits as one list (BS-110).
@@ -41,6 +42,37 @@ final todayChecklistProvider = Provider<AsyncValue<TodayChecklist>>((ref) {
     ),
   );
 });
+
+/// The card "Aufgaben und Gewohnheiten" for a day that is not today (BS-93):
+/// the tasks completed on that day and the habits of that day with their state
+/// (see `buildDayChecklist`). It reads the streams the card of today reads, so a
+/// correction made for that day shows up here too. Released when no card shows
+/// it.
+final dayChecklistProvider = Provider.autoDispose
+    .family<AsyncValue<TodayChecklist>, LocalDate>((ref, day) {
+      final tasks = ref.watch(tasksProvider);
+      final habitDay = ref.watch(habitOnDayProvider(day));
+      final clock = ref.watch(clockProvider);
+      final inputs = <AsyncValue<Object?>>[tasks, habitDay];
+      for (final input in inputs) {
+        if (input.hasError) {
+          return AsyncError<TodayChecklist>(
+            input.error!,
+            input.stackTrace ?? StackTrace.empty,
+          );
+        }
+      }
+      if (inputs.any((input) => !input.hasValue)) {
+        return const AsyncLoading<TodayChecklist>();
+      }
+      return AsyncData<TodayChecklist>(
+        buildDayChecklist(
+          tasks: tasks.requireValue,
+          habitDay: habitDay.requireValue,
+          completedAt: (task) => _completionTime(clock, task),
+        ),
+      );
+    });
 
 /// The wall clock time of the completion of [task] in the zone it happened in;
 /// null when the task is open or its zone is unknown.

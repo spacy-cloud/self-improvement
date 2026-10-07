@@ -10,6 +10,7 @@ import 'package:self_improvement/features/tasks/application/today_checklist_prov
 import 'package:self_improvement/features/tasks/domain/today_checklist.dart';
 import 'package:self_improvement/features/tasks/presentation/checklist_row.dart';
 import 'package:self_improvement/features/tasks/presentation/tasks_routes.dart';
+import 'package:self_improvement/shared/local_date.dart';
 
 /// The `tasks` card of the dashboard (full width), "Heute abhaken" (BS-110):
 /// what is to be ticked off today, tasks and habits in one list.
@@ -24,22 +25,36 @@ import 'package:self_improvement/features/tasks/presentation/tasks_routes.dart';
 /// (`dashboardTaskLimit`) and [dashboardHabitLimit] habits; the rest is one
 /// line per kind that opens its list.
 ///
-/// With [readOnly] (a past day, BS-93) the card shows the state and offers
-/// neither a tick nor the actions that create something.
+/// With [readOnly] the card shows the state and offers neither a tick nor the
+/// actions that create something.
+///
+/// With a [day] (a day that is not today, BS-93) it is the card of that day, and
+/// read-only: the tasks completed on that day and the habits of that day with
+/// their state (`buildDayChecklist`). It is then called "Aufgaben und
+/// Gewohnheiten", not "Heute abhaken", and a box cannot be changed here: a
+/// correction for an earlier day is made in the habits tab or the task list.
 class TasksDashboardCard extends ConsumerWidget {
-  const TasksDashboardCard({super.key, this.readOnly = false});
+  const TasksDashboardCard({super.key, this.readOnly = false, this.day});
 
   /// Shows the state only: no box can be changed, nothing can be created.
   final bool readOnly;
 
+  /// The day shown; `null` is today.
+  final LocalDate? day;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final checklist = ref.watch(todayChecklistProvider);
+    final day = this.day;
+    final readOnly = this.readOnly || day != null;
+    final checklist = day == null
+        ? ref.watch(todayChecklistProvider)
+        : ref.watch(dayChecklistProvider(day));
     return checklist.when(
-      loading: () => const _CardFrame(
+      loading: () => _CardFrame(
+        title: _title(day),
         progress: null,
         allDone: false,
-        children: <Widget>[SizedBox(height: 48)],
+        children: const <Widget>[SizedBox(height: 48)],
       ),
       error: (error, stack) => ErrorState(
         onRetry: () {
@@ -50,11 +65,12 @@ class TasksDashboardCard extends ConsumerWidget {
         },
       ),
       data: (data) => _CardFrame(
+        title: _title(day),
         progress: data.isEmpty ? null : data.progressText,
         allDone: data.allDone,
         children: <Widget>[
           if (data.isEmpty)
-            _EmptyBody(readOnly: readOnly)
+            _EmptyBody(readOnly: readOnly, pastDay: day != null)
           else ...<Widget>[
             for (final entry in data.tasks)
               ChecklistRow(
@@ -83,14 +99,21 @@ class TasksDashboardCard extends ConsumerWidget {
   }
 }
 
+/// The heading of the card: the live card is "Heute abhaken", the card of
+/// another day names what it holds.
+String _title(LocalDate? day) =>
+    day == null ? 'Heute abhaken' : 'Aufgaben und Gewohnheiten';
+
 /// The heading with the count outside the card and the card with the rows.
 class _CardFrame extends StatelessWidget {
   const _CardFrame({
+    required this.title,
     required this.progress,
     required this.allDone,
     required this.children,
   });
 
+  final String title;
   final String? progress;
   final bool allDone;
   final List<Widget> children;
@@ -113,7 +136,7 @@ class _CardFrame extends StatelessWidget {
               Semantics(
                 header: true,
                 child: Text(
-                  'Heute abhaken',
+                  title,
                   style: AppTextStyles.titleSection.copyWith(
                     color: colors.textPrimary,
                   ),
@@ -153,11 +176,14 @@ class _CardFrame extends StatelessWidget {
   }
 }
 
-/// Neither a task nor a habit for today.
+/// Neither a task nor a habit for the day.
 class _EmptyBody extends StatelessWidget {
-  const _EmptyBody({required this.readOnly});
+  const _EmptyBody({required this.readOnly, required this.pastDay});
 
   final bool readOnly;
+
+  /// The card of a day that is not today: it says what that day had.
+  final bool pastDay;
 
   @override
   Widget build(BuildContext context) {
@@ -168,8 +194,11 @@ class _EmptyBody extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
-            'Für heute ist nichts offen. Neue Aufgaben und Gewohnheiten '
-            'erscheinen hier.',
+            pastDay
+                ? 'An diesem Tag wurde keine Aufgabe erledigt, und es gab '
+                      'keine Gewohnheit.'
+                : 'Für heute ist nichts offen. Neue Aufgaben und Gewohnheiten '
+                      'erscheinen hier.',
             style: AppTextStyles.bodyRegular.copyWith(
               color: colors.textSecondary,
             ),

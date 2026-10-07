@@ -6,9 +6,11 @@ import 'package:self_improvement/core/modules/module_id.dart';
 import 'package:self_improvement/features/nutrition/presentation/meal_form_screen.dart';
 import 'package:self_improvement/features/nutrition/presentation/meals_screen.dart';
 import 'package:self_improvement/features/nutrition/presentation/nutrition_dashboard_card.dart';
+import 'package:self_improvement/features/nutrition/presentation/nutrition_past_day_card.dart';
 import 'package:self_improvement/features/nutrition/presentation/nutrition_routes.dart';
 import 'package:self_improvement/features/nutrition/presentation/water_dashboard_card.dart';
 import 'package:self_improvement/features/nutrition/presentation/water_edit_screen.dart';
+import 'package:self_improvement/features/nutrition/presentation/water_past_day_card.dart';
 import 'package:self_improvement/features/nutrition/presentation/water_screen.dart';
 
 /// The `nutrition` module: water (one shared screen, quick add, history) and
@@ -65,12 +67,14 @@ final class NutritionModule extends SelfImprovementModule {
       title: 'Wasser',
       defaultRank: 1,
       builder: (context, ref) => const WaterDashboardCard(),
+      dayBuilder: (context, ref, day) => WaterPastDayCard(day: day),
     ),
     DashboardCardDescriptor(
       cardId: 'nutrition',
       title: 'Ernährung',
       defaultRank: 6,
       builder: (context, ref) => const NutritionDashboardCard(),
+      dayBuilder: (context, ref, day) => NutritionPastDayCard(day: day),
     ),
   ];
 

@@ -6,6 +6,7 @@ import 'package:self_improvement/core/goals/data/day_status_repository.dart';
 import 'package:self_improvement/features/gamification/data/xp_projector.dart';
 import 'package:self_improvement/features/gamification/domain/badges.dart';
 import 'package:self_improvement/features/gamification/domain/level.dart';
+import 'package:self_improvement/shared/local_date.dart';
 
 /// XP, level and badges as shown on the progress page and the dashboard card.
 @immutable
@@ -62,6 +63,11 @@ class GamificationRepository {
   /// Total XP, re-emitted when awards change.
   Stream<int> watchTotalXp() =>
       watchComputed(_database, [_database.xpAwards], _xp.totalXp);
+
+  /// The XP at the end of [day] (BS-93), re-emitted when awards change.
+  Stream<int> watchTotalXpThrough(LocalDate day) => watchComputed(_database, [
+    _database.xpAwards,
+  ], () => _xp.totalXpThrough(day));
 
   /// The summary, recomputed on every relevant change.
   Stream<GamificationSummary> watchSummary() =>
