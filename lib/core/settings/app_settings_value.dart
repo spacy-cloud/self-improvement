@@ -10,6 +10,8 @@ final class AppSettingsValue {
     required this.notificationsEnabled,
     required this.rowVersion,
     this.lastKnownTimezone,
+    this.healthStepsSyncEnabled = false,
+    this.healthStepsLastSyncAtUtc,
   });
 
   /// `system`, `light`, `dark` or `oled`.
@@ -24,5 +26,16 @@ final class AppSettingsValue {
   final bool notificationsEnabled;
 
   final String? lastKnownTimezone;
+
+  /// Desired state of "Schritte aus Health übernehmen" (off by default). Like
+  /// [notificationsEnabled] it is a wish only: whether the app may read is
+  /// always asked from the device, so after an import the switch can be on
+  /// without an access.
+  final bool healthStepsSyncEnabled;
+
+  /// When the last comparison with the health interface finished (UTC, on the
+  /// minute); null until one ran. Informational only.
+  final DateTime? healthStepsLastSyncAtUtc;
+
   final int rowVersion;
 }
