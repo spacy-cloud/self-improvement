@@ -19,9 +19,9 @@ import 'support/app_harness.dart';
 /// overflow and keeps its tap targets and labels; a form can be reached by
 /// scrolling, is saved, and keeps what was typed when the phone is turned.
 ///
-/// What it does NOT show: that landscape is pleasant to read (Tyler found it
-/// hard to read on his iPhone), that a keyboard of about 250 px or more fits
-/// (it does not: header and pinned action need about 144 of the 393 px), a
+/// What it does NOT show: that landscape is pleasant to read (the iOS tester
+/// found it hard to read on an iPhone), that a keyboard of about 250 px or more
+/// fits (it does not: header and pinned action need about 144 of the 393 px), a
 /// tablet, a foldable, large text in landscape, or anything on a device. The
 /// safe-area insets of the turned iPhone (left and right 59, bottom 21) are an
 /// approximation of the iPhone 15 Pro, not a measurement.

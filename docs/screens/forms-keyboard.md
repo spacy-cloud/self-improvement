@@ -1,6 +1,6 @@
 # Formulare und Tastatur (BS-112)
 
-Dieses Dokument beschreibt, wie die Tastatur in den Formularen der App geschlossen wird: durch Tippen neben das Feld und durch Ziehen. Anlass ist Tylers iOS-Test ([BS-96](https://spacy-cloud.atlassian.net/browse/BS-96), iPhone 15 Pro): Die Zifferntastatur von iOS hat keine Eingabetaste, und iOS hat keine Zurück-Geste, die sie schließt. Ticket: [BS-112](https://spacy-cloud.atlassian.net/browse/BS-112), Entscheidung D-018 in [implementation-decisions.md](../implementation-decisions.md). Es gibt keinen Figma-Entwurf: Das Verhalten hat keinen eigenen Bildschirm, kein Formular ändert Aussehen oder Fachlogik.
+Dieses Dokument beschreibt, wie die Tastatur in den Formularen der App geschlossen wird: durch Tippen neben das Feld und durch Ziehen. Anlass ist der iOS-Test des Testers ([BS-96](https://spacy-cloud.atlassian.net/browse/BS-96), iPhone 15 Pro): Die Zifferntastatur von iOS hat keine Eingabetaste, und iOS hat keine Zurück-Geste, die sie schließt. Ticket: [BS-112](https://spacy-cloud.atlassian.net/browse/BS-112), Entscheidung D-018 in [implementation-decisions.md](../implementation-decisions.md). Es gibt keinen Figma-Entwurf: Das Verhalten hat keinen eigenen Bildschirm, kein Formular ändert Aussehen oder Fachlogik.
 
 ## 1. Verhalten
 
@@ -66,7 +66,7 @@ Mutationsproben (Produktivcode zurückgenommen, die neuen Tests scheitern): sieh
 
 ## 6. Offene Punkte
 
-- Auf einem Gerät nicht geprüft: das Verhalten der echten Tastatur eines iPhones (Schließen, Ruckeln beim Wechsel zwischen Feldern, ob die Zifferntastatur ohne „Fertig“-Leiste reicht; Prüfung durch Tyler, [BS-96](https://spacy-cloud.atlassian.net/browse/BS-96)), das Verhalten unter Android (Zurück-Geste, Tippen daneben, Ziehen), TalkBack und VoiceOver.
+- Auf einem Gerät nicht geprüft: das Verhalten der echten Tastatur eines iPhones (Schließen, Ruckeln beim Wechsel zwischen Feldern, ob die Zifferntastatur ohne „Fertig“-Leiste reicht; Prüfung durch den iOS-Tester, [BS-96](https://spacy-cloud.atlassian.net/browse/BS-96)), das Verhalten unter Android (Zurück-Geste, Tippen daneben, Ziehen), TalkBack und VoiceOver.
 - Auf einem Gerät nicht geprüft: die Grenze am Cursor (Ziehen genau auf dem Cursor auf iOS). Der Host belegt sie mit den Gesten von Flutter und dem Theme von iOS; wie groß der Griff auf einem iPhone ist und ob ein Ziehen dort wirklich nur den Cursor bewegt, zeigt erst ein Gerät.
 - Das Wandern der angehefteten Schaltfläche beim Einfahren der Tastatur ist im Host nachgestellt (Einzug von einem Bild zum nächsten weggenommen), nicht als Animation einer echten Tastatur.
 - Optional und nicht umgesetzt: „Fertig“-Leiste über der Zifferntastatur (nur iOS).

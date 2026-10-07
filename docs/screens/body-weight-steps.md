@@ -87,7 +87,7 @@ Die Aktion bleibt auch nach dem ersten Eintrag sichtbar (BS-108, Entscheidung D-
 
 ### 2.3 Schritte aus Health (BS-97)
 
-Schritte können aus der Health-App des Telefons übernommen werden (Android: Health Connect; iOS folgt erst nach einem positiven Spike mit Tyler, ob SideStore das Entitlement beim Neusignieren setzt, ein Ticket dafür gibt es noch nicht). Der Schalter „Schritte aus Health übernehmen“ ist standardmäßig aus. Die Entscheidungen stehen in D-031 bis D-033 ([implementation-decisions.md](../implementation-decisions.md)), die Architektur in [architecture.md](../architecture.md) Abschnitt 13.
+Schritte können aus der Health-App des Telefons übernommen werden (Android: Health Connect; iOS folgt erst nach einem positiven Spike mit dem iOS-Tester, ob SideStore das Entitlement beim Neusignieren setzt, ein Ticket dafür gibt es noch nicht). Der Schalter „Schritte aus Health übernehmen“ ist standardmäßig aus. Die Entscheidungen stehen in D-031 bis D-033 ([implementation-decisions.md](../implementation-decisions.md)), die Architektur in [architecture.md](../architecture.md) Abschnitt 13.
 
 **Regeln (Kern, D-032).**
 
