@@ -119,7 +119,7 @@ Zusätzlich lief die App am 2026-10-03 manuell auf einem Android-Emulator des Pr
 
 ## 6. Release v0.2.0
 
-Das Release besteht aus einer Kette von Pull Requests gegen `dev`; jeder Branch enthält seine Vorgänger. Reihenfolge: PR 4 (iOS und Doku), 8 (Datenvertrag v2), 6 (BS-113), 5 (BS-108), 7 (BS-118), 9 (BS-117), 10 (BS-120), 11 (BS-112), 12 (BS-114), 15 (BS-121), 16 (BS-99), 17 (BS-111), 13, 14 und 18 (BS-97), 19 (BS-110), 20 und 21 (BS-100), 23 (Befunde des Prüfzyklus 1), 25 (BS-93); danach folgen die Abnahme der Dokumente und die Versionsanhebung. Die Zuordnung von Pull Request, Ticket und Jira-Status steht in Abschnitt 1a der [Anforderungsmatrix](requirements-matrix.md). Alles in diesem Abschnitt sind Host-Tests und Prüfungen am Quelltext; **nichts davon ist auf einem Gerät geprüft** (Abschnitt 7).
+Das Release besteht aus einer Kette von Pull Requests gegen `dev`; jeder Branch enthält seine Vorgänger. Reihenfolge: PR 4 (iOS und Doku), 8 (Datenvertrag v2), 6 (BS-113), 5 (BS-108), 7 (BS-118), 9 (BS-117), 10 (BS-120), 11 (BS-112), 12 (BS-114), 15 (BS-121), 16 (BS-99), 17 (BS-111), 13, 14 und 18 (BS-97), 19 (BS-110), 20 und 21 (BS-100), 23 (Befunde des Prüfzyklus 1), 25 (BS-93), 26 (Abnahme der Dokumente); danach folgt die Versionsanhebung. Die Zuordnung von Pull Request, Ticket und Jira-Status steht in Abschnitt 1a der [Anforderungsmatrix](requirements-matrix.md). Alles in diesem Abschnitt sind Host-Tests und Prüfungen am Quelltext; **nichts davon ist auf einem Gerät geprüft** (Abschnitt 7).
 
 ### 6.1 Migration und Import älterer Sicherungen (Datenvertrag v2, BS-98)
 
@@ -172,7 +172,7 @@ Ein Prüfer, der den Code nicht geschrieben hat, prüft den Stand in Zyklen (hö
 | P1 | R1-02: Zwei Dokumente stritten noch ab, dass es eine Health-Anbindung gibt | behoben in PR 23 (mit Dokumenttest) |
 | P2 | R1-03 Plus-Eintrag „Workout“ hing nur am Wochenziel; R1-04 `flutter test` hing bei fehlschlagenden Tests mit offener Seite; R1-05 handgepflegte Seitenlisten kannten „Über die App“ nicht; R1-08 Lücken des Regeltests gegen Plattformnamen; R1-09 Vorname des iOS-Testers in öffentlichen Dateien; R1-12 exportierter Dienst der Health-Bibliothek nicht dokumentiert | behoben in PR 23 |
 | P2 | R1-06 Verweis auf D-033 vor seiner Aufnahme | erledigt: D-033 steht seit PR 18 in der Tabelle der Entscheidungen |
-| P2 | R1-07 Zählungen der Anforderungsmatrix nach dem Zusammenführen veraltet | behoben mit der Abnahme der Dokumente (Zahlen aus den Messungen in Abschnitt 2) |
+| P2 | R1-07 Zählungen der Anforderungsmatrix nach dem Zusammenführen veraltet | behoben mit der Abnahme der Dokumente, PR 26 (Zahlen aus den Messungen in Abschnitt 2) |
 | P2 | R1-10 Pull-Request-Texte verwiesen auf das Hilfsskript des Laufs | erledigt: die Texte nennen die offenen Befehle |
 | Hinweis (P2) | R1-11 die README ändert drei Stellen (Copyright, iOS-Zeile, Absatz zum iOS-Workflow); R1-13 `load_test.dart` ist reihenfolgeabhängig (schon in der Basis, kein Fehler des Releases); R1-14 Schnitt der Kette: die Pull Requests 13, 14 und 18 (Health) gehören zusammen und stehen in der Kette hintereinander | R1-11: Bestätigung des Absatzes zum iOS-Workflow offen; R1-13: nicht behoben; R1-14: bei der Reihenfolge der Merges zu beachten |
 
