@@ -21,6 +21,9 @@ Wird laufend ergänzt. Offene Anforderungen stehen zusätzlich in [requirements-
 - **„Keine Daten“ entfernt nichts** (D-032). Meldet Health für einen Tag nichts (etwa nach einer Neuinstallation von Health Connect), bleibt ein früherer Wert dieses Tages stehen. Nach einem Zeitzonenwechsel kann ein Health-Wert rund um Mitternacht des Wechsels deshalb an zwei Tagen stehen. Ein Tag, den jemand löscht, wird beim nächsten Abgleich wieder gefüllt, solange der Schalter an ist und Health Daten hat.
 - **Rückwirkende Änderungen** (D-032): Ein Health-Wert für einen vergangenen Tag kann XP dieses Tages nachträglich vergeben oder zurücknehmen und den Streak verändern; ein Level-Aufstieg durch einen Abgleich wird wie jeder andere angezeigt.
 - Die Datenschutz-Erklärung, auf die der Dialog von Health Connect verweist, ist eine eigene Textseite (`HealthRationaleActivity`) ohne Flutter; sie folgt dem Hell-Dunkel-Modus des Systems, nicht dem Theme der App.
+- **Nach zwei Ablehnungen zeigt Android den Dialog nicht mehr.** „Zugriff erlauben“ bleibt dann ohne Wirkung; die App erkennt das nicht vorher und sagt es erst nach dem Versuch („Erscheint keine Abfrage mehr, erlaube die Schritte über ‚Einstellungen öffnen‘.“). Der zweite Weg, „Einstellungen öffnen“, öffnet die Einstellungen von Health Connect, nicht eine Seite nur dieser App. Der Schalter bleibt nach einer Ablehnung an (der Wunsch ist gespeichert, der Zustand sagt „Kein Zugriff“); wer nichts übernehmen will, schaltet ihn aus.
+- **Kein Hinweis zum Health-Wunsch in der Importvorschau.** Steht der Schalter in einer importierten Sicherung an, fehlt aber der Zugriff auf diesem Gerät, zeigt erst die Gruppe „Schritte“ der Einstellungen „Kein Zugriff auf Health Connect“; die Vorschau des Imports nennt es nicht (anders als den Erinnerungswunsch). Das Lesen ohne Zugriff ist ausgeschlossen, der Hinweis fehlt nur.
+- **Texte ohne Entwurf.** Für „Health Connect ist veraltet“, „Abgleich fehlgeschlagen“, „Wird abgeglichen …“ und einen Tag ohne Daten gibt es keinen Figma-Entwurf; die Texte folgen dem Muster der vorhandenen und sind von Joern noch nicht bestätigt. Ebenso weichen das Herz auf der Plakette „Aus Health“ und die zweite Aktion „Einstellungen öffnen“ vom Entwurf ab ([screens/body-weight-steps.md](screens/body-weight-steps.md) Abschnitt 3).
 
 ## Formale offene Punkte (kein Implementierungsblocker)
 
@@ -52,7 +55,7 @@ Wird laufend ergänzt. Offene Anforderungen stehen zusätzlich in [requirements-
 
 ## Fachliche Grenzen von V1
 
-- Keine Cloud, Konten, Telemetrie oder Laufzeit-Netzwerkfunktion; keine automatische Schrittzählung, keine Health-Anbindung (Health Connect / HealthKit / Samsung Health), keine KI-Analyse, keine MCP-Schnittstelle. Diese Punkte sind für später vorgemerkt und nicht als Platzhalter sichtbar.
+- Keine Cloud, Konten, Telemetrie oder Laufzeit-Netzwerkfunktion; keine eigene Schrittzählung (die App liest keine Sensoren), keine Anbindung an HealthKit (iOS) oder an Samsung Health selbst, keine KI-Analyse, keine MCP-Schnittstelle. Schritte kommen von Hand oder, nur auf Android und erst seit v0.2.0, lesend aus Health Connect (Abschnitt „Schritte aus Health (BS-97)“). Die übrigen Punkte sind für später vorgemerkt und nicht als Platzhalter sichtbar.
 - SQLite wird nicht zusätzlich verschlüsselt; Schutz durch Gerätesandbox und Gerätesperre.
 - Lokale Erinnerungen nutzen ungenaue Android-Alarme ohne Exact-Alarm-Recht und ohne Foreground-Service. Zustellung kann vom Betriebssystem verzögert werden; nach einem Force-Stop kann die Zustellung bis zum nächsten App-Start ausbleiben.
 - Die Uhr des Geräts ist ohne Server nicht manipulationssicher; XP und Streak sind ein lokaler Motivationsmechanismus.
