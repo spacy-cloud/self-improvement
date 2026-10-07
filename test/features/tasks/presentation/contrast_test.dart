@@ -56,6 +56,27 @@ void main() {
       );
       text('selected day of the week strip', c.onPrimary, c.primaryButton);
       text('series text on a card', c.streakText, c.surface);
+      // The block "Erinnerung" of the task form (BS-111).
+      text(
+        'notice of the reminder block: warning text on its tint',
+        c.warningText,
+        c.warningTint,
+      );
+      text(
+        'action of the notice (green text) on the warning tint',
+        c.primaryText,
+        c.warningTint,
+      );
+      text(
+        'action of the planning error notice (green text) on the error tint',
+        c.primaryText,
+        c.errorTint,
+      );
+      text(
+        'removal of the reminder: error text on the page',
+        c.error,
+        c.background,
+      );
 
       for (final icon in HabitIcon.values) {
         final accent = icon.accent;

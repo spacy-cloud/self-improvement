@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:self_improvement/core/commands/command_context.dart';
 import 'package:self_improvement/core/commands/command_runner.dart';
 import 'package:self_improvement/core/database/app_database.dart';
 import 'package:self_improvement/core/errors/app_failure.dart';
@@ -16,6 +17,13 @@ import 'package:self_improvement/shared/local_date.dart';
 /// Completion is a DESIRED STATE ([setCompleted]), never a blind toggle: the
 /// same command id is a replay, a new command id for a state the task already
 /// has is a no-op that keeps the existing completion and returns no undo.
+///
+/// The optional reminder (BS-111) is part of the content: [create] and
+/// [update] set, change or remove it, and the undo of an edit restores the
+/// previous reminder exactly (instant, frozen date and zone). A reminder must
+/// lie in the future when it is SET; the planner of the reminder engine reads
+/// the three columns, so completing, deleting, restoring or editing a task
+/// changes what is delivered without any call from here.
 class TaskRepository {
   TaskRepository({required this._database, required this._runner});
 
@@ -74,7 +82,9 @@ class TaskRepository {
       type: createType,
       body: (ctx) async {
         final input = validateTaskDraft(draft);
+        _requireReminderAllowed(input.reminderAtUtc, nowUtc: ctx.nowUtc);
         final id = ctx.ids.newId();
+        final reminder = _freezeReminder(ctx, input.reminderAtUtc);
         await _database
             .into(_database.tasks)
             .insert(
@@ -85,6 +95,9 @@ class TaskRepository {
                 priority: Value(input.priority.key),
                 dueLocalDate: Value(input.dueDate),
                 tagsJson: Value(input.tags),
+                reminderAtUtc: Value(reminder?.atUtc),
+                reminderLocalDate: Value(reminder?.localDate),
+                reminderTimezoneId: Value(reminder?.timezoneId),
                 createdAtUtc: ctx.nowUtc,
                 updatedAtUtc: ctx.nowUtc,
               ),
@@ -105,9 +118,16 @@ class TaskRepository {
     );
   }
 
-  /// Edits title, description, priority, due date and tags. NEVER changes the
-  /// completion. [expectedRowVersion] is the version the form was loaded with;
-  /// a mismatch is a [ConflictFailure] (`staleVersion`).
+  /// Edits title, description, priority, due date, tags and the reminder.
+  /// NEVER changes the completion. [expectedRowVersion] is the version the form
+  /// was loaded with; a mismatch is a [ConflictFailure] (`staleVersion`).
+  ///
+  /// The reminder of the draft is the desired state: another instant moves it
+  /// (the date and zone are frozen again), `null` removes it, the very same
+  /// instant leaves the three columns exactly as they are (no new freezing,
+  /// and an expired reminder does not block saving other changes). A reminder
+  /// that is set or moved must lie in the future ([ValidationFailure] with the
+  /// field [TaskFields.reminder]).
   Future<CommandOutcome> update({
     required String commandId,
     required String id,
@@ -120,11 +140,28 @@ class TaskRepository {
       body: (ctx) async {
         final input = validateTaskDraft(draft);
         final before = await _requireActive(id);
+        _requireReminderAllowed(
+          input.reminderAtUtc,
+          nowUtc: ctx.nowUtc,
+          unchangedAtUtc: before.reminderAtUtc,
+        );
         if (before.rowVersion != expectedRowVersion) {
           throw ConflictFailure(ConflictKind.staleVersion, relatedEntityId: id);
         }
         final newVersion = before.rowVersion + 1;
-        await _writeContent(id, input, now: ctx.nowUtc, rowVersion: newVersion);
+        final unchanged = _sameReminder(
+          input.reminderAtUtc,
+          before.reminderAtUtc,
+        );
+        await _writeContent(
+          id,
+          input,
+          now: ctx.nowUtc,
+          rowVersion: newVersion,
+          reminder: unchanged
+              ? null
+              : _ReminderColumns(_freezeReminder(ctx, input.reminderAtUtc)),
+        );
         // Content edits never move a completion: no day is affected.
         return CommandEffect(
           entityId: id,
@@ -323,6 +360,9 @@ class TaskRepository {
           ),
           now: ctx.nowUtc,
           rowVersion: current.rowVersion + 1,
+          // The previous reminder comes back exactly, with the date and zone
+          // it was frozen with (or none at all).
+          reminder: _ReminderColumns(previous.reminder),
         );
         return CommandEffect(entityId: previous.id);
       },
@@ -360,11 +400,15 @@ class TaskRepository {
     );
   }
 
+  /// Writes the content columns; the reminder columns only when [reminder] is
+  /// given (all three together, the schema requires them to be all set or all
+  /// null), otherwise they stay as they are.
   Future<void> _writeContent(
     String id,
     TaskDraft input, {
     required DateTime now,
     required int rowVersion,
+    _ReminderColumns? reminder,
   }) async {
     await (_database.update(
       _database.tasks,
@@ -375,11 +419,53 @@ class TaskRepository {
         priority: Value(input.priority.key),
         dueLocalDate: Value(input.dueDate),
         tagsJson: Value(input.tags),
+        reminderAtUtc: reminder == null
+            ? const Value.absent()
+            : Value(reminder.reminder?.atUtc),
+        reminderLocalDate: reminder == null
+            ? const Value.absent()
+            : Value(reminder.reminder?.localDate),
+        reminderTimezoneId: reminder == null
+            ? const Value.absent()
+            : Value(reminder.reminder?.timezoneId),
         updatedAtUtc: Value(now),
         rowVersion: Value(rowVersion),
       ),
     );
   }
+
+  /// A reminder that is set or moved must lie in the future (see
+  /// [taskReminderError]); [unchangedAtUtc] is the reminder the task has.
+  static void _requireReminderAllowed(
+    DateTime? reminderAtUtc, {
+    required DateTime nowUtc,
+    DateTime? unchangedAtUtc,
+  }) {
+    final hint = taskReminderError(
+      reminderAtUtc,
+      nowUtc: nowUtc,
+      unchangedAtUtc: unchangedAtUtc,
+    );
+    if (hint != null) {
+      throw ValidationFailure({TaskFields.reminder: hint});
+    }
+  }
+
+  /// The instant with the local date and zone of this command, or null.
+  static TaskReminder? _freezeReminder(CommandContext ctx, DateTime? instant) {
+    if (instant == null) {
+      return null;
+    }
+    final frozen = ctx.freeze(instant);
+    return TaskReminder(
+      atUtc: frozen.utc,
+      localDate: frozen.localDate,
+      timezoneId: frozen.timezoneId,
+    );
+  }
+
+  static bool _sameReminder(DateTime? a, DateTime? b) =>
+      a == null || b == null ? a == b : a.isAtSameMomentAs(b);
 
   /// Writes the four completion columns together (the schema requires them to
   /// be all set or all null).
@@ -428,10 +514,31 @@ class TaskRepository {
     completedLocalDate: row.completedLocalDate,
     completionTimezoneId: row.timezoneId,
     completionEligibility: row.completionEligibility,
+    reminder: _mapReminder(row),
     createdAtUtc: row.createdAtUtc,
     updatedAtUtc: row.updatedAtUtc,
     rowVersion: row.rowVersion,
   );
+
+  /// The reminder of a row; null without one. The database keeps the three
+  /// columns all set or all null, so a partial state cannot occur.
+  static TaskReminder? _mapReminder(TaskRow row) {
+    final at = row.reminderAtUtc;
+    final date = row.reminderLocalDate;
+    final zone = row.reminderTimezoneId;
+    if (at == null || date == null || zone == null) {
+      return null;
+    }
+    return TaskReminder(atUtc: at, localDate: date, timezoneId: zone);
+  }
+}
+
+/// The three reminder columns of a task as one value to write, so they are
+/// never written one by one. A null [reminder] clears all three.
+final class _ReminderColumns {
+  const _ReminderColumns(this.reminder);
+
+  final TaskReminder? reminder;
 }
 
 /// The completion columns of a task as one value, copied exactly (including a

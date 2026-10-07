@@ -4,12 +4,14 @@ import 'package:self_improvement/core/commands/command_runner.dart';
 import 'package:self_improvement/core/commands/submission_tracker.dart';
 import 'package:self_improvement/core/errors/app_failure.dart';
 import 'package:self_improvement/core/providers/core_providers.dart';
+import 'package:self_improvement/core/time/clock_service.dart';
 import 'package:self_improvement/features/tasks/application/task_providers.dart';
 import 'package:self_improvement/features/tasks/domain/task.dart';
 import 'package:self_improvement/features/tasks/domain/task_priority.dart';
 import 'package:self_improvement/features/tasks/domain/task_tags.dart';
 import 'package:self_improvement/features/tasks/domain/task_validation.dart';
 import 'package:self_improvement/shared/local_date.dart';
+import 'package:self_improvement/shared/local_time.dart';
 
 /// Identifies a task form: new task (`task == null`) or editing [task].
 ///
@@ -42,6 +44,7 @@ final class TaskFormState {
     required this.priority,
     required this.dueDate,
     required this.tags,
+    this.reminderAtUtc,
     this.dirty = false,
     this.fieldErrors = const {},
     this.submitting = false,
@@ -58,6 +61,10 @@ final class TaskFormState {
 
   /// The tags entered so far (trimmed, deduplicated, at most five).
   final List<String> tags;
+
+  /// The optional reminder as an instant (UTC); null means no reminder. The
+  /// form shows it in the zone of the device.
+  final DateTime? reminderAtUtc;
 
   /// True while the content differs from what the form was opened with; drives
   /// the "Änderungen verwerfen?" dialog. Typing and deleting the same text again
@@ -83,6 +90,7 @@ final class TaskFormState {
     TaskPriority? priority,
     LocalDate? Function()? dueDate,
     List<String>? tags,
+    DateTime? Function()? reminderAtUtc,
     bool? dirty,
     Map<String, String>? fieldErrors,
     bool? submitting,
@@ -93,6 +101,7 @@ final class TaskFormState {
     priority: priority ?? this.priority,
     dueDate: dueDate == null ? this.dueDate : dueDate(),
     tags: tags ?? this.tags,
+    reminderAtUtc: reminderAtUtc == null ? this.reminderAtUtc : reminderAtUtc(),
     dirty: dirty ?? this.dirty,
     fieldErrors: fieldErrors ?? this.fieldErrors,
     submitting: submitting ?? this.submitting,
@@ -151,6 +160,7 @@ class TaskFormController extends Notifier<TaskFormState> {
       priority: task?.priority ?? defaultTaskPriority,
       dueDate: task?.dueDate,
       tags: List.unmodifiable(task?.tags ?? const <String>[]),
+      reminderAtUtc: task?.reminder?.atUtc,
     );
     _initialContent = _contentOf(initial);
     return initial;
@@ -177,6 +187,55 @@ class TaskFormController extends Notifier<TaskFormState> {
       fieldErrors: _without(TaskFields.dueDate),
     ),
   );
+
+  /// Sets the reminder to the instant [atUtc]; null removes it (the form
+  /// commits it with the rest on save).
+  ///
+  /// A moment that has already passed is not accepted: the hint shows at the
+  /// field and the reminder stays as it was. The reminder the task already has
+  /// can always be kept, also after it has gone off.
+  void setReminder(DateTime? atUtc) {
+    final hint = taskReminderError(
+      atUtc,
+      nowUtc: ref.read(clockProvider).nowUtc(),
+      unchangedAtUtc: args.task?.reminder?.atUtc,
+    );
+    if (hint != null) {
+      state = state.copyWith(
+        fieldErrors: {...state.fieldErrors, TaskFields.reminder: hint},
+      );
+      return;
+    }
+    _change(
+      state.copyWith(
+        reminderAtUtc: () => atUtc,
+        fieldErrors: _without(TaskFields.reminder),
+      ),
+    );
+  }
+
+  /// Sets the reminder from a date and a wall clock time of the device zone,
+  /// which is what the pickers give. A time that does not exist (the clock
+  /// jumps forward) is refused with a hint; a time that exists twice (the
+  /// clock turns back) means its first occurrence, like everywhere in the app.
+  void setReminderLocal(LocalDate date, LocalTime time) {
+    switch (ref.read(clockProvider).toUtc(date, time)) {
+      case ZonedResolved(:final utc):
+        setReminder(utc);
+      case ZonedNonexistent(:final nextValid):
+        state = state.copyWith(
+          fieldErrors: {
+            ...state.fieldErrors,
+            TaskFields.reminder:
+                'Diese Uhrzeit gibt es wegen der Zeitumstellung nicht. '
+                'Bitte wähle ${nextValid.toIso()} Uhr oder später.',
+          },
+        );
+    }
+  }
+
+  /// Removes the reminder.
+  void clearReminder() => setReminder(null);
 
   /// Adds a tag from the tag input. Returns what happened; on a rejection the
   /// German hint is also stored under [TaskFields.tags] and the tags stay as
@@ -229,14 +288,26 @@ class TaskFormController extends Notifier<TaskFormState> {
       priority: state.priority,
       dueDate: state.dueDate,
       tags: state.tags,
+      reminderAtUtc: state.reminderAtUtc,
     );
+    final errors = <String, String>{};
     try {
       validateTaskDraft(draft);
     } on ValidationFailure catch (failure) {
-      state = state.copyWith(
-        fieldErrors: failure.fieldErrors,
-        submitFailure: () => null,
-      );
+      errors.addAll(failure.fieldErrors);
+    }
+    // The form may have been open for a while: a reminder chosen for 18:00 is
+    // refused at 18:01, with the same hint as a pick in the past.
+    final reminderHint = taskReminderError(
+      draft.reminderAtUtc,
+      nowUtc: ref.read(clockProvider).nowUtc(),
+      unchangedAtUtc: args.task?.reminder?.atUtc,
+    );
+    if (reminderHint != null) {
+      errors[TaskFields.reminder] = reminderHint;
+    }
+    if (errors.isNotEmpty) {
+      state = state.copyWith(fieldErrors: errors, submitFailure: () => null);
       return const TaskRejected();
     }
 
@@ -294,6 +365,7 @@ class TaskFormController extends Notifier<TaskFormState> {
     s.priority,
     s.dueDate,
     s.tags.join('\u0000'),
+    s.reminderAtUtc?.millisecondsSinceEpoch,
   );
 
   Map<String, String> _without(String field) =>

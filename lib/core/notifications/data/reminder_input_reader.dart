@@ -9,7 +9,8 @@ import 'package:self_improvement/core/notifications/domain/reminder_status.dart'
 /// Gathers the plain facts the planner needs, once per run.
 ///
 /// Reads the master switch, the module statuses, the water rules, the habits
-/// with a reminder time and the open focus session straight from the database.
+/// with a reminder time, the open tasks with a reminder and the open focus
+/// session straight from the database.
 /// Two facts come from outside and are injected: whether today's water goal is
 /// reached (it depends on goals and entries, which belong to other features)
 /// and, optionally, the open focus session.
@@ -39,6 +40,7 @@ class ReminderInputReader {
     final statuses = await _modules.statuses();
     final waterRules = await _readWaterRules();
     final habits = await _readHabits();
+    final tasks = await _readTasks();
     final waterReached = await _waterGoalReached();
     final focus =
         await (_focusSession?.call() ?? readOpenFocusSession(_database));
@@ -54,6 +56,7 @@ class ReminderInputReader {
       waterRules: waterRules,
       waterGoalReachedToday: waterReached,
       habits: habits,
+      tasks: tasks,
       focusSession: focus,
     );
   }
@@ -100,6 +103,27 @@ class ReminderInputReader {
           archivedFrom: row.archivedFromDate,
           deleted: row.deletedAtUtc != null,
         ),
+    ];
+  }
+
+  /// The tasks that are to be reminded: not deleted, not completed and with a
+  /// reminder (`reminder_at_utc`). Completing or deleting a task takes it out
+  /// of this list and with it out of the plan; reopening or restoring puts it
+  /// back. Whether the instant is still ahead is decided by the planner.
+  Future<List<TaskReminderInput>> _readTasks() async {
+    final rows =
+        await (_database.select(_database.tasks)
+              ..where(
+                (t) =>
+                    t.deletedAtUtc.isNull() &
+                    t.completedAtUtc.isNull() &
+                    t.reminderAtUtc.isNotNull(),
+              )
+              ..orderBy([(t) => OrderingTerm.asc(t.id)]))
+            .get();
+    return [
+      for (final row in rows)
+        TaskReminderInput(id: row.id, reminderAtUtc: row.reminderAtUtc!),
     ];
   }
 

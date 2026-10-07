@@ -168,10 +168,17 @@ void main() {
       await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
       expect(find.text('Donnerstag, 15. Oktober'), findsOneWidget);
-      final chips = tester.widgetList<AppChoiceChip>(
-        find.byType(AppChoiceChip),
+      // The chips of the due day (the block "Erinnerung" has its own, and its
+      // "Aus" is selected as long as there is no reminder).
+      final dueChips = tester.widgetList<AppChoiceChip>(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is AppChoiceChip &&
+              <String>['Heute', 'Morgen', 'Kein Datum'].contains(widget.label),
+        ),
       );
-      expect(chips.where((chip) => chip.selected), isEmpty);
+      expect(dueChips, hasLength(3));
+      expect(dueChips.where((chip) => chip.selected), isEmpty);
 
       await save(tester);
       await waitForFeedback(tester, env);
@@ -186,6 +193,9 @@ void main() {
       (tester) async {
         final env = await createTasksUiEnv(tester);
         await openForm(tester, env);
+        // The block "Erinnerung" made the form taller: bring the field into
+        // view first, as a user does before typing into it.
+        await tester.ensureVisible(descriptionField);
         await tester.enterText(descriptionField, 'Nur eine Beschreibung');
 
         await save(tester);
@@ -224,7 +234,9 @@ void main() {
         final env = await createTasksUiEnv(tester);
         await openForm(tester, env);
         Future<void> addTag(String text) async {
+          await tester.ensureVisible(tagField);
           await tester.enterText(tagField, text);
+          await tester.ensureVisible(find.text('Hinzufügen'));
           await tester.tap(find.text('Hinzufügen'));
           await tester.pump();
         }
