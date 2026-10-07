@@ -29,7 +29,8 @@ const List<Size> responsiveSizes = <Size>[
 ];
 
 /// Creates a [DataHarness] inside `runAsync` (real async I/O of the in-memory
-/// database) and disposes it when the test ends.
+/// database) and disposes it when the test ends, after taking down whatever the
+/// test still has mounted.
 ///
 /// With [onboarded] the onboarding state is seeded (all modules enabled, goal
 /// versions, dashboard cards); pass [enabledModules] to enable only some.
@@ -45,6 +46,12 @@ Future<DataHarness> createTestHarness(
     () => DataHarness.create(nowIso: nowIso, realProjection: realProjection),
   ))!;
   addTearDown(() async {
+    // Take the app down before the database closes. A failed test leaves its
+    // widget tree mounted, Riverpod pauses the listeners of the pages that
+    // another page covers, and Drift's close() waits for the end of every
+    // listener, which a paused one never reaches: the tear down (and with it
+    // the whole run) would hang instead of reporting the failure (BS-98, R1-04).
+    await tester.pumpWidget(const SizedBox.shrink());
     await tester.runAsync(harness.dispose);
   });
   if (onboarded) {

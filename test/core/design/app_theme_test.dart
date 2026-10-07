@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart'
+    show debugDefaultTargetPlatformOverride;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/core/design/design.dart';
@@ -84,6 +86,127 @@ void main() {
     test('themes are built once', () {
       expect(identical(AppTheme.light(), AppTheme.light()), isTrue);
       expect(identical(AppTheme.oled(), AppTheme.oled()), isTrue);
+    });
+  });
+
+  group('the theme carries the platform that is current (BS-112, R1-01)', () {
+    /// Runs [body] as [platform], the way `TargetPlatformVariant` does.
+    T asPlatform<T>(TargetPlatform platform, T Function() body) {
+      final before = debugDefaultTargetPlatformOverride;
+      debugDefaultTargetPlatformOverride = platform;
+      try {
+        return body();
+      } finally {
+        debugDefaultTargetPlatformOverride = before;
+      }
+    }
+
+    test('every variant has the platform it is asked for, in any order of asking (BS-112, R1-01, AT33)', () {
+      // iOS first, then Android, then iOS again, then every platform: the
+      // platform of the first theme that was built must not decide.
+      final order = <TargetPlatform>[
+        TargetPlatform.iOS,
+        TargetPlatform.android,
+        TargetPlatform.iOS,
+        ...TargetPlatform.values,
+      ];
+      for (final platform in order) {
+        for (final variant in allVariants) {
+          final theme = asPlatform(
+            platform,
+            () => AppTheme.forVariant(variant),
+          );
+          expect(
+            theme.platform,
+            platform,
+            reason: '${variant.name} on ${platform.name}',
+          );
+        }
+      }
+    });
+
+    test('light(), dark(), oled() and themeFor follow the platform too (BS-112, R1-01, AT33)', () {
+      for (final platform in <TargetPlatform>[
+        TargetPlatform.iOS,
+        TargetPlatform.android,
+      ]) {
+        asPlatform(platform, () {
+          expect(AppTheme.light().platform, platform);
+          expect(AppTheme.dark().platform, platform);
+          expect(AppTheme.oled().platform, platform);
+          for (final mode in AppThemeMode.values) {
+            for (final brightness in Brightness.values) {
+              expect(themeFor(mode, brightness).platform, platform);
+            }
+          }
+        });
+      }
+    });
+
+    test('a platform has one theme per variant, built once; two platforms have two (BS-112, R1-01)', () {
+      for (final variant in allVariants) {
+        final ios = asPlatform(
+          TargetPlatform.iOS,
+          () => AppTheme.forVariant(variant),
+        );
+        final android = asPlatform(
+          TargetPlatform.android,
+          () => AppTheme.forVariant(variant),
+        );
+        expect(
+          identical(
+            ios,
+            asPlatform(TargetPlatform.iOS, () => AppTheme.forVariant(variant)),
+          ),
+          isTrue,
+          reason: '${variant.name}: the same iOS theme every time',
+        );
+        expect(
+          identical(
+            android,
+            asPlatform(
+              TargetPlatform.android,
+              () => AppTheme.forVariant(variant),
+            ),
+          ),
+          isTrue,
+          reason: '${variant.name}: the same Android theme every time',
+        );
+        expect(identical(ios, android), isFalse, reason: variant.name);
+      }
+    });
+
+    test('the themes of two platforms look the same: colours, tokens and text differ in nothing (BS-112, R1-01)', () {
+      for (final variant in allVariants) {
+        final ios = asPlatform(
+          TargetPlatform.iOS,
+          () => AppTheme.forVariant(variant),
+        );
+        final android = asPlatform(
+          TargetPlatform.android,
+          () => AppTheme.forVariant(variant),
+        );
+        expect(ios.colorScheme, android.colorScheme, reason: variant.name);
+        expect(
+          ios.extension<AppTokens>(),
+          android.extension<AppTokens>(),
+          reason: variant.name,
+        );
+        expect(
+          ios.scaffoldBackgroundColor,
+          android.scaffoldBackgroundColor,
+          reason: variant.name,
+        );
+        expect(
+          ios.textTheme.bodyMedium?.fontFamily,
+          android.textTheme.bodyMedium?.fontFamily,
+        );
+        expect(
+          ios.textTheme.bodyMedium?.fontSize,
+          android.textTheme.bodyMedium?.fontSize,
+        );
+        expect(ios.useMaterial3, android.useMaterial3);
+      }
     });
   });
 

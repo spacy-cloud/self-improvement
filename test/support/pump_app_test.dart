@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -68,6 +69,62 @@ void main() {
           ),
     );
     expect(find.text('count=1'), findsOneWidget);
+  });
+
+  group('the platform of a test variant reaches the screen (BS-112, R1-01)', () {
+    const platforms = TargetPlatformVariant(<TargetPlatform>{
+      TargetPlatform.android,
+      TargetPlatform.iOS,
+    });
+
+    /// The platform of the theme and the scroll physics a screen below the app
+    /// sees: what decides how a Material text field and a scroll view behave.
+    Widget probe(List<String> seen) => Builder(
+      builder: (context) {
+        seen
+          ..add(Theme.of(context).platform.name)
+          ..add(
+            ScrollConfiguration.of(context)
+                .getScrollPhysics(context)
+                .runtimeType
+                .toString(),
+          );
+        return const SizedBox();
+      },
+    );
+
+    List<String> expected() => <String>[
+      defaultTargetPlatform.name,
+      defaultTargetPlatform == TargetPlatform.iOS
+          ? 'BouncingScrollPhysics'
+          : 'ClampingScrollPhysics',
+    ];
+
+    testWidgets(
+      'pumpApp shows the screen with the theme and the scroll physics of the platform of the test (BS-112, R1-01, AT33)',
+      (tester) async {
+        final seen = <String>[];
+        await pumpApp(tester, probe(seen));
+        expect(seen.take(2).toList(), expected());
+      },
+      variant: platforms,
+    );
+
+    testWidgets(
+      'pumpRouterApp shows the screen with the theme and the scroll physics of the platform of the test (BS-112, R1-01, AT33)',
+      (tester) async {
+        final seen = <String>[];
+        await pumpRouterApp(
+          tester,
+          initialLocation: '/',
+          routes: <RouteBase>[
+            GoRoute(path: '/', builder: (context, state) => probe(seen)),
+          ],
+        );
+        expect(seen.take(2).toList(), expected());
+      },
+      variant: platforms,
+    );
   });
 
   testWidgets('pumpRouterApp navigates and the back button pops', (

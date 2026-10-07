@@ -43,25 +43,31 @@ final class PlusEntry {
   final AppAccent accent;
   final ModuleId module;
 
-  /// The goal of "Meine Ziele" this entry belongs to, or `null` for an entry
-  /// without one ([plusGoalFor]).
-  GoalType? get goal => plusGoalFor(id);
+  /// The goals of "Meine Ziele" this entry belongs to, empty for an entry
+  /// without one ([plusGoalsFor]).
+  Set<GoalType> get goals => plusGoalsFor(id);
 }
 
-/// The goal of "Meine Ziele" an entry belongs to, or `null` when it has none.
+/// The goals of "Meine Ziele" an entry belongs to, empty when it has none. An
+/// entry with several goals is offered while at least one of them is on
+/// ([filterPlusEntriesByGoals]).
 ///
-/// Weight ("Gewicht erfassen"), workout ("Workouts"), water, steps, focus and
-/// task ("Aufgabe erledigen") each have a goal there. A habit carries its own
-/// daily goal inside the habit and a meal has no goal at all, so those two
-/// stay in the menu whenever their module is on (BS-117).
-GoalType? plusGoalFor(String id) => switch (id) {
-  'weight' => GoalType.weightEntry,
-  'workout' => GoalType.workoutWeekly,
-  'water' => GoalType.water,
-  'steps' => GoalType.steps,
-  'focus' => GoalType.focusMinutes,
-  'task' => GoalType.taskCompletion,
-  _ => null,
+/// Weight ("Gewicht erfassen"), water, steps, focus and task ("Aufgabe
+/// erledigen") each have one goal there. Workout has two: the weekly goal
+/// "Workouts" and the optional daily goal "Workout heute" (BS-99). Both ask for
+/// workouts to be recorded, so the entry stays while either one is on; with the
+/// daily goal on and the weekly one off the menu still leads to the workout
+/// form. A habit carries its own daily goal inside the habit and a meal has no
+/// goal at all, so those two stay in the menu whenever their module is on
+/// (BS-117).
+Set<GoalType> plusGoalsFor(String id) => switch (id) {
+  'weight' => const <GoalType>{GoalType.weightEntry},
+  'workout' => const <GoalType>{GoalType.workoutWeekly, GoalType.workoutDaily},
+  'water' => const <GoalType>{GoalType.water},
+  'steps' => const <GoalType>{GoalType.steps},
+  'focus' => const <GoalType>{GoalType.focusMinutes},
+  'task' => const <GoalType>{GoalType.taskCompletion},
+  _ => const <GoalType>{},
 };
 
 /// The goals the user has switched on, in the state the user saved last.
@@ -85,14 +91,14 @@ Set<GoalType> activeGoalTypes(Iterable<GoalVersion> versions, LocalDate today) {
   };
 }
 
-/// The entries of [entries] whose goal is in [activeGoals], plus the entries
-/// without a goal (habit, meal). The order stays as it is.
+/// The entries of [entries] with at least one goal in [activeGoals], plus the
+/// entries without a goal (habit, meal). The order stays as it is.
 List<PlusEntry> filterPlusEntriesByGoals(
   Iterable<PlusEntry> entries,
   Set<GoalType> activeGoals,
 ) => <PlusEntry>[
   for (final entry in entries)
-    if (entry.goal == null || activeGoals.contains(entry.goal)) entry,
+    if (entry.goals.isEmpty || entry.goals.any(activeGoals.contains)) entry,
 ];
 
 /// Icon tile accent per entry (Figma: weight and task use the brand tint).

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:self_improvement/core/design/tokens/app_radii.dart';
 import 'package:self_improvement/core/design/tokens/app_sizes.dart';
@@ -64,27 +65,33 @@ enum AppThemeMode {
 }
 
 /// Builds the [ThemeData] of the three variants from the design tokens.
+///
+/// A [ThemeData] fixes its [ThemeData.platform] when it is built. The themes
+/// are therefore cached per platform and variant, and a theme always carries
+/// the [defaultTargetPlatform] that is current when it is asked for. On a
+/// device the platform never changes, so each variant is built once and the
+/// same instance is returned every time, as before. A host test that runs a
+/// variant on another platform (`TargetPlatformVariant`) gets a theme of that
+/// platform, so the scroll physics and the text field gestures of the Material
+/// widgets follow it too (BS-98, R1-01).
 abstract final class AppTheme {
-  static final ThemeData _light = _build(AppTokens.light);
-  static final ThemeData _dark = _build(AppTokens.dark);
-  static final ThemeData _oled = _build(AppTokens.oled);
+  static final Map<(TargetPlatform, AppThemeVariant), ThemeData> _themes =
+      <(TargetPlatform, AppThemeVariant), ThemeData>{};
 
   /// Light theme.
-  static ThemeData light() => _light;
+  static ThemeData light() => forVariant(AppThemeVariant.light);
 
   /// Dark theme.
-  static ThemeData dark() => _dark;
+  static ThemeData dark() => forVariant(AppThemeVariant.dark);
 
   /// OLED theme (true black background).
-  static ThemeData oled() => _oled;
+  static ThemeData oled() => forVariant(AppThemeVariant.oled);
 
-  /// Theme of a resolved [variant].
+  /// Theme of a resolved [variant] for the current [defaultTargetPlatform].
   static ThemeData forVariant(AppThemeVariant variant) {
-    return switch (variant) {
-      AppThemeVariant.light => _light,
-      AppThemeVariant.dark => _dark,
-      AppThemeVariant.oled => _oled,
-    };
+    final platform = defaultTargetPlatform;
+    final key = (platform, variant);
+    return _themes[key] ??= _build(AppTokens.forVariant(variant), platform);
   }
 }
 
@@ -95,7 +102,7 @@ ThemeData themeFor(AppThemeMode mode, Brightness platformBrightness) {
   return AppTheme.forVariant(mode.resolve(platformBrightness));
 }
 
-ThemeData _build(AppTokens tokens) {
+ThemeData _build(AppTokens tokens, TargetPlatform platform) {
   final c = tokens.colors;
   final brightness = tokens.variant.brightness;
   final textTheme = AppTextStyles.textTheme(c);
@@ -150,6 +157,7 @@ ThemeData _build(AppTokens tokens) {
 
   return ThemeData(
     useMaterial3: true,
+    platform: platform,
     brightness: brightness,
     colorScheme: scheme,
     fontFamily: AppTextStyles.fontFamily,

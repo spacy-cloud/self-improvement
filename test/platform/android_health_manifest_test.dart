@@ -6,6 +6,11 @@ import 'package:flutter_test/flutter_test.dart';
 /// read permission for the steps, the explanation Health Connect asks for, and
 /// a native side that can only read. These tests read the files; they do not
 /// run Android (the CI compiles it, a device is needed for everything else).
+///
+/// They read the manifests of the app only. The merged manifest also holds what
+/// the libraries bring along, for example the exported service
+/// `HealthDataSdkService` of `connect-client` (D-031, docs/known-limitations.md,
+/// BS-98, R1-12): it is made by the Android build, so no host test sees it.
 void main() {
   String read(String path) => File(path).readAsStringSync();
 
@@ -247,6 +252,39 @@ void main() {
       final pubspec = read('pubspec.yaml');
       expect(pubspec, isNot(matches(RegExp(r'^\s+health:', multiLine: true))));
       expect(read('pubspec.lock'), isNot(contains('name: health\n')));
+    });
+  });
+
+  group('what the library adds to the merged manifest (BS-98, R1-12)', () {
+    const service =
+        'androidx.health.platform.client.impl.sdkservice.HealthDataSdkService';
+
+    test('the app declares no service of its own, and the exported service '
+        'that comes with connect-client is written down (D-031, '
+        'docs/known-limitations.md; BS-98, R1-12)', () {
+      expect(manifest, isNot(contains('<service')));
+      expect(manifest, isNot(contains('HealthDataSdkService')));
+      for (final path in [
+        'docs/implementation-decisions.md',
+        'docs/known-limitations.md',
+      ]) {
+        final doc = read(path);
+        expect(doc, contains(service), reason: path);
+        expect(doc, contains('ACTION_BIND_SDK_SERVICE'), reason: path);
+        expect(doc, contains('exported="true"'), reason: path);
+      }
+    });
+
+    test('the documents say that only the Android build sees the merged '
+        'manifest (BS-98, R1-12)', () {
+      expect(
+        read('docs/known-limitations.md'),
+        contains('das zusammengeführte Manifest belegt erst der Android-Build'),
+      );
+      expect(
+        read('docs/implementation-decisions.md'),
+        contains('entsteht erst im Android-Build, den nur die CI ausführt'),
+      );
     });
   });
 }
