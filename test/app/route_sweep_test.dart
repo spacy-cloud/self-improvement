@@ -2,8 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:self_improvement/app/router/app_routes.dart';
+import 'package:self_improvement/core/goals/domain/workout_day_mark_kind.dart';
 import 'package:self_improvement/core/modules/module_registry.dart';
 import 'package:self_improvement/core/providers/command_providers.dart';
+import 'package:self_improvement/core/testing/data_harness.dart';
+import 'package:self_improvement/features/focus/data/workout_day_mark_repository.dart';
+import 'package:self_improvement/features/focus/data/workout_repository.dart';
+import 'package:self_improvement/features/focus/domain/training_category.dart';
+import 'package:self_improvement/features/focus/domain/workout_entry.dart';
 import 'package:self_improvement/shared/local_date.dart';
 
 import '../support/pump_app.dart';
@@ -68,6 +74,56 @@ Future<void> _check(WidgetTester tester, AppFixture app, String route) async {
   await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
   await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
   handle.dispose();
+}
+
+/// The pages that change with the optional daily goal "Workout heute" (BS-99):
+/// home with the Workout card, the workout area with its day card, and the
+/// goal editor. Each state of the day is a state of the card.
+const List<String> _dailyWorkoutRoutes = <String>['/', '/workouts', '/goals'];
+
+/// Switches "Workout heute" on and puts the day into [state]: `open`, `rest`,
+/// `skipped` or `workout` (a rest day and a skipped day need no workout; the
+/// workout of yesterday makes the area show its week and its list).
+Future<void> _seedDailyWorkout(DataHarness harness, String state) async {
+  await harness.seedOnboarded(
+    startedOn: LocalDate(2026, 9, 1),
+    workoutDailyGoal: true,
+  );
+  final marks = WorkoutDayMarkRepository(
+    database: harness.database,
+    runner: harness.runner,
+  );
+  final workouts = WorkoutRepository(
+    database: harness.database,
+    runner: harness.runner,
+  );
+  WorkoutDraft draft(DateTime at) => WorkoutDraft(
+    category: TrainingCategory.strength,
+    durationMinutes: 45,
+    occurredAtUtc: at,
+    title: 'Oberkörper',
+  );
+  await workouts.create(
+    commandId: harness.ids.newId(),
+    draft: draft(DateTime.utc(2026, 10, 2, 8)),
+  );
+  switch (state) {
+    case 'rest':
+      await marks.mark(
+        commandId: harness.ids.newId(),
+        kind: WorkoutDayMarkKind.rest,
+      );
+    case 'skipped':
+      await marks.mark(
+        commandId: harness.ids.newId(),
+        kind: WorkoutDayMarkKind.skipped,
+      );
+    case 'workout':
+      await workouts.create(
+        commandId: harness.ids.newId(),
+        draft: draft(harness.clock.nowUtc()),
+      );
+  }
 }
 
 void main() {
@@ -151,6 +207,67 @@ void main() {
         await app.settle();
         await _check(tester, app, route);
       });
+    }
+  }
+
+  // BS-99: the three pages that change with "Workout heute", with the goal on
+  // and the day in each of its four states.
+  for (final setup in <_Setup>[_setups.first, _setups[3]]) {
+    for (final state in <String>['open', 'rest', 'skipped', 'workout']) {
+      for (final route in _dailyWorkoutRoutes) {
+        testWidgets(
+          'AT33 $route with "Workout heute" on and the day $state lays out '
+          'and is operable at ${setup.name}',
+          (tester) async {
+            final harness = await createTestHarness(
+              tester,
+              onboarded: false,
+              realProjection: true,
+            );
+            final app = await pumpFullApp(
+              tester,
+              reuse: harness,
+              size: setup.size,
+              textScale: setup.scale,
+              onboarded: false,
+              seed: (h) => _seedDailyWorkout(h, state),
+            );
+            await _check(tester, app, route);
+          },
+        );
+      }
+    }
+  }
+
+  for (final mode in <String>['dark', 'oled']) {
+    for (final route in _dailyWorkoutRoutes) {
+      testWidgets(
+        'AT35 $route with "Workout heute" on and a rest day lays out and is '
+        'operable in the $mode theme',
+        (tester) async {
+          final harness = await createTestHarness(
+            tester,
+            onboarded: false,
+            realProjection: true,
+          );
+          final app = await pumpFullApp(
+            tester,
+            reuse: harness,
+            onboarded: false,
+            seed: (h) => _seedDailyWorkout(h, 'rest'),
+          );
+          await app.run(
+            () => app.container
+                .read(settingsCommandsProvider)
+                .setThemeMode(
+                  commandId: app.harness.ids.newId(),
+                  themeModeKey: mode,
+                ),
+          );
+          await app.settle();
+          await _check(tester, app, route);
+        },
+      );
     }
   }
 }

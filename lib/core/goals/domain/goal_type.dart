@@ -23,8 +23,9 @@ enum GoalTargetValidation {
 /// The goal kinds the app knows. The string [key] is a stable technical
 /// contract (database rows, backup) and never changes.
 ///
-/// Five of them are daily goals that form the day ring; [workoutWeekly] is a
-/// weekly display value only. Nutrition (meals) and XP are not goals at all.
+/// Six of them are daily goals that form the day ring ([workoutDaily] is off
+/// until it is switched on); [workoutWeekly] is a weekly display value only.
+/// Nutrition (meals) and XP are not goals at all.
 enum GoalType {
   /// Drinking goal in millilitres per day (250 to 10000 in steps of 50).
   water(
@@ -86,6 +87,20 @@ enum GoalType {
     defaultTarget: 3,
     minTarget: 1,
     maxTarget: 14,
+  ),
+
+  /// "Workout heute" (BS-99): an optional on/off switch with the fixed target
+  /// 1, OFF until a goal version switches it on ([defaultEnabled] is false).
+  /// At least one valid workout on the day, a rest day or a skipped day
+  /// fulfils it; how many workouts the weekly goal asks for does not matter.
+  workoutDaily(
+    'workout_daily',
+    module: ModuleId.focus,
+    isDaily: true,
+    defaultTarget: 1,
+    minTarget: 1,
+    maxTarget: 1,
+    defaultEnabled: false,
   );
 
   const GoalType(
@@ -96,6 +111,7 @@ enum GoalType {
     required this.minTarget,
     required this.maxTarget,
     this.step = 1,
+    this.defaultEnabled = true,
   });
 
   /// Stable persisted identifier. For daily goals it doubles as the goal key
@@ -120,8 +136,14 @@ enum GoalType {
   /// Valid targets are `minTarget + k * step`.
   final int step;
 
+  /// Whether the goal is on while no goal version exists for it. Every goal
+  /// but [workoutDaily] is on by default; "no version" means off for the
+  /// optional daily workout goal.
+  final bool defaultEnabled;
+
   /// Whether the goal is an on/off switch with the fixed target 1 (weight
-  /// entry and task completion): only the enabled flag is user-editable.
+  /// entry, task completion and the daily workout goal): only the enabled
+  /// flag is user-editable.
   bool get isSwitch => minTarget == maxTarget;
 
   /// The daily goal types in enum order: the order of snapshot items.

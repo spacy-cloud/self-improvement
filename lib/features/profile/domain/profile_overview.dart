@@ -23,6 +23,9 @@ enum ProfileGoalKind {
   taskCompletion,
   workoutWeekly,
 
+  /// The optional daily goal "Workout heute" (BS-99).
+  workoutDaily,
+
   /// The body target weight (a profile value, effective immediately).
   targetWeight,
 }
@@ -194,5 +197,6 @@ ProfileGoalKind _kindOf(GoalType type) {
     GoalType.weightEntry => ProfileGoalKind.weightEntry,
     GoalType.taskCompletion => ProfileGoalKind.taskCompletion,
     GoalType.workoutWeekly => ProfileGoalKind.workoutWeekly,
+    GoalType.workoutDaily => ProfileGoalKind.workoutDaily,
   };
 }

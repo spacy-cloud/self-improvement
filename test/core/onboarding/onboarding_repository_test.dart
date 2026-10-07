@@ -292,4 +292,82 @@ void main() {
       );
     });
   });
+
+  group('the optional daily workout goal (BS-99)', () {
+    Future<List<GoalType>> storedTypes() async => [
+      for (final goal in await GoalVersionRepository(harness.database).all())
+        goal.type,
+    ];
+
+    test('(BS-99) skipping writes a version for every goal but "Workout heute": it stays off', () async {
+      await start();
+      await onboarding.complete(
+        commandId: 'skip',
+        draft: const OnboardingDraft.skipped(),
+      );
+      final types = await storedTypes();
+      expect(types, hasLength(GoalType.values.length - 1));
+      expect(types, isNot(contains(GoalType.workoutDaily)));
+      expect(
+        types.toSet(),
+        GoalType.values.toSet()..remove(GoalType.workoutDaily),
+      );
+
+      final status = (await harness.dayStatusRepository().statusFor(today))!;
+      final daily = status.progressOf(GoalType.workoutDaily)!;
+      expect(daily.applicable, isFalse, reason: 'off, not in "x von y"');
+      expect(status.applicableCount, 5);
+    });
+
+    test(
+      '(BS-99) a finished onboarding with entered goals leaves it off as well',
+      () async {
+        await start();
+        await onboarding.complete(
+          commandId: 'goals',
+          draft: const OnboardingDraft(
+            goals: {GoalType.workoutWeekly: GoalSetting(target: 5)},
+          ),
+        );
+        expect(await storedTypes(), isNot(contains(GoalType.workoutDaily)));
+      },
+    );
+
+    test(
+      '(BS-99) an explicit choice writes the version, effective from today',
+      () async {
+        await start();
+        await onboarding.complete(
+          commandId: 'explicit',
+          draft: const OnboardingDraft(
+            goals: {GoalType.workoutDaily: GoalSetting()},
+          ),
+        );
+        final goals = await GoalVersionRepository(harness.database).all();
+        final daily = goals.singleWhere((g) => g.type == GoalType.workoutDaily);
+        expect(daily.enabled, isTrue);
+        expect(daily.target, 1);
+        expect(daily.effectiveFrom, today);
+        final status = (await harness.dayStatusRepository().statusFor(today))!;
+        expect(status.progressOf(GoalType.workoutDaily)!.applicable, isTrue);
+      },
+    );
+
+    test(
+      '(BS-99) the test harness seeds it off too, unless a test asks for it',
+      () async {
+        await start();
+        await harness.seedOnboarded();
+        expect(await storedTypes(), isNot(contains(GoalType.workoutDaily)));
+        await harness.dispose();
+
+        await start();
+        await harness.seedOnboarded(workoutDailyGoal: true);
+        final daily = (await GoalVersionRepository(
+          harness.database,
+        ).all()).singleWhere((g) => g.type == GoalType.workoutDaily);
+        expect(daily.enabled, isTrue);
+      },
+    );
+  });
 }

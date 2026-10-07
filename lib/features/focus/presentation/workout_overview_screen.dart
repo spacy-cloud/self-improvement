@@ -1,16 +1,22 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:self_improvement/core/design/design.dart';
+import 'package:self_improvement/core/feedback/feedback_service.dart';
 import 'package:self_improvement/core/goals/application/goal_providers.dart';
 import 'package:self_improvement/core/providers/core_providers.dart';
+import 'package:self_improvement/features/focus/application/workout_day_providers.dart';
 import 'package:self_improvement/features/focus/application/workout_providers.dart';
 import 'package:self_improvement/features/focus/application/workout_ui_providers.dart';
 import 'package:self_improvement/features/focus/domain/muscle_recency.dart';
+import 'package:self_improvement/features/focus/domain/workout_day_mark.dart';
 import 'package:self_improvement/features/focus/domain/workout_entry.dart';
 import 'package:self_improvement/features/focus/domain/workout_week.dart';
 import 'package:self_improvement/features/focus/presentation/focus_routes.dart';
 import 'package:self_improvement/features/focus/presentation/focus_widgets.dart';
+import 'package:self_improvement/features/focus/presentation/workout_day_sheet.dart';
 import 'package:self_improvement/features/focus/presentation/workout_labels.dart';
 import 'package:self_improvement/features/focus/presentation/workout_widgets.dart';
 import 'package:self_improvement/shared/local_date.dart';
@@ -18,9 +24,12 @@ import 'package:self_improvement/shared/local_date.dart';
 /// Route of the goals editor (the weekly goal is changed there).
 const String _goalsRoute = '/goals';
 
-/// "Meine Workouts": this week (Monday to Sunday) against the weekly goal, the
-/// muscle groups trained last and the latest workouts. The ring is capped at
-/// 100 %; the real count and minutes stay visible next to it.
+/// "Meine Workouts": today against the optional daily goal "Workout heute"
+/// (only while it counts), this week (Monday to Sunday) against the weekly
+/// goal, the muscle groups trained last and the latest workouts. The ring is
+/// capped at 100 %; the real count and minutes stay visible next to it. The
+/// weekly goal and the daily goal are separate: a rest day or a skipped day
+/// reaches the daily goal and never counts as a workout of the week.
 class WorkoutOverviewScreen extends ConsumerWidget {
   const WorkoutOverviewScreen({super.key});
 
@@ -45,19 +54,37 @@ class WorkoutOverviewScreen extends ConsumerWidget {
             workoutEntriesPageProvider(workoutOverviewLatestCount),
           ),
         ),
-        data: (entries) => entries.isEmpty
-            ? EmptyState(
-                title: 'Noch kein Training',
-                message:
-                    'Trage dein erstes Training ein, dann siehst du hier '
-                    'deine Woche.',
-                actionLabel: 'Training eintragen',
-                onAction: () => context.push(WorkoutRoutes.create),
-                icon: AppIcon.workout,
-                accent: AppAccent.workout,
-              )
-            : _Content(entries: entries),
+        data: (entries) =>
+            entries.isEmpty ? const _NoWorkouts() : _Content(entries: entries),
       ),
+    );
+  }
+}
+
+/// No workout yet. With the daily goal on, the day card stays reachable: a rest
+/// day or a skipped day needs no workout.
+class _NoWorkouts extends ConsumerWidget {
+  const _NoWorkouts();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final empty = EmptyState(
+      title: 'Noch kein Training',
+      message:
+          'Trage dein erstes Training ein, dann siehst du hier '
+          'deine Woche.',
+      actionLabel: 'Training eintragen',
+      onAction: () => context.push(WorkoutRoutes.create),
+      icon: AppIcon.workout,
+      accent: AppAccent.workout,
+    );
+    final daily = ref.watch(workoutDailyGoalAppliesProvider).value ?? false;
+    if (!daily) {
+      return empty;
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [const _TodayCard(), empty],
     );
   }
 }
@@ -75,6 +102,7 @@ class _Content extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        const _TodayCard(),
         const _WeekCard(),
         const SizedBox(height: 12),
         const _RecencyCard(),
@@ -460,14 +488,122 @@ class _MuscleChip extends StatelessWidget {
   }
 }
 
-/// The weekly goal is changed in the goals editor; changes apply from
-/// tomorrow.
+/// "Heute": how today answers "Wie war dein Tag?" while the daily goal "Workout
+/// heute" counts (Figma `4123:316`, as a card of the workout area). Hidden
+/// without the goal: then there is nothing a rest day could reach.
+class _TodayCard extends ConsumerWidget {
+  const _TodayCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final daily = ref.watch(workoutDailyGoalAppliesProvider).value ?? false;
+    final state = ref.watch(workoutDayStateProvider).value;
+    if (!daily || state == null) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: _TodayCardBody(state: state),
+    );
+  }
+}
+
+class _TodayCardBody extends ConsumerWidget {
+  const _TodayCardBody({required this.state});
+
+  final WorkoutDayState state;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.tokens.colors;
+    final outcome = state.outcome;
+    final busy = ref.watch(workoutDayActionsProvider);
+    final icon = switch (outcome) {
+      WorkoutDayOutcome.open => null,
+      WorkoutDayOutcome.trained => AppIcon.check.data,
+      WorkoutDayOutcome.rest => workoutRestIcon,
+      WorkoutDayOutcome.skipped => workoutSkipIcon,
+    };
+    final Widget? action = switch (outcome) {
+      WorkoutDayOutcome.open => SecondaryButton(
+        label: 'Wie war dein Tag?',
+        onPressed: () => unawaited(askHowTheDayWas(context, ref)),
+      ),
+      WorkoutDayOutcome.trained => null,
+      WorkoutDayOutcome.rest || WorkoutDayOutcome.skipped => SecondaryButton(
+        label: 'Rückgängig',
+        semanticLabel: workoutDayTakeBackLabel(state),
+        onPressed: busy
+            ? null
+            : () => unawaited(
+                takeBackWorkoutDay(
+                  ref.read(workoutDayActionsProvider.notifier),
+                  ref.read(feedbackServiceProvider),
+                  state.takeBackMark!,
+                ),
+              ),
+      ),
+    };
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const CardHeading(
+            icon: Icons.today_rounded,
+            title: 'Heute',
+            accent: AppAccent.workout,
+            trailing: 'Ziel: Workout heute',
+          ),
+          const SizedBox(height: 12),
+          Semantics(
+            container: true,
+            label: workoutDaySpoken(state),
+            excludeSemantics: true,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    if (icon != null) ...[
+                      Icon(icon, size: 20, color: colors.moduleWorkout),
+                      const SizedBox(width: 8),
+                    ],
+                    Flexible(
+                      child: Text(
+                        workoutDayValue(state),
+                        style: AppTextStyles.titleSection.copyWith(
+                          color: colors.textPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  workoutDayCaption(state),
+                  style: AppTextStyles.captionDefault.copyWith(
+                    color: colors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (action != null) ...[const SizedBox(height: 12), action],
+        ],
+      ),
+    );
+  }
+}
+
+/// The goals are changed in the goals editor: the weekly goal and the daily
+/// goal "Workout heute". Changes apply from tomorrow.
 class _GoalLink extends ConsumerWidget {
   const _GoalLink();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final target = ref.watch(workoutWeekSummaryProvider).value?.weeklyTarget;
+    final plan = ref.watch(workoutDailyGoalPlanProvider).value;
     return AppListGroup(
       children: [
         EntryListTile.chevron(
@@ -480,6 +616,14 @@ class _GoalLink extends ConsumerWidget {
           accent: AppAccent.workout,
           onTap: () => context.push(_goalsRoute),
         ),
+        if (plan != null)
+          EntryListTile.chevron(
+            title: 'Tagesziel „Workout heute“',
+            subtitle: workoutDailyGoalPlanText(plan),
+            icon: AppIcon.workout.data,
+            accent: AppAccent.workout,
+            onTap: () => context.push(_goalsRoute),
+          ),
       ],
     );
   }

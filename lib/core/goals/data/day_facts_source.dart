@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:self_improvement/core/database/app_database.dart';
 import 'package:self_improvement/core/goals/domain/day_status.dart';
+import 'package:self_improvement/core/goals/domain/workout_day_mark_kind.dart';
 import 'package:self_improvement/shared/local_date.dart';
 
 /// Aggregates the stored facts per local day for goal fulfilment.
@@ -8,8 +9,9 @@ import 'package:self_improvement/shared/local_date.dart';
 /// One grouped query per fact table over a date range (no per-row work in
 /// Dart): water sum, step total (a recorded 0 differs from no record), weight
 /// entry count, completed focus seconds on the completion day, tasks completed
-/// that day and which habits were checked (only active habits count). Soft
-/// deleted rows never count.
+/// that day, which habits were checked (only active habits count), the
+/// workouts of the day and its rest or skipped mark. Soft deleted rows never
+/// count.
 class DayFactsSource {
   DayFactsSource(this._database);
 
@@ -24,6 +26,8 @@ class DayFactsSource {
     _database.tasks,
     _database.habitChecks,
     _database.habits,
+    _database.workoutEntries,
+    _database.workoutDayMarks,
   ];
 
   /// Facts for every day in `[from, to]` that has at least one fact. Days
@@ -40,6 +44,8 @@ class DayFactsSource {
     final focus = <LocalDate, int>{};
     final tasks = <LocalDate, int>{};
     final habits = <LocalDate, Set<String>>{};
+    final workouts = <LocalDate, int>{};
+    final marks = <LocalDate, WorkoutDayMarkKind>{};
 
     Future<void> grouped(
       String sql,
@@ -94,6 +100,23 @@ class DayFactsSource {
           habits.putIfAbsent(date, () => <String>{}).add(row.read<String>('h')),
     );
 
+    await grouped(
+      'SELECT local_date AS d, COUNT(*) AS v FROM workout_entries '
+      'WHERE deleted_at_utc IS NULL AND local_date BETWEEN ?1 AND ?2 '
+      'GROUP BY local_date',
+      (date, row) => workouts[date] = row.read<int>('v'),
+    );
+    await grouped('SELECT local_date AS d, kind AS k FROM workout_day_marks '
+        'WHERE deleted_at_utc IS NULL AND local_date BETWEEN ?1 AND ?2', (
+      date,
+      row,
+    ) {
+      final kind = WorkoutDayMarkKind.tryParse(row.read<String>('k'));
+      if (kind != null) {
+        marks[date] = kind;
+      }
+    });
+
     final days = <LocalDate>{
       ...water.keys,
       ...steps.keys,
@@ -101,6 +124,8 @@ class DayFactsSource {
       ...focus.keys,
       ...tasks.keys,
       ...habits.keys,
+      ...workouts.keys,
+      ...marks.keys,
     };
     return {
       for (final day in days)
@@ -112,6 +137,8 @@ class DayFactsSource {
           focusCompletedSeconds: focus[day] ?? 0,
           tasksCompleted: tasks[day] ?? 0,
           habitIdsChecked: habits[day] ?? const {},
+          workoutEntries: workouts[day] ?? 0,
+          workoutDayMark: marks[day],
         ),
     };
   }
@@ -131,5 +158,7 @@ class DayFactsSource {
     focusCompletedSeconds: 0,
     tasksCompleted: 0,
     habitIdsChecked: const {},
+    workoutEntries: 0,
+    workoutDayMark: null,
   );
 }

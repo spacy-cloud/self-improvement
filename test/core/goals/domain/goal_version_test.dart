@@ -112,14 +112,41 @@ void main() {
   });
 
   group('effectiveGoalOrDefault', () {
-    test('falls back to the default, enabled, when no version exists', () {
+    test('falls back to the default when no version exists: on, except "Workout heute" (BS-99)', () {
       for (final type in GoalType.values) {
         final goal = effectiveGoalOrDefault(const [], type, start);
         expect(goal.type, type);
         expect(goal.target, type.defaultTarget);
-        expect(goal.enabled, isTrue);
+        expect(
+          goal.enabled,
+          type != GoalType.workoutDaily,
+          reason:
+              '${type.key}: no version means off only for the daily workout goal',
+        );
       }
     });
+
+    test(
+      '(BS-99) a version switches "Workout heute" on from its day, not before',
+      () {
+        final on = GoalVersion(
+          type: GoalType.workoutDaily,
+          effectiveFrom: start.addDays(1),
+        );
+        expect(
+          effectiveGoalOrDefault([on], GoalType.workoutDaily, start).enabled,
+          isFalse,
+        );
+        expect(
+          effectiveGoalOrDefault(
+            [on],
+            GoalType.workoutDaily,
+            start.addDays(1),
+          ).enabled,
+          isTrue,
+        );
+      },
+    );
 
     test('falls back before the first version, uses versions afterwards', () {
       final versions = [water3000];

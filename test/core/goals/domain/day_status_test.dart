@@ -3,6 +3,7 @@ import 'package:self_improvement/core/goals/domain/day_snapshot.dart';
 import 'package:self_improvement/core/goals/domain/day_status.dart';
 import 'package:self_improvement/core/goals/domain/goal_keys.dart';
 import 'package:self_improvement/core/goals/domain/goal_type.dart';
+import 'package:self_improvement/core/goals/domain/workout_day_mark_kind.dart';
 import 'package:self_improvement/core/modules/module_id.dart';
 import 'package:self_improvement/shared/local_date.dart';
 
@@ -230,12 +231,14 @@ void main() {
         focusCompletedSeconds: 99999,
         tasksCompleted: 9,
         habitIdsChecked: const {'h1'},
+        workoutEntries: 4,
+        workoutDayMark: WorkoutDayMarkKind.rest,
       );
       final status = statusOf([
         for (final type in GoalType.dailyTypes) goal(type, applicable: false),
         habit('h1', applicable: false),
       ], facts);
-      expect(status.goals, hasLength(6));
+      expect(status.goals, hasLength(7), reason: 'six daily goals and a habit');
       expect(status.goals.where((g) => g.fulfilled), isEmpty);
       expect(status.applicableCount, 0);
       expect(status.fulfilledCount, 0);
@@ -254,6 +257,151 @@ void main() {
       expect(status.goals.last.applicable, isFalse);
       expect(status.goals.last.fulfilled, isFalse);
       expect(status.goals.last.current, 12000);
+    });
+  });
+
+  group('daily workout goal "Workout heute" (BS-99)', () {
+    final item = goal(GoalType.workoutDaily);
+
+    test(
+      '(BS-99, AT20) one workout of the day is enough, the count only shows',
+      () {
+        for (final (entries, fulfilled) in [
+          (0, false),
+          (1, true),
+          (2, true),
+          (5, true),
+          (14, true),
+        ]) {
+          final result = progress(
+            item,
+            DayFacts(date: day, workoutEntries: entries),
+          );
+          expect(result.fulfilled, fulfilled, reason: '$entries workouts');
+          expect(result.current, entries);
+          expect(result.target, 1);
+          expect(result.applicable, isTrue);
+        }
+      },
+    );
+
+    test(
+      '(BS-99) a rest day and a skipped day fulfil it without a workout',
+      () {
+        for (final kind in WorkoutDayMarkKind.values) {
+          final result = progress(
+            item,
+            DayFacts(date: day, workoutDayMark: kind),
+          );
+          expect(result.fulfilled, isTrue, reason: kind.key);
+          expect(result.current, 1, reason: 'a mark counts as one');
+          expect(result.target, 1);
+        }
+      },
+    );
+
+    test('(BS-99) a day without a workout and without a mark is open', () {
+      final result = progress(item, DayFacts(date: day));
+      expect(result.fulfilled, isFalse);
+      expect(result.current, 0);
+      expect(result.applicable, isTrue);
+    });
+
+    test(
+      '(BS-99) with a workout the count shows the workouts, not the mark',
+      () {
+        final result = progress(
+          item,
+          DayFacts(
+            date: day,
+            workoutEntries: 2,
+            workoutDayMark: WorkoutDayMarkKind.skipped,
+          ),
+        );
+        expect(result.fulfilled, isTrue);
+        expect(result.current, 2);
+      },
+    );
+
+    test('(BS-99) the weekly workout goal in the snapshot is ignored', () {
+      final status = statusOf([
+        goal(GoalType.workoutWeekly, target: 5),
+        item,
+      ], DayFacts(date: day, workoutEntries: 1));
+      expect(status.goals.map((g) => g.goalKey), ['workout_daily']);
+      expect(status.goals.single.fulfilled, isTrue);
+      expect(status.applicableCount, 1);
+    });
+
+    test(
+      '(BS-99) a goal that is off never counts, with a workout or a mark',
+      () {
+        final off = goal(GoalType.workoutDaily, applicable: false);
+        for (final facts in [
+          DayFacts(date: day, workoutEntries: 3),
+          DayFacts(date: day, workoutDayMark: WorkoutDayMarkKind.rest),
+        ]) {
+          final result = progress(off, facts);
+          expect(result.applicable, isFalse);
+          expect(result.fulfilled, isFalse);
+        }
+        final status = statusOf([
+          goal(GoalType.water, target: 2000),
+          off,
+        ], DayFacts(date: day, waterMl: 2000, workoutEntries: 1));
+        expect(status.applicableCount, 1, reason: 'the ring says "1 von 1"');
+        expect(status.fulfilledCount, 1);
+      },
+    );
+
+    test('(BS-99) the ring counts it like any other goal', () {
+      final goals = [
+        goal(GoalType.water, target: 2000),
+        goal(GoalType.workoutDaily),
+      ];
+      final open = statusOf(goals, DayFacts(date: day, waterMl: 2000));
+      expect(open.applicableCount, 2);
+      expect(open.fulfilledCount, 1);
+      expect(open.isComplete, isFalse);
+
+      final rest = statusOf(
+        goals,
+        DayFacts(
+          date: day,
+          waterMl: 2000,
+          workoutDayMark: WorkoutDayMarkKind.rest,
+        ),
+      );
+      expect(rest.fulfilledCount, 2);
+      expect(rest.isComplete, isTrue);
+      expect(rest.ringFraction, 1.0);
+    });
+
+    test(
+      '(BS-99, G02) a rest day alone makes the day active for the streak',
+      () {
+        final status = statusOf([
+          goal(GoalType.workoutDaily),
+        ], DayFacts(date: day, workoutDayMark: WorkoutDayMarkKind.skipped));
+        expect(status.isActive, isTrue);
+        final none = statusOf([
+          goal(GoalType.workoutDaily),
+        ], DayFacts(date: day));
+        expect(none.isActive, isFalse);
+      },
+    );
+
+    test('(BS-99) progressOf finds the goal of the day or nothing', () {
+      final status = statusOf([
+        goal(GoalType.water),
+        goal(GoalType.workoutDaily),
+      ], DayFacts(date: day));
+      expect(
+        status.progressOf(GoalType.workoutDaily)?.goalKey,
+        'workout_daily',
+      );
+      expect(status.progressOf(GoalType.water)?.goalKey, 'water');
+      expect(status.progressOf(GoalType.steps), isNull);
     });
   });
 

@@ -62,7 +62,7 @@ final class GoalSnapshotItem {
   /// Whether the goal counts on this day (enabled and its module active).
   final bool applicable;
 
-  /// The goal type for the five daily keys, `null` for habits and unknown keys.
+  /// The goal type for the daily keys, `null` for habits and unknown keys.
   GoalType? get type => GoalType.tryParse(goalKey);
 
   /// The habit id for habit keys, otherwise `null`.
@@ -87,9 +87,10 @@ final class GoalSnapshotItem {
 
 /// The goals that count on one local day, with their frozen thresholds.
 ///
-/// Items are ordered deterministically: the five daily goal types in
-/// `GoalType` enum order, then the applicable habits sorted by habit id. Every
-/// snapshot contains all five daily types (not applicable ones included).
+/// Items are ordered deterministically: the daily goal types in `GoalType` enum
+/// order, then the applicable habits sorted by habit id. Every snapshot
+/// contains all daily types (not applicable ones included, so a day without
+/// the optional "Workout heute" goal still shows it as not applicable).
 @immutable
 final class DaySnapshot {
   const DaySnapshot({required this.date, required this.items});
@@ -158,7 +159,7 @@ final class DaySnapshot {
 ///   only on days it applies ([HabitSnapshotInput.applicableOn]); its item is
 ///   applicable only while the `tasks` module is enabled on that day.
 ///
-/// Workout week goal, meals and XP are not daily goals and never appear.
+/// The weekly workout goal, meals and XP are not daily goals and never appear.
 DaySnapshot? buildDaySnapshot({
   required LocalDate day,
   required LocalDate profileStart,
@@ -185,7 +186,7 @@ DaySnapshot? buildDaySnapshot({
 /// A module change takes effect for today immediately: goals of a disabled
 /// module become not applicable, and enabling the module again restores them
 /// with the ORIGINAL frozen target and the goal's own enabled flag (a goal that
-/// was switched off stays off). The five daily goal items are never dropped and
+/// was switched off stays off). The daily goal items are never dropped and
 /// never retargeted: their targets are taken from [stored], even if [versions]
 /// would resolve to something else by now. Habit items follow [habits]: a habit
 /// created today is added, one that is gone is removed.
