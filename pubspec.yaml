@@ -56,3 +56,6 @@ flutter:
   assets:
     # Licence text, registered in the LicenseRegistry by registerDesignLicenses().
     - assets/fonts/OFL.txt
+    # The licence of the own code (the file LICENSE of the repository). The page
+    # "Über die App" shows exactly this file; there is no second copy (D-021).
+    - LICENSE
