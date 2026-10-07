@@ -113,7 +113,9 @@ class HealthStepsActions {
   }
 
   /// "Zugriff erlauben": shows the system dialog and compares when it was
-  /// given.
+  /// given. The explanation comes BEFORE this call and is not part of it (it
+  /// needs a screen): the screens reach it through
+  /// `performHealthNoticeAction`, which shows the explanation first.
   Future<void> allowAccess() async {
     final result = await _controller.allowAccess();
     switch (result) {
@@ -157,7 +159,9 @@ class HealthStepsActions {
     }
   }
 
-  /// Runs the action of a notice button.
+  /// Runs the action of a notice button. Screens do not call this directly but
+  /// `performHealthNoticeAction`, so that "Zugriff erlauben" never starts the
+  /// system dialog without the explanation.
   Future<void> perform(HealthNoticeAction action) => switch (action) {
     HealthNoticeAction.allowAccess => allowAccess(),
     HealthNoticeAction.openSettings => openAccessSettings(),

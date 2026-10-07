@@ -3,6 +3,7 @@ import 'dart:ui' show Tristate;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:self_improvement/core/design/design.dart';
+import 'package:self_improvement/core/providers/core_providers.dart';
 import 'package:self_improvement/features/dashboard/application/day_browser_providers.dart';
 import 'package:self_improvement/features/dashboard/presentation/dashboard_cards_screen.dart';
 import 'package:self_improvement/features/dashboard/presentation/home_screen.dart';
@@ -450,6 +451,76 @@ void main() {
       expect(find.text('Karten anpassen'), findsOneWidget);
       await _settleDay(tester);
       expect(find.text('Freitag, 2. Oktober'), findsOneWidget);
+    });
+  });
+  group('the zone changes while a day before today is shown (BS-93, BS-110, '
+      'AT25, R2-03)', () {
+    testWidgets('(BS-93, BS-110, AT25, R2-03) west: the day shown becomes '
+        'today, the cards of that day are not built as a day before today '
+        '(no exception), and Home shows today', (tester) async {
+      // 03:00 on Saturday, 3 October in Berlin.
+      final home = await pumpRealHome(tester, nowIso: '2026-10-03T01:00:00Z');
+      final yesterday = LocalDate(2026, 10, 2);
+      await showDay(tester, home, yesterday);
+      expect(find.text('Nicht heute'), findsOneWidget);
+      expect(find.text('Freitag, 2. Oktober'), findsOneWidget);
+      expect(
+        find.text('Aufgaben und Gewohnheiten'),
+        findsOneWidget,
+        reason: 'the card of the day before today is mounted',
+      );
+
+      // 21:00 on Friday, 2 October in New York: "today" is the day shown.
+      home.harness.clock.setTimeZone('America/New_York');
+      home.container.read(todayProvider.notifier).refresh();
+      await tester.pump();
+      expect(
+        tester.takeException(),
+        isNull,
+        reason: 'no card of a day before today for a day that is today',
+      );
+      expect(
+        find.text('Nicht heute'),
+        findsNothing,
+        reason: 'the page of the day shown is not kept for a day that is today',
+      );
+      await settle(tester);
+      expect(tester.takeException(), isNull);
+
+      expect(home.container.read(todayProvider), yesterday);
+      expect(home.container.read(browsedDayProvider).isToday, isTrue);
+      expect(find.text('Nicht heute'), findsNothing);
+      expect(find.text('Dein Tag im Überblick'), findsOneWidget);
+      expect(find.text('Freitag, 2. Oktober'), findsOneWidget);
+      expect(find.text('Heute abhaken'), findsOneWidget);
+      expect(find.text('Aufgaben und Gewohnheiten'), findsNothing);
+    });
+
+    testWidgets('(BS-93, AT25, R2-03) east: the choice is dropped, Home shows '
+        'the new today, no exception', (tester) async {
+      // 14:00 on Saturday, 3 October in Berlin.
+      final home = await pumpRealHome(tester, nowIso: '2026-10-03T12:00:00Z');
+      await showDay(tester, home, LocalDate(2026, 10, 1));
+      expect(find.text('Nicht heute'), findsOneWidget);
+
+      // 02:00 on Sunday, 4 October on Kiritimati (UTC+14).
+      home.harness.clock.setTimeZone('Pacific/Kiritimati');
+      home.container.read(todayProvider.notifier).refresh();
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text('Nicht heute'),
+        findsNothing,
+        reason: 'the page of the old today is not kept under the new today',
+      );
+      await settle(tester);
+      expect(tester.takeException(), isNull);
+
+      expect(home.container.read(todayProvider), LocalDate(2026, 10, 4));
+      expect(home.container.read(selectedDayProvider), isNull);
+      expect(find.text('Nicht heute'), findsNothing);
+      expect(find.text('Sonntag, 4. Oktober'), findsOneWidget);
+      expect(find.text('Heute abhaken'), findsOneWidget);
     });
   });
 }

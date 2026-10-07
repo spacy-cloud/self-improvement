@@ -10,6 +10,7 @@ import 'package:self_improvement/features/body/steps/application/health_steps_co
 import 'package:self_improvement/features/body/steps/application/steps_providers.dart';
 import 'package:self_improvement/features/body/steps/domain/health_steps_status.dart';
 import 'package:self_improvement/features/body/steps/domain/step_source.dart';
+import 'package:self_improvement/features/body/steps/presentation/health_notice_actions.dart';
 import 'package:self_improvement/features/body/steps/presentation/health_notice_card.dart';
 import 'package:self_improvement/features/body/steps/presentation/health_steps_labels.dart';
 import 'package:self_improvement/features/body/steps/presentation/steps_labels.dart';
@@ -53,7 +54,7 @@ class StepsDashboardCard extends ConsumerWidget {
             state: state,
             health: health,
             warning: warning,
-            quickAction: _warningAction(health, actions),
+            quickAction: _warningAction(context, ref, health),
           );
         }
         final fromHealth =
@@ -144,7 +145,14 @@ class StepsDashboardCard extends ConsumerWidget {
     );
   }
 
-  Widget? _warningAction(HealthStepsStatus health, HealthStepsActions actions) {
+  /// The button below the warning chip. It takes the same way as the buttons
+  /// of the notices ([performHealthNoticeAction]): "Zugriff erlauben" shows the
+  /// explanation before the system dialog.
+  Widget? _warningAction(
+    BuildContext context,
+    WidgetRef ref,
+    HealthStepsStatus health,
+  ) {
     final button = healthCardWarningAction(health);
     if (button == null) {
       return null;
@@ -154,7 +162,8 @@ class StepsDashboardCard extends ConsumerWidget {
       child: HealthTextAction(
         label: button.label,
         semanticLabel: button.semanticLabel,
-        onPressed: () => unawaited(actions.perform(button.action)),
+        onPressed: () =>
+            unawaited(performHealthNoticeAction(context, ref, button.action)),
       ),
     );
   }

@@ -5,6 +5,7 @@ import 'package:self_improvement/core/dashboard/domain/motivation.dart';
 import 'package:self_improvement/core/design/design.dart';
 import 'package:self_improvement/core/goals/domain/goal_type.dart';
 import 'package:self_improvement/core/goals/domain/workout_day_mark_kind.dart';
+import 'package:self_improvement/core/modules/module_id.dart';
 import 'package:self_improvement/core/onboarding/onboarding_repository.dart';
 import 'package:self_improvement/core/providers/command_providers.dart';
 import 'package:self_improvement/core/providers/core_providers.dart';
@@ -129,6 +130,125 @@ void main() {
       expect(find.text('0 von 5'), findsOneWidget);
     });
   });
+
+  group(
+    'the focus card keeps the goal the day had (BS-93, R2-02, AT24, C04)',
+    () {
+      testWidgets(
+        '(BS-93, R2-02, AT24, C04) the focus module was off on the day: '
+        'the ring has no focus goal and the card says "Kein Tagesziel an '
+        'diesem Tag", never "Es fehlten …"',
+        (tester) async {
+          final home = await pumpRealHome(
+            tester,
+            seed: (h) => seedModuleOffBetween(
+              h,
+              ModuleId.focus,
+              off: _day.addDays(-1),
+              backOn: _day.addDays(1),
+            ),
+          );
+          await seedFocus(tester, home, _day, 10);
+          await showDay(tester, home, _day);
+
+          expect(find.text('0 von 4'), findsOneWidget, reason: 'the ring');
+          expect(find.text('Kein Tagesziel an diesem Tag'), findsOneWidget);
+          expect(find.textContaining('fehlten'), findsNothing);
+          expect(
+            _rich('10 Min.'),
+            findsOneWidget,
+            reason: 'the time, no target',
+          );
+          expect(
+            find.textContaining('/ 25 Min.', findRichText: true),
+            findsNothing,
+          );
+        },
+      );
+
+      testWidgets('(BS-93, R2-02, AT24, C04) a day on which the goal applied '
+          'keeps it, a day on which the module was off has none, side by side '
+          'with the ring of each', (tester) async {
+        final offDay = _day.addDays(-2);
+        final home = await pumpRealHome(
+          tester,
+          seed: (h) => seedModuleOffBetween(
+            h,
+            ModuleId.focus,
+            off: offDay.addDays(-1),
+            backOn: offDay.addDays(1),
+          ),
+        );
+        await seedFocus(tester, home, offDay, 10);
+        await seedFocus(tester, home, _day, 10);
+
+        await showDay(tester, home, _day);
+        expect(find.text('0 von 5'), findsOneWidget);
+        expect(_rich('10 / 25 Min.'), findsOneWidget);
+        expect(
+          find.text('Es fehlten 15 Min. bis zum Tagesziel'),
+          findsOneWidget,
+        );
+        expect(find.text('Kein Tagesziel an diesem Tag'), findsNothing);
+
+        await showDay(tester, home, offDay);
+        expect(find.text('0 von 4'), findsOneWidget);
+        expect(find.text('Kein Tagesziel an diesem Tag'), findsOneWidget);
+        expect(find.textContaining('fehlten'), findsNothing);
+      });
+
+      testWidgets(
+        '(BS-93, R2-02, AT24, C04) the focus goal switched off for the '
+        'day: the same words, like the ring',
+        (tester) async {
+          final home = await pumpRealHome(tester);
+          // Switched off "ab morgen" on the day before: it counts from the day.
+          await atInstant(
+            tester,
+            home,
+            atMorning(_day.addDays(-1)),
+            () => home.container
+                .read(goalsCommandsProvider)
+                .update(
+                  commandId: home.harness.ids.newId(),
+                  changes: <GoalType, GoalSetting>{
+                    GoalType.focusMinutes: const GoalSetting(enabled: false),
+                  },
+                ),
+          );
+          await seedFocus(tester, home, _day, 10);
+          await showDay(tester, home, _day);
+          expect(find.text('0 von 4'), findsOneWidget);
+          expect(find.text('Kein Tagesziel an diesem Tag'), findsOneWidget);
+          expect(find.textContaining('fehlten'), findsNothing);
+        },
+      );
+
+      testWidgets('(BS-93, R2-02, AT24, C04) a focus goal changed "ab morgen": '
+          'the day before keeps its goal in the card', (tester) async {
+        final home = await pumpRealHome(tester);
+        await seedFocus(tester, home, hostToday, 20);
+        await tester.runCommand(
+          () => home.container
+              .read(goalsCommandsProvider)
+              .update(
+                commandId: home.harness.ids.newId(),
+                changes: <GoalType, GoalSetting>{
+                  GoalType.focusMinutes: const GoalSetting(target: 60),
+                },
+              ),
+        );
+        await _nextDay(tester, home);
+        await showDay(tester, home, hostToday);
+        expect(_rich('20 / 25 Min.'), findsOneWidget);
+        expect(
+          find.text('Es fehlten 5 Min. bis zum Tagesziel'),
+          findsOneWidget,
+        );
+        expect(_rich('20 / 60 Min.'), findsNothing);
+      });
+    },
+  );
 
   group('the ring of the day (BS-93, C04, C06)', () {
     Future<RealHome> seedDay(WidgetTester tester) async {

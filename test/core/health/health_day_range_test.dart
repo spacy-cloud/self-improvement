@@ -162,4 +162,55 @@ void main() {
       expect(window.last.day, LocalDate(2027, 1, 2));
     });
   });
+  group('which days a comparison reads (BS-97, R2-05)', () {
+    final today = LocalDate(2026, 10, 3);
+
+    test('(BS-97, R2-05) today and the six days before are in, the seventh day '
+        'back and older ones are out', () {
+      for (var back = 0; back <= 6; back++) {
+        expect(
+          isInHealthSyncWindow(today.addDays(-back), today),
+          isTrue,
+          reason: '$back days back',
+        );
+      }
+      for (final back in [7, 8, 30, 400]) {
+        expect(
+          isInHealthSyncWindow(today.addDays(-back), today),
+          isFalse,
+          reason: '$back days back',
+        );
+      }
+    });
+
+    test('(BS-97, R2-05) a day after today is out (the window ends today)', () {
+      expect(isInHealthSyncWindow(today.addDays(1), today), isFalse);
+    });
+
+    test('(BS-97, R2-05) it is the very window a comparison reads: the days '
+        'of healthSyncWindow are in, the day before the oldest is out', () {
+      final clock = FakeClock.at('2026-10-03T08:00:00Z');
+      final window = healthSyncWindow(clock);
+      for (final range in window) {
+        expect(isInHealthSyncWindow(range.day, clock.today()), isTrue);
+      }
+      expect(
+        isInHealthSyncWindow(window.first.day.addDays(-1), clock.today()),
+        isFalse,
+      );
+    });
+
+    test('(BS-97, R2-05) it counts calendar days across a month and a year '
+        'boundary', () {
+      final newYear = LocalDate(2027, 1, 2);
+      expect(isInHealthSyncWindow(LocalDate(2026, 12, 27), newYear), isTrue);
+      expect(isInHealthSyncWindow(LocalDate(2026, 12, 26), newYear), isFalse);
+    });
+
+    test('(BS-97, R2-05) it takes the number of days it is asked for', () {
+      expect(isInHealthSyncWindow(today, today, days: 1), isTrue);
+      expect(isInHealthSyncWindow(today.addDays(-1), today, days: 1), isFalse);
+      expect(isInHealthSyncWindow(today.addDays(-29), today, days: 30), isTrue);
+    });
+  });
 }
