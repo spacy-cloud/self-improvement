@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:self_improvement/core/health/domain/health_steps_source.dart';
 
 /// The adapter for a device without a health interface the app supports (every
-/// platform except Android in this version). It reports
+/// platform except Android and iOS). It reports
 /// [HealthAvailability.unsupported], so the switch stays hidden and nothing
 /// reads or asks.
 @immutable

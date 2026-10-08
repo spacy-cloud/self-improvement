@@ -248,7 +248,7 @@ void main() {
     });
 
     test('the pub package "health" is not used: the app has its own '
-        'channel and no iOS HealthKit code (BS-97, D-031)', () {
+        'channels for Android and iOS (BS-97, D-031; BS-122, D-034)', () {
       final pubspec = read('pubspec.yaml');
       expect(pubspec, isNot(matches(RegExp(r'^\s+health:', multiLine: true))));
       expect(read('pubspec.lock'), isNot(contains('name: health\n')));

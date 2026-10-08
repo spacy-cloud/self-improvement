@@ -1,7 +1,10 @@
 name: iOS IPA (unsigned)
 
-# Builds an UNSIGNED .ipa for sideloading tools that sign it themselves (for example
-# SideStore with the tester's Apple ID). No certificates and no secrets are used.
+# Builds an .ipa WITHOUT a certificate for sideloading tools that sign it themselves (for example
+# SideStore with the tester's Apple ID). No certificates and no secrets are used. The only
+# signature is an ad-hoc one ("-") on the main executable that carries the entitlements of
+# ios/Runner/Runner.entitlements (HealthKit, BS-122): the build itself leaves them out, and the
+# signing tool of the tester reads them from there. The tool replaces that signature.
 # A successful build is not a device test (BS-95). Runs for every push to dev (so the tester
 # gets a fresh IPA after each merge), for the BS-95 feature branch and by hand (workflow_dispatch).
 on:
@@ -40,7 +43,17 @@ jobs:
       - run: dart run build_runner build
       - name: Build the iOS app without code signing
         run: flutter build ios --release --no-codesign
-      - name: Package the unsigned IPA
+      - name: Carry the entitlements in an ad-hoc signature (no certificate)
+        run: |
+          set -euo pipefail
+          exe="build/ios/iphoneos/Runner.app/Runner"
+          test -f "$exe"
+          codesign --force --sign - --identifier de.lf10.selfimprovement \
+            --entitlements ios/Runner/Runner.entitlements "$exe"
+          codesign -d --entitlements :- "$exe" > build/entitlements-in-binary.plist 2>/dev/null
+          cat build/entitlements-in-binary.plist
+          grep -q "com.apple.developer.healthkit" build/entitlements-in-binary.plist
+      - name: Package the IPA
         run: |
           set -euo pipefail
           app="build/ios/iphoneos/Runner.app"

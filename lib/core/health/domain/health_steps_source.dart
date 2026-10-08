@@ -1,7 +1,8 @@
 /// Whether the health interface of the device can be used.
 ///
 /// The interface is the part of the operating system (or an app) that collects
-/// the steps of the phone, a watch and other apps (Health Connect on Android).
+/// the steps of the phone, a watch and other apps (Health Connect on Android,
+/// HealthKit on iOS).
 enum HealthAvailability {
   /// The interface exists and can be used.
   available,
@@ -57,9 +58,8 @@ final class HealthStepsException implements Exception {
 /// The seam between the steps and the health data of the phone.
 ///
 /// The steps feature only knows this interface, so the Android adapter
-/// (Health Connect) and a later iOS adapter (HealthKit) implement the same
-/// methods without any change above it, and host tests use
-/// `FakeHealthStepsSource`.
+/// (Health Connect) and the iOS adapter (HealthKit) implement the same methods
+/// without any change above it, and host tests use `FakeHealthStepsSource`.
 ///
 /// ## What the interface does and does not offer
 ///
