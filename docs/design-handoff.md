@@ -137,7 +137,7 @@ Weitere Tokens: Modulfarben (`color/module/*`), Abstände 4/8/12/16/24/32, Radie
 
 - iPhone-Statusleiste, Dynamic Island und Home-Indikator sind nur Figma-Rahmen; Android nutzt echte Systemleisten.
 - Schlafwerte entfallen; keine erfundenen Werte (km, kcal, Aktivminuten ohne Datenquelle).
-- Einstellungen ohne Konto/Cloud; Health nur als Schalter „Schritte aus Health übernehmen“ (BS-97, Entwurf `4122:314`, nur Android), keine weiteren Health-Zeilen; lokales Profil, „Alle Daten zurücksetzen“ statt „Konto löschen“.
+- Einstellungen ohne Konto/Cloud; Health nur als Schalter „Schritte aus Health übernehmen“ (BS-97, Entwurf `4122:314`; Android, und mit BS-122 iOS), keine weiteren Health-Zeilen; lokales Profil, „Alle Daten zurücksetzen“ statt „Konto löschen“.
 - Plus-Menü mit 8 Einträgen und Schließen im Sheet; die rote X-Taste in der Navigation ist zusätzlich erlaubt.
 - Detailseite Wasser entfällt; „Wasser eintragen“ deckt Tagesstand und Verlauf ab.
 - Workout-Erfassung enthält zusätzlich Muskelgruppen und Intensität (optional, über F03 hinaus); die Trainingskategorie folgt Kraft/Cardio/Mobility/Sport.
@@ -498,7 +498,7 @@ Die Entwürfe legen Verhalten fest, das die Tickets offen ließen. Die Umsetzung
 - Vergangene Tage: Der Hinweis „Nicht heute“ trägt „Zurück zu heute“, die Pfeile gelten zusätzlich zur Wischgeste, der Tag ist nur lesend.
 - Ruhetag und Überspringen erscheinen als eigene Status, zählen als erreicht, vergeben keine XP, und die Streak bleibt.
 - Dashboard: Eine Aufgabe hat ein eckiges Kästchen, eine Gewohnheit ein rundes Kästchen mit ihrer Serie, dazu jeweils einen Typ-Chip.
-- Die Texte zu Health nennen Health Connect (Android zuerst); iOS folgt erst nach dem Spike mit dem iOS-Tester. Der App-Name bleibt ein Platzhalter (BS-47).
+- Die Texte zu Health nennen die Schnittstelle über ihren Anzeigenamen (Health Connect unter Android, Apple Health unter iOS, BS-122); für iOS gibt es keinen eigenen Entwurf. Der App-Name bleibt ein Platzhalter (BS-47).
 
 ### 10.3 Nicht entworfen
 
