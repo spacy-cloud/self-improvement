@@ -42,7 +42,10 @@ import '../support/platform_names.dart';
 ///   (`test/features/reminders/reminder_platform_neutral_test.dart`) reads
 ///   what is really on the screen for that.
 /// - The names the platforms give to themselves in their own files: the manifest
-///   and the Info.plist hold no text of the app but the app name.
+///   and the Info.plist hold no text of the app but the app name and the one
+///   usage description iOS requires before HealthKit asks (BS-122,
+///   `NSHealthShareUsageDescription`; it names no platform, and
+///   `ios_health_project_test.dart` reads it).
 ///
 /// A technical literal that has to name a platform (a channel name, a map key)
 /// goes into [allowedLiterals] with the reason; the list is empty today.

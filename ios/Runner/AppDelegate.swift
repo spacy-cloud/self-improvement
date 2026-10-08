@@ -17,5 +17,10 @@ import UserNotifications
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    // The app's own channel for the steps from Apple Health (BS-122, D-034);
+    // not a pub package. Not verified without macOS/Xcode and a device.
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "HealthStepsPlugin") {
+      HealthStepsPlugin.register(with: registrar)
+    }
   }
 }
